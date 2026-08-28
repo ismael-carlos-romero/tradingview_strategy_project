@@ -1,0 +1,33 @@
+{
+  "webhook_url": "https://script.google.com/macros/s/AKfycbzLTCVXSJHV9KUUCT2zhGvKCkcq-WS4ng-ZRa0GSysYdKVEwdj7TpCmXprQiQMedcch/exec",
+  "anticipation_threshold_pct": 1.0,
+  "imminent_threshold_pct": 0.35,
+  "weights": {
+    "trend_daily": 0,
+    "ma_distance": 0,
+    "relative_volume": 50,
+    "daily_floor": 50
+  },
+  "bot_tournament": {
+    "bot_conservative": {
+      "desc": "Conservador (TP 20%, SL -10%)",
+      "tp_pct": 20.0,
+      "sl_pct": -10.0
+    },
+    "bot_pilot": {
+      "desc": "Piloto Est\u00e1ndar (TP 30%, SL -15%)",
+      "tp_pct": 30.0,
+      "sl_pct": -15.0
+    },
+    "bot_aggressive": {
+      "desc": "Agresivo (TP 50%, SL -20%)",
+      "tp_pct": 50.0,
+      "sl_pct": -20.0
+    }
+  },
+  "telegram": {
+    "enabled": true,
+    "bot_token": "8962141983:AAF0xsT5F6xSrLFzL04JZHg0ouRsIQ2ZuOY",
+    "chat_id": "1815633041"
+  }
+}

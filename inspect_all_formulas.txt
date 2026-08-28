@@ -1,0 +1,34 @@
+Col 1 (Letter A): Header=V, Formula=True
+Col 2 (Letter B): Header=X, Formula=False
+Col 3 (Letter C): Header=ID, Formula=1
+Col 4 (Letter D): Header=CAPITAL, Formula=None
+Col 5 (Letter E): Header=Ticker, Formula=BAC
+Col 6 (Letter F): Header=Tipo, Formula=CALL
+Col 7 (Letter G): Header=Strike, Formula=48.5
+Col 8 (Letter H): Header=Fecha compra, Formula=2026-03-26 00:00:00
+Col 9 (Letter I): Header=Fecha venta, Formula=2026-04-01 00:00:00
+Col 10 (Letter J): Header=Fecha vencimiento, Formula=2026-04-02 00:00:00
+Col 11 (Letter K): Header=Cantidad, Formula=2
+Col 12 (Letter L): Header=Prima compra, Formula=0.84
+Col 13 (Letter M): Header=TP %, Formula=0.92
+Col 14 (Letter N): Header=Precio TP, Formula==IF(M6>0,(L6+(L6*M6)),0)
+Col 15 (Letter O): Header=SL %, Formula=0.65
+Col 16 (Letter P): Header=STOP LIMIT, Formula==IF(O6>0,(L6+(L6*-O6)),0)
+Col 17 (Letter Q): Header=PRIMA-SALDO, Formula==-L6+N6-P6
+Col 18 (Letter R): Header=COMPRA , Formula==(K6*$K$2*L6)
+Col 19 (Letter S): Header=VENTA, Formula==IF(N6>0,(N6*K6*100),P6*100)
+Col 20 (Letter T): Header=COMISIONES, Formula==1.05*$T$4
+Col 21 (Letter U): Header=GANANCIA/PERDIDA, Formula==S6-R6-T6
+Col 22 (Letter V): Header=GANANCIA, Formula==((S6-R6)/R6)
+Col 23 (Letter W): Header=Veces Multiplicadas la Inversión, Formula==(S6-R6)/S6
+Col 24 (Letter X): Header=RETIRAR DINERO %, Formula=None
+Col 25 (Letter Y): Header=CUENTA CORRIENTE USD, Formula=None
+Col 26 (Letter Z): Header=CUENTA CORRIENTE $, Formula=None
+Col 27 (Letter AA): Header=SALDO PARA INVERTIR, Formula=None
+Col 28 (Letter AB): Header=None, Formula=None
+Col 29 (Letter AC): Header=None, Formula==AD6*1500
+Col 30 (Letter AD): Header=Total usd, Formula==SUM(AE5:AI5)
+Col 31 (Letter AE): Header==SUM(AE7:AE16), Formula=2026-05-04 00:00:00
+Col 32 (Letter AF): Header==SUM(AF7:AF16), Formula=2026-05-05 00:00:00
+Col 33 (Letter AG): Header==SUM(AG7:AG19), Formula=2026-04-01 00:00:00
+Col 34 (Letter AH): Header==SUM(AH7:AH16), Formula=2026-05-07 00:00:00

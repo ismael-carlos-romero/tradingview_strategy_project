@@ -1,0 +1,27 @@
+Col 1 (V): True
+Col 2 (X): False
+Col 3 (ID): 1
+Col 4 (CAPITAL): None
+Col 5 (Ticker): BAC
+Col 6 (Tipo): CALL
+Col 7 (Strike): 48.5
+Col 8 (Fecha compra): 2026-03-26 00:00:00
+Col 9 (Fecha venta): 2026-04-01 00:00:00
+Col 10 (Fecha vencimiento): 2026-04-02 00:00:00
+Col 11 (Cantidad): 2
+Col 12 (Prima compra): 0.84
+Col 13 (TP %): 0.92
+Col 14 (Precio TP): =IF(M6>0,(L6+(L6*M6)),0)
+Col 15 (SL %): 0.65
+Col 16 (STOP LIMIT): =IF(O6>0,(L6+(L6*-O6)),0)
+Col 17 (PRIMA-SALDO): =-L6+N6-P6
+Col 18 (COMPRA ): =(K6*$K$2*L6)
+Col 19 (VENTA): =IF(N6>0,(N6*K6*100),P6*100)
+Col 20 (COMISIONES): =1.05*$T$4
+Col 21 (GANANCIA/PERDIDA): =S6-R6-T6
+Col 22 (GANANCIA): =((S6-R6)/R6)
+Col 23 (Veces Multiplicadas la Inversión): =(S6-R6)/S6
+Col 24 (RETIRAR DINERO %): None
+Col 25 (CUENTA CORRIENTE USD): None
+Col 26 (CUENTA CORRIENTE $): None
+Col 27 (SALDO PARA INVERTIR): None

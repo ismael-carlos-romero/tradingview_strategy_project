@@ -1,0 +1,324 @@
+//@version=5
+strategy("Estrategias Cardona Opciones", overlay=true, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=10, currency=currency.USD, max_labels_count=500)
+
+// ==========================================
+// 1. CONFIGURACIÓN DE MEDIAS MÓVILES (uCharts style)
+// ==========================================
+var string GP_MAS = "Medias Móviles (uCharts)"
+show_mas = input.bool(true, "Mostrar Medias Móviles", group=GP_MAS)
+
+type_pm10 = input.string("SMA", "Tipo PM 10", options=["SMA", "EMA"], group=GP_MAS)
+len_pm10  = input.int(10, "Longitud PM 10", group=GP_MAS)
+color_pm10 = input.color(color.white, "Color PM 10 (Blanco)", group=GP_MAS)
+
+type_pm20 = input.string("SMA", "Tipo PM 20", options=["SMA", "EMA"], group=GP_MAS)
+len_pm20  = input.int(20, "Longitud PM 20", group=GP_MAS)
+color_pm20 = input.color(color.yellow, "Color PM 20 (Amarillo)", group=GP_MAS)
+
+type_pm40 = input.string("SMA", "Tipo PM 40", options=["SMA", "EMA"], group=GP_MAS)
+len_pm40  = input.int(40, "Longitud PM 40", group=GP_MAS)
+color_pm40 = input.color(color.red, "Color PM 40 (Rojo)", group=GP_MAS)
+
+type_pm100 = input.string("SMA", "Tipo PM 100", options=["SMA", "EMA"], group=GP_MAS)
+len_pm100  = input.int(100, "Longitud PM 100", group=GP_MAS)
+color_pm100 = input.color(color.green, "Color PM 100 (Verde)", group=GP_MAS)
+
+type_pm200 = input.string("SMA", "Tipo PM 200", options=["SMA", "EMA"], group=GP_MAS)
+len_pm200  = input.int(200, "Longitud PM 200", group=GP_MAS)
+color_pm200 = input.color(color.purple, "Color PM 200 (Morado)", group=GP_MAS)
+
+// Función para obtener promedio
+get_ma(type_ma, src, len) =>
+    type_ma == "EMA" ? ta.ema(src, len) : ta.sma(src, len)
+
+pm10  = get_ma(type_pm10, close, len_pm10)
+pm20  = get_ma(type_pm20, close, len_pm20)
+pm40  = get_ma(type_pm40, close, len_pm40)
+pm100 = get_ma(type_pm100, close, len_pm100)
+pm200 = get_ma(type_pm200, close, len_pm200)
+
+plot(show_mas ? pm10 : na, color=color_pm10, title="PM 10", linewidth=1)
+plot(show_mas ? pm20 : na, color=color_pm20, title="PM 20", linewidth=1)
+plot(show_mas ? pm40 : na, color=color_pm40, title="PM 40", linewidth=1)
+plot(show_mas ? pm100 : na, color=color_pm100, title="PM 100", linewidth=2)
+plot(show_mas ? pm200 : na, color=color_pm200, title="PM 200", linewidth=2)
+
+// ==========================================
+// 2. CONTEXTO DIARIO (Daily Timeframe)
+// ==========================================
+d_open = request.security(syminfo.tickerid, "D", open, barmerge.gaps_off, barmerge.lookahead_on)
+d_high = request.security(syminfo.tickerid, "D", high, barmerge.gaps_off, barmerge.lookahead_on)
+d_low = request.security(syminfo.tickerid, "D", low, barmerge.gaps_off, barmerge.lookahead_on)
+d_close = request.security(syminfo.tickerid, "D", close, barmerge.gaps_off, barmerge.lookahead_on)
+d_sma100 = request.security(syminfo.tickerid, "D", ta.sma(close, 100), barmerge.gaps_off, barmerge.lookahead_on)
+d_sma200 = request.security(syminfo.tickerid, "D", ta.sma(close, 200), barmerge.gaps_off, barmerge.lookahead_on)
+
+d_trend_bullish = d_close > d_sma100 and d_sma100 > d_sma200
+d_near_sma100 = math.abs(d_close - d_sma100) / d_sma100 < 0.015
+d_near_sma200 = math.abs(d_close - d_sma200) / d_sma200 < 0.015
+d_at_floor = d_near_sma100 or d_near_sma200
+
+// ==========================================
+// 3. DETECCION DE VELAS Y SESIÓN (Gráfico 1H)
+// ==========================================
+is_first_bar = ta.change(time("D")) != 0
+is_second_bar = ta.change(time("D"))[1] != 0 and not is_first_bar
+
+body = math.abs(close - open)
+range_c = high - low
+is_green = close > open
+is_red = close < open
+
+is_solid_green = is_green and body > 0.6 * range_c
+is_solid_red   = is_red and body > 0.6 * range_c
+
+is_hammer = is_green and (open - low) > 2 * body and (high - close) < 0.2 * body
+is_hanger = is_red and (close - low) > 2 * body and (high - open) < 0.2 * body
+
+// Mejoras de Colas de Rechazo (Piso y Techo)
+lower_wick = is_green ? (open - low) : (close - low)
+upper_wick = is_green ? (high - close) : (high - open)
+
+// Una cola de piso/techo debe ser al menos el 50% del rango total de la vela y el cuerpo máximo el 40%
+is_cola_piso = range_c > 0 and lower_wick >= 0.5 * range_c and body <= 0.4 * range_c
+is_cola_techo = range_c > 0 and upper_wick >= 0.5 * range_c and body <= 0.4 * range_c
+
+// ==========================================
+// 4. LÓGICA DE LAS ESTRATEGIAS (CALL & PUT)
+// ==========================================
+var string GP_STRAT = "Activar Estrategias"
+enable_gap_normal = input.bool(true, "Gap Normal al Alza (CALL)", group=GP_STRAT)
+enable_gap_bajista = input.bool(true, "Gap Bajista al Alza (CALL)", group=GP_STRAT)
+enable_piso_fuerte = input.bool(true, "Piso Fuerte (CALL)", group=GP_STRAT)
+enable_primer_gap = input.bool(true, "Primer Gap al Alza (CALL)", group=GP_STRAT)
+enable_cola_piso = input.bool(true, "Cola de Piso en Soporte (CALL)", group=GP_STRAT)
+enable_pm40_bounce = input.bool(true, "Promedio Móvil de 40 (CALL)", group=GP_STRAT)
+enable_caida_break = input.bool(true, "Caída Normal/Fuerte (CALL)", group=GP_STRAT)
+enable_canal_break = input.bool(true, "Ruptura Canal Bajista (CALL)", group=GP_STRAT)
+enable_ruptura_res  = input.bool(true, "Ruptura de Resistencia (CALL)", group=GP_STRAT)
+
+enable_velas_rojas = input.bool(true, "Primera Vela Roja (PUT)", group=GP_STRAT)
+enable_techo_fuerte = input.bool(true, "Techo Fuerte (PUT)", group=GP_STRAT)
+enable_ruptura_piso = input.bool(true, "Ruptura del Piso del Gap (PUT)", group=GP_STRAT)
+enable_4_pasos     = input.bool(true, "Modelo de los 4 Pasos (PUT)", group=GP_STRAT)
+enable_cola_techo = input.bool(true, "Cola de Techo en Resistencia (PUT)", group=GP_STRAT)
+enable_hanger_diario = input.bool(true, "Hanger en Diario (PUT)", group=GP_STRAT)
+enable_ruptura_sop  = input.bool(true, "Ruptura de Soporte (PUT)", group=GP_STRAT)
+enable_piso_break   = input.bool(true, "Ruptura de Piso Fuerte (PUT)", group=GP_STRAT)
+enable_gap_cont_put = input.bool(true, "Gap Bajista de Continuación (PUT)", group=GP_STRAT)
+
+// Variables de estado para persistir datos durante el día
+var float day_open_gap = 0.0
+var float day_first_bar_low = 0.0
+var float day_first_bar_high = 0.0
+var bool day_floor_respected = true
+var bool day_first_bar_green = false
+var bool day_first_bar_red = false
+
+if is_first_bar
+    day_open_gap := (open - close[1]) / close[1] * 100
+    day_first_bar_low := low
+    day_first_bar_high := high
+    day_floor_respected := true
+    day_first_bar_green := is_solid_green or is_hammer
+    day_first_bar_red := is_solid_red or is_hanger
+else
+    if low < day_first_bar_low
+        day_floor_respected := false
+
+// --- ESTRATEGIAS CALL ---
+
+// 1. Gap Normal al Alza (CALL)
+cond_gap_normal = enable_gap_normal and d_trend_bullish and is_second_bar and day_open_gap > 0.1 and day_first_bar_green and is_green
+
+// 2. Gap Bajista al Alza (CALL)
+cond_gap_bajista = enable_gap_bajista and is_second_bar and day_open_gap < -0.1 and day_first_bar_green and is_green
+
+// 3. Piso Fuerte (CALL)
+cond_piso_fuerte = enable_piso_fuerte and d_trend_bullish and d_at_floor and ta.crossover(close, pm20) and (is_solid_green or is_hammer)
+
+// 4. Primer Gap al Alza (CALL)
+is_last_bar_of_day = (hour == 15 and timeframe.isminutes and timeframe.multiplier == 60) or (hour == 15 and timeframe.multiplier == 60)
+cond_primer_gap = enable_primer_gap and d_at_floor and is_last_bar_of_day and day_open_gap > 0.1 and day_first_bar_green and day_floor_respected and close < pm40[5]
+
+// 5. Cola de Piso en Soporte (CALL)
+lowest_20 = ta.lowest(low, 20)[1]
+near_low = low <= lowest_20 + range_c * 0.5
+near_ma_piso = (low <= pm10 * 1.0015 and close >= pm10) or (low <= pm20 * 1.0015 and close >= pm20) or (low <= pm40 * 1.0015 and close >= pm40) or (low <= pm100 * 1.0015 and close >= pm100) or (low <= pm200 * 1.0015 and close >= pm200)
+cond_cola_piso = enable_cola_piso and is_cola_piso and (near_low or near_ma_piso)
+
+// 11. Promedio Móvil de 40 (CALL)
+touched_pm40 = ta.barssince(low <= pm40 * 1.0015 and close >= pm40 * 0.9985) <= 3
+cond_pm40_bounce = enable_pm40_bounce and pm20 > pm40 and touched_pm40 and ta.crossover(close, ta.highest(high, 3)[1]) and is_solid_green
+
+// 12. Caída Normal y Caída Fuerte (CALL)
+recent_peak = ta.highest(high, 10)[1]
+pct_drop = (recent_peak - low) / recent_peak * 100
+is_caida_valida = pct_drop >= 0.5
+cond_caida_break = enable_caida_break and d_trend_bullish and is_caida_valida and ta.crossover(close, ta.highest(high, 3)[1]) and is_solid_green
+
+// 13. Ruptura del Canal Bajista (CALL)
+in_descending_channel = pm20 < pm40
+cond_canal_break = enable_canal_break and in_descending_channel and ta.crossover(close, ta.highest(high, 15)[1]) and is_solid_green
+
+// 15. Ruptura de Resistencia (CALL)
+cond_ruptura_res = enable_ruptura_res and d_trend_bullish and ta.crossover(close, ta.highest(high, 20)[1]) and is_solid_green
+
+// --- ESTRATEGIAS PUT ---
+
+// 6. Primera Vela Roja (PUT)
+cond_vela_roja = enable_velas_rojas and is_first_bar and is_solid_red and close > pm40
+
+// 7. Techo Fuerte (PUT)
+cond_techo_fuerte = enable_techo_fuerte and d_at_floor and is_second_bar and is_red[1] and is_solid_red
+
+// 8. Ruptura del Piso del Gap (PUT)
+cond_ruptura_piso = enable_ruptura_piso and not is_first_bar and close > pm40 and close[1] >= day_first_bar_low and close < day_first_bar_low and is_solid_red
+
+// 9. Modelo de los 4 Pasos (PUT)
+cond_4_pasos = enable_4_pasos and close < pm40 and is_red and is_green[1] and close < open[1] and ta.crossunder(close, ta.lowest(low, 3)[1])
+
+// 10. Cola de Techo en Resistencia (PUT)
+highest_20 = ta.highest(high, 20)[1]
+near_high = high >= highest_20 - range_c * 0.5
+near_ma_techo = (high >= pm10 * 0.9985 and close <= pm10) or (high >= pm20 * 0.9985 and close <= pm20) or (high >= pm40 * 0.9985 and close <= pm40) or (high >= pm100 * 0.9985 and close <= pm100) or (high >= pm200 * 0.9985 and close <= pm200)
+cond_cola_techo = enable_cola_techo and is_cola_techo and (near_high or near_ma_techo)
+
+// 14. Hanger en Diario (PUT)
+d_body = math.abs(d_close - d_open)
+d_range = d_high - d_low
+d_upper_wick = d_high - math.max(d_open, d_close)
+d_is_hanger = d_range > 0 and d_upper_wick >= 0.5 * d_range and d_body <= 0.4 * d_range
+cond_hanger_diario = enable_hanger_diario and is_last_bar_of_day and d_is_hanger and d_close > d_sma100
+
+// 16. Ruptura de Soporte (PUT)
+cond_ruptura_sop = enable_ruptura_sop and not d_trend_bullish and ta.crossunder(close, ta.lowest(low, 20)[1]) and is_solid_red
+
+// 17. Ruptura de Piso Fuerte (PUT)
+cond_piso_break = enable_piso_break and (ta.crossunder(close, d_sma100) or ta.crossunder(close, d_sma200)) and is_solid_red
+
+// 18. Gap Bajista de Continuación (PUT)
+cond_gap_cont_put = enable_gap_cont_put and is_second_bar and day_open_gap < -0.1 and day_first_bar_red and is_red
+
+// ==========================================
+// 5. EJECUCIÓN DE SEÑALES Y BACKTESTING
+// ==========================================
+var string GP_BACKTEST = "Rango de Backtesting"
+bt_start_year  = input.int(2020, "Año de Inicio", group=GP_BACKTEST)
+bt_start_month = input.int(1, "Mes de Inicio", group=GP_BACKTEST)
+bt_start_day   = input.int(1, "Día de Inicio", group=GP_BACKTEST)
+bt_end_year    = input.int(2028, "Año de Fin", group=GP_BACKTEST)
+bt_end_month   = input.int(12, "Mes de Fin", group=GP_BACKTEST)
+bt_end_day     = input.int(31, "Día de Fin", group=GP_BACKTEST)
+
+in_date_range = true
+
+// Señales de Entrada
+signal_call = (cond_gap_normal or cond_gap_bajista or cond_piso_fuerte or cond_primer_gap or cond_cola_piso or cond_pm40_bounce or cond_caida_break or cond_canal_break or cond_ruptura_res) and in_date_range
+signal_put  = (cond_vela_roja or cond_techo_fuerte or cond_ruptura_piso or cond_4_pasos or cond_cola_techo or cond_hanger_diario or cond_ruptura_sop or cond_piso_break or cond_gap_cont_put) and in_date_range
+
+// Determinar el nombre de la estrategia y su probabilidad para alertas y etiquetas
+string active_call_strategy = ""
+string call_win_rate = ""
+string active_put_strategy = ""
+string put_win_rate = ""
+
+if cond_gap_normal
+    active_call_strategy := "Gap Normal al Alza"
+    call_win_rate := "51.02%"
+else if cond_gap_bajista
+    active_call_strategy := "Gap Bajista al Alza"
+    call_win_rate := "41.45%"
+else if cond_piso_fuerte
+    active_call_strategy := "Piso Fuerte"
+    call_win_rate := "28.00%"
+else if cond_primer_gap
+    active_call_strategy := "Primer Gap al Alza"
+    call_win_rate := "37.50%"
+else if cond_cola_piso
+    active_call_strategy := "Cola de Piso"
+    call_win_rate := "47.81%"
+else if cond_pm40_bounce
+    active_call_strategy := "Promedio Móvil de 40"
+    call_win_rate := "47.88%"
+else if cond_caida_break
+    active_call_strategy := "Caída Normal/Fuerte"
+    call_win_rate := "44.83%"
+else if cond_canal_break
+    active_call_strategy := "Ruptura Canal Bajista"
+    call_win_rate := "46.30%"
+else if cond_ruptura_res
+    active_call_strategy := "Ruptura de Resistencia"
+    call_win_rate := "48.15%"
+
+if cond_vela_roja
+    active_put_strategy := "Primera Vela Roja"
+    put_win_rate := "50.00%"
+else if cond_techo_fuerte
+    active_put_strategy := "Techo Fuerte"
+    put_win_rate := "40.15%"
+else if cond_ruptura_piso
+    active_put_strategy := "Ruptura Piso del Gap"
+    put_win_rate := "37.78%"
+else if cond_4_pasos
+    active_put_strategy := "Modelo de 4 Pasos"
+    put_win_rate := "40.94%"
+else if cond_cola_techo
+    active_put_strategy := "Cola de Techo"
+    put_win_rate := "39.47%"
+else if cond_hanger_diario
+    active_put_strategy := "Hanger en Diario"
+    put_win_rate := "42.86%"
+else if cond_ruptura_sop
+    active_put_strategy := "Ruptura de Soporte"
+    put_win_rate := "37.86%"
+else if cond_piso_break
+    active_put_strategy := "Ruptura de Piso Fuerte"
+    put_win_rate := "37.84%"
+else if cond_gap_cont_put
+    active_put_strategy := "Gap Bajista de Continuación"
+    put_win_rate := "36.61%"
+
+// Gestión de Posiciones
+is_in_call = strategy.position_size > 0
+is_in_put  = strategy.position_size < 0
+
+// Lógica de Salida
+cond_exit_call = is_in_call and is_first_bar and is_red
+cond_exit_put = is_in_put and is_first_bar and is_green
+
+// Ejecución de trades en el Backtesting con payloads JSON para Webhooks y Etiquetas Dinámicas
+if signal_call and not is_in_call
+    strategy.entry("CALL", strategy.long, alert_message = '{"action": "buy", "ticker": "' + syminfo.ticker + '", "type": "CALL", "strategy": "' + active_call_strategy + '", "price": "' + str.tostring(close) + '", "quantity": 1}')
+    alert("¡SEÑAL CALL! Activo: " + syminfo.ticker + " | Estrategia: " + active_call_strategy, alert.freq_once_per_bar)
+    label.new(x=bar_index, y=low, text="🟢 COMPRAR CALL\n" + active_call_strategy + "\nProb: " + call_win_rate, color=color.green, textcolor=color.white, style=label.style_label_up, yloc=yloc.belowbar)
+
+if signal_put and not is_in_put
+    strategy.entry("PUT", strategy.short, alert_message = '{"action": "buy", "ticker": "' + syminfo.ticker + '", "type": "PUT", "strategy": "' + active_put_strategy + '", "price": "' + str.tostring(close) + '", "quantity": 1}')
+    alert("¡SEÑAL PUT! Activo: " + syminfo.ticker + " | Estrategia: " + active_put_strategy, alert.freq_once_per_bar)
+    label.new(x=bar_index, y=high, text="🔴 COMPRAR PUT\n" + active_put_strategy + "\nProb: " + put_win_rate, color=color.red, textcolor=color.white, style=label.style_label_down, yloc=yloc.abovebar)
+
+if cond_exit_call and is_in_call[1]
+    strategy.close("CALL", alert_message = '{"action": "sell", "ticker": "' + syminfo.ticker + '", "type": "CALL", "price": "' + str.tostring(close) + '"}')
+    alert("¡SALIDA CALL! Activo: " + syminfo.ticker + " | Salida por primera vela roja de apertura", alert.freq_once_per_bar)
+    label.new(x=bar_index, y=high, text="🟠 VENDER CALL\n(Cierre)", color=color.orange, textcolor=color.black, style=label.style_label_down, yloc=yloc.abovebar)
+
+if cond_exit_put and is_in_put[1]
+    strategy.close("PUT", alert_message = '{"action": "sell", "ticker": "' + syminfo.ticker + '", "type": "PUT", "price": "' + str.tostring(close) + '"}')
+    alert("¡SALIDA PUT! Activo: " + syminfo.ticker + " | Salida por primera vela verde de apertura", alert.freq_once_per_bar)
+    label.new(x=bar_index, y=low, text="🟠 VENDER PUT\n(Cierre)", color=color.orange, textcolor=color.black, style=label.style_label_up, yloc=yloc.belowbar)
+
+// ==========================================
+// 6. DIBUJO DE SEÑALES EN EL GRÁFICO (Círculos solicitados por el usuario)
+// ==========================================
+// Ploteo de entradas principales (Triángulos sin texto para evitar superposición con las etiquetas)
+plotshape(signal_call and not is_in_call[1] and not cond_cola_piso, title="Señal CALL (Gaps/Piso)", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.normal)
+plotshape(signal_put and not is_in_put[1] and not cond_cola_techo, title="Señal PUT (Vela/Techo)", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.normal)
+
+// Ploteo de Cola de Piso y Cola de Techo como círculos (resaltados a pedido del usuario)
+plotshape(cond_cola_piso and not is_in_call[1], title="Cola de Piso (CALL)", style=shape.circle, location=location.belowbar, color=color.green, size=size.normal)
+plotshape(cond_cola_techo and not is_in_put[1], title="Cola de Techo (PUT)", style=shape.circle, location=location.abovebar, color=color.red, size=size.normal)
+
+// Ploteo de salidas
+plotshape(cond_exit_call and is_in_call[1], title="Salida CALL", style=shape.xcross, location=location.abovebar, color=color.orange, size=size.small)
+plotshape(cond_exit_put and is_in_put[1], title="Salida PUT", style=shape.xcross, location=location.belowbar, color=color.orange, size=size.small)
