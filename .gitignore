@@ -18,3 +18,4 @@ __pycache__/
 *.PNG
 ESTRATEGIAS/
 scratch/
+config.json

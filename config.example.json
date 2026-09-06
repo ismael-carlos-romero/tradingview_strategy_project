@@ -1,5 +1,5 @@
 {
-  "webhook_url": "https://script.google.com/macros/s/AKfycbzLTCVXSJHV9KUUCT2zhGvKCkcq-WS4ng-ZRa0GSysYdKVEwdj7TpCmXprQiQMedcch/exec",
+  "webhook_url": "TU_WEBHOOK_URL_DE_APPS_SCRIPT_AQUI",
   "anticipation_threshold_pct": 1.0,
   "imminent_threshold_pct": 0.35,
   "weights": {
@@ -15,7 +15,7 @@
       "sl_pct": -10.0
     },
     "bot_pilot": {
-      "desc": "Piloto Est\u00e1ndar (TP 30%, SL -15%)",
+      "desc": "Piloto Estandar (TP 30%, SL -15%)",
       "tp_pct": 30.0,
       "sl_pct": -15.0
     },
@@ -27,7 +27,11 @@
   },
   "telegram": {
     "enabled": true,
-    "bot_token": "8962141983:AAF0xsT5F6xSrLFzL04JZHg0ouRsIQ2ZuOY",
-    "chat_id": "1815633041"
+    "bot_token": "TU_BOT_TOKEN_DE_TELEGRAM_AQUI",
+    "chat_id": "TU_CHAT_ID_AQUI"
+  },
+  "ngrok": {
+    "authtoken": "TU_AUTHTOKEN_DE_NGROK_AQUI",
+    "static_domain": "tu-dominio-fijo.ngrok-free.app"
   }
 }

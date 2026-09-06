@@ -73,3 +73,29 @@ Una vez que el backtester termine, ejecuta el analizador para procesar la base d
 * [CardonaOptionStrategies.pine](file:///C:/Users/Ismael%20Romero/.gemini/antigravity/scratch/tradingview_strategy_project/CardonaOptionStrategies.pine) - Estrategia en Pine Script v5 para TradingView.
 * [backtest_to_db.py](file:///C:/Users/Ismael%20Romero/.gemini/antigravity/scratch/tradingview_strategy_project/backtest_to_db.py) - Algoritmo Python para descarga de datos y ejecución de backtesting histórico masivo.
 * [analyze_results.py](file:///C:/Users/Ismael%20Romero/.gemini/antigravity/scratch/tradingview_strategy_project/analyze_results.py) - Algoritmo para procesar la base de datos SQLite y exportar reportes Excel con métricas.
+
+---
+
+## 🌐 Túnel remoto: ngrok con dominio estático (Tarea #32)
+
+`run_tunnel.py` ahora soporta dos modos de túnel para exponer el servidor local (puerto 8055):
+
+1. **Serveo (SSH)** — el modo actual, con URL que cambia en cada reinicio (problema de IP dinámica).
+2. **ngrok con dominio fijo** — nuevo, se activa automáticamente en cuanto `config.json` tenga cargados `ngrok.authtoken` y `ngrok.static_domain`. La dependencia `pyngrok` ya está instalada en esta PC.
+
+El script elige el modo solo: si esos dos campos están vacíos, sigue usando Serveo tal cual funcionaba antes. Nada se rompe hasta que actives ngrok.
+
+### Pasos que faltan (manuales, solo los puede hacer Ismael)
+1. Crear una cuenta gratuita en [ngrok.com](https://ngrok.com/) (el Implementador no puede crear cuentas de terceros por vos).
+2. Copiar el **Authtoken** desde el dashboard de ngrok (`Your Authtoken`).
+3. Reservar un **dominio estático gratuito** desde el dashboard (`Domains` → `Create Domain`), algo como `tu-nombre.ngrok-free.app`.
+4. Completar esos dos valores en `config.json`, dentro de la sección `"ngrok"` (ver `config.example.json` como referencia):
+   ```json
+   "ngrok": {
+     "authtoken": "PEGAR_AQUI_EL_AUTHTOKEN",
+     "static_domain": "tu-nombre.ngrok-free.app"
+   }
+   ```
+5. Reiniciar `INICIAR_MELIORA_OPTIONS.bat` (o `run_tunnel.py` directo). Ese dominio ya no va a cambiar nunca más, así que el link de acceso desde el celular queda fijo.
+
+`config.json` está ahora en `.gitignore` porque guarda credenciales reales (Telegram y, pronto, ngrok) — el archivo de referencia sin datos sensibles es `config.example.json`.

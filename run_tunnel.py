@@ -13,6 +13,11 @@ TELEGRAM_ENABLED = False
 TELEGRAM_TOKEN = ""
 TELEGRAM_CHAT_ID = ""
 
+# Tunel ngrok con dominio estatico (Tarea #32). Se activa solo si config.json
+# trae authtoken + static_domain cargados; si no, se sigue usando Serveo.
+NGROK_AUTHTOKEN = ""
+NGROK_STATIC_DOMAIN = ""
+
 if os.path.exists(CONFIG_PATH):
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -21,6 +26,9 @@ if os.path.exists(CONFIG_PATH):
             TELEGRAM_ENABLED = tg_conf.get("enabled", False)
             TELEGRAM_TOKEN = tg_conf.get("bot_token", "")
             TELEGRAM_CHAT_ID = tg_conf.get("chat_id", "")
+            ngrok_conf = config.get("ngrok", {})
+            NGROK_AUTHTOKEN = ngrok_conf.get("authtoken", "")
+            NGROK_STATIC_DOMAIN = ngrok_conf.get("static_domain", "")
     except Exception as e:
         print(f"[Tunnel Manager] Error al cargar config.json: {e}")
 
@@ -101,11 +109,64 @@ def run_ssh_tunnel():
 
     return proc.wait()
 
+def run_ngrok_tunnel():
+    from pyngrok import ngrok as pyngrok_client
+
+    pyngrok_client.set_auth_token(NGROK_AUTHTOKEN)
+    print("[Tunnel Manager] Iniciando tunel ngrok (dominio estatico)...")
+    tunnel = pyngrok_client.connect(addr=8055, proto="http", domain=NGROK_STATIC_DOMAIN)
+    url = tunnel.public_url
+    print(f"[Tunnel Manager] ¡TÚNEL DETECTADO! URL pública: {url}")
+
+    with open("tunnel_url.txt", "w", encoding="utf-8") as f_url:
+        f_url.write(url)
+
+    msg = (
+        f"🌐 <b>Meliora Options - Laboratorio Central</b>\n"
+        f"Tu túnel de acceso remoto (ngrok, dominio fijo) se ha conectado o reiniciado con éxito.\n\n"
+        f"👉 <b>Enlace de Acceso:</b>\n"
+        f"{url}\n\n"
+        f"🔑 <i>Contraseña: meliora2026</i>"
+    )
+    send_telegram_message(msg)
+
+    try:
+        while True:
+            time.sleep(10)
+            tunnels_activos = pyngrok_client.get_tunnels()
+            if not any(t.public_url == url for t in tunnels_activos):
+                print("[Tunnel Manager] El tunel ngrok se desconecto. Reiniciando...")
+                break
+    except KeyboardInterrupt:
+        pass
+    finally:
+        try:
+            pyngrok_client.disconnect(url)
+            pyngrok_client.kill()
+        except Exception:
+            pass
+
+    return 1
+
 def main():
+    use_ngrok = bool(NGROK_AUTHTOKEN) and bool(NGROK_STATIC_DOMAIN)
+    if use_ngrok:
+        try:
+            import pyngrok  # noqa: F401
+        except ImportError:
+            print("[Tunnel Manager] pyngrok no esta instalado (pip install pyngrok). Usando Serveo como respaldo.")
+            use_ngrok = False
+
+    modo = "ngrok (dominio estatico)" if use_ngrok else "Serveo (SSH)"
+    print(f"[Tunnel Manager] Modo de tunel: {modo}")
+
     while True:
         try:
-            exit_code = run_ssh_tunnel()
-            print(f"[Tunnel Manager] Proceso SSH cerrado con código: {exit_code}. Reconectando en 5 segundos...")
+            if use_ngrok:
+                exit_code = run_ngrok_tunnel()
+            else:
+                exit_code = run_ssh_tunnel()
+            print(f"[Tunnel Manager] Proceso de tunel cerrado con codigo: {exit_code}. Reconectando en 5 segundos...")
         except Exception as e:
             print(f"[Tunnel Manager] Error general en el túnel: {e}. Reconectando en 5 segundos...")
         time.sleep(5)
