@@ -1271,6 +1271,7 @@
       <li><a href="#" class="menu-item" data-target="test-panel">🧪 Probador de Señales</a></li>
       <li><a href="#" class="menu-item" data-target="portfolio-sim">💼 Posiciones Vivo (Simulador)</a></li>
       <li><a href="#" class="menu-item" data-target="control-celular">📱 Centro de Control</a></li>
+      <li><a href="#" class="menu-item" data-target="calculadora-1090">🧮 Calculadora 10/90</a></li>
     </ul>
   </aside>
 
@@ -6766,6 +6767,10 @@ if __name__ == "__main__":
                 <span style="font-size: 12px; color: #718096; text-transform: uppercase;">Fondos disponibles para operar</span>
                 <div style="font-size: 28px; font-weight: 700; color: #2d3748; margin-top: 5px;" id="sim-cupo-disponible">$0.00</div>
               </div>
+              <div style="text-align: right; margin-left: 20px;" title="Regla Cardona: ningún trade individual debería superar el 10% del capital total.">
+                <span style="font-size: 12px; color: #718096; text-transform: uppercase;">Máximo por trade (10%)</span>
+                <div style="font-size: 28px; font-weight: 700; color: #c05621; margin-top: 5px;" id="sim-max-per-trade">$0.00</div>
+              </div>
             </div>
 
             <!-- HISTORIAL DE SALDO CHART (Réplica Imagen 1) -->
@@ -7218,6 +7223,175 @@ if __name__ == "__main__":
 
     </section>
 
+    <!-- CALCULADORA MELIORA 10/90 -->
+    <section id="calculadora-1090" class="section">
+      <style>
+        #calculadora-1090 .c1090-card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:18px}
+        #calculadora-1090 h1{margin:0 0 8px;font-size:28px}
+        #calculadora-1090 h2{font-size:21px;margin-top:0}
+        #calculadora-1090 h3{font-size:17px;margin:0 0 12px}
+        #calculadora-1090 .c1090-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+        #calculadora-1090 label{display:block;font-weight:700;margin-bottom:6px}
+        #calculadora-1090 input{width:100%;padding:11px 12px;border:1px solid #bbb;border-radius:10px;font-size:16px;box-sizing:border-box}
+        #calculadora-1090 .c1090-section-title{margin-top:22px}
+        #calculadora-1090 .c1090-result{line-height:1.85;font-size:17px}
+        #calculadora-1090 .c1090-big{font-size:26px;font-weight:800}
+        #calculadora-1090 .c1090-goal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+        #calculadora-1090 .c1090-goal-card{border:1px solid #d7d7d7;border-radius:12px;padding:14px}
+        #calculadora-1090 .c1090-goal-card .c1090-value{font-size:21px;font-weight:800;margin:5px 0}
+        #calculadora-1090 .c1090-status{font-weight:700}
+        #calculadora-1090 .c1090-small{font-size:13px;color:#666}
+        #calculadora-1090 table{width:100%;border-collapse:collapse;font-size:14px}
+        #calculadora-1090 th,#calculadora-1090 td{padding:8px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap}
+        #calculadora-1090 th:first-child,#calculadora-1090 td:first-child{text-align:left}
+        #calculadora-1090 .c1090-scroll{overflow:auto;max-height:520px}
+        #calculadora-1090 .c1090-note{font-size:13px;color:#555;line-height:1.5}
+        #calculadora-1090 .c1090-badge{display:inline-block;padding:4px 8px;border:1px solid #ccc;border-radius:999px;font-size:12px}
+      </style>
+
+      <h1>🧮 Calculadora Meliora — Ciclo 10/90 Multidía</h1>
+      <p class="subtitle">Simula el reciclaje intradía del bucket, el retiro del 10% de cada ganancia y la consolidación del capital al cierre de cada jornada. Hecha originalmente por Ismael con ChatGPT.</p>
+
+      <div class="c1090-card">
+        <div class="c1090-grid">
+          <div><label>Capital total inicial (USD)</label><input id="c1090-capital" type="number" step=".01" value="1000"></div>
+          <div><label>% máximo diario</label><input id="c1090-bucket-pct" type="number" step=".01" value="10"></div>
+          <div><label>Take Profit ganador (%)</label><input id="c1090-tp" type="number" step=".01" value="5"></div>
+          <div><label>% ganancia reinvertida</label><input id="c1090-reinvest-pct" type="number" step=".01" value="90"></div>
+          <div><label>Trades ganadores por día</label><input id="c1090-wins" type="number" step="1" value="20"></div>
+          <div><label>Trades perdedores por día</label><input id="c1090-losses" type="number" step="1" value="0"></div>
+          <div><label>Pérdida por trade perdedor (%)</label><input id="c1090-loss-pct" type="number" step=".01" value="5"></div>
+          <div><label>Días de mercado a simular</label><input id="c1090-days" type="number" step="1" value="60"></div>
+        </div>
+        <h2 class="c1090-section-title">Metas de Cuenta Corriente</h2>
+        <p class="c1090-small">Las cuatro metas son independientes y editables. El sistema calcula en qué momento la producción de Cuenta Corriente alcanza cada objetivo.</p>
+        <div class="c1090-grid">
+          <div><label>Meta diaria (USD)</label><input id="c1090-goal-daily" type="number" step=".01" value="100"></div>
+          <div><label>Meta semanal (USD)</label><input id="c1090-goal-weekly" type="number" step=".01" value="500"></div>
+          <div><label>Meta quincenal (USD)</label><input id="c1090-goal-biweekly" type="number" step=".01" value="1000"></div>
+          <div><label>Meta mensual (USD)</label><input id="c1090-goal-monthly" type="number" step=".01" value="4000"></div>
+          <div><label>Meta personalizada acumulada (USD)</label><input id="c1090-goal-custom" type="number" step=".01" value="10000"></div>
+        </div>
+      </div>
+
+      <div class="c1090-card">
+        <h2>Resultado del período</h2>
+        <div class="c1090-result">
+          Capital inicial: <b id="c1090-r-initial"></b><br>
+          Capital reinvertible final: <span class="c1090-big" id="c1090-r-capital"></span><br>
+          Cuenta Corriente acumulada: <span class="c1090-big" id="c1090-r-cc"></span><br>
+          Patrimonio total (capital + retiros): <b id="c1090-r-wealth"></b><br>
+          Rentabilidad del capital reinvertible: <b id="c1090-r-roi"></b><br>
+          Nuevo bucket para la próxima jornada: <b id="c1090-r-next"></b><br>
+          Promedio diario generado en Cuenta Corriente: <b id="c1090-r-avg-daily"></b>
+        </div>
+      </div>
+
+      <div class="c1090-card">
+        <h2>Metas de ingreso</h2>
+        <div class="c1090-goal-grid">
+          <div class="c1090-goal-card"><h3>Meta diaria</h3><div class="c1090-value" id="c1090-daily-target"></div><div class="c1090-status" id="c1090-daily-status"></div><div class="c1090-small" id="c1090-daily-detail"></div></div>
+          <div class="c1090-goal-card"><h3>Meta semanal</h3><div class="c1090-value" id="c1090-weekly-target"></div><div class="c1090-status" id="c1090-weekly-status"></div><div class="c1090-small" id="c1090-weekly-detail"></div></div>
+          <div class="c1090-goal-card"><h3>Meta quincenal</h3><div class="c1090-value" id="c1090-biweekly-target"></div><div class="c1090-status" id="c1090-biweekly-status"></div><div class="c1090-small" id="c1090-biweekly-detail"></div></div>
+          <div class="c1090-goal-card"><h3>Meta mensual</h3><div class="c1090-value" id="c1090-monthly-target"></div><div class="c1090-status" id="c1090-monthly-status"></div><div class="c1090-small" id="c1090-monthly-detail"></div></div>
+          <div class="c1090-goal-card"><h3>Meta personalizada</h3><div class="c1090-value" id="c1090-custom-target"></div><div class="c1090-status" id="c1090-custom-status"></div><div class="c1090-small" id="c1090-custom-detail"></div></div>
+        </div>
+      </div>
+
+      <div class="c1090-card">
+        <h2>Ingresos por bloques de mercado</h2>
+        <div class="c1090-goal-grid">
+          <div class="c1090-goal-card"><span class="c1090-badge">1 día</span><div class="c1090-value" id="c1090-income1"></div><div class="c1090-small">Cuenta Corriente generada en la primera jornada.</div></div>
+          <div class="c1090-goal-card"><span class="c1090-badge">5 días</span><div class="c1090-value" id="c1090-income5"></div><div class="c1090-small">Producción acumulada aproximada de una semana bursátil.</div></div>
+          <div class="c1090-goal-card"><span class="c1090-badge">10 días</span><div class="c1090-value" id="c1090-income10"></div><div class="c1090-small">Producción acumulada aproximada de una quincena bursátil.</div></div>
+          <div class="c1090-goal-card"><span class="c1090-badge">20 días</span><div class="c1090-value" id="c1090-income20"></div><div class="c1090-small">Producción acumulada aproximada de un mes de mercado.</div></div>
+        </div>
+      </div>
+
+      <div class="c1090-card">
+        <h2>Evolución día por día</h2>
+        <div class="c1090-scroll"><table>
+          <thead><tr><th>Día</th><th>Capital inicial</th><th>Bucket 10%</th><th>Bucket final</th><th>Retiro del día</th><th>Cuenta Corriente acum.</th><th>Capital cierre</th><th>Próximo bucket</th></tr></thead>
+          <tbody id="c1090-rows"></tbody>
+        </table></div>
+        <p class="c1090-note"><b>Importante:</b> este es un modelo matemático determinista. Repite exactamente los ganadores y perdedores cargados cada jornada. Sirve para estudiar la mecánica 10/90 y escenarios de metas, pero no constituye una predicción de resultados reales. No incorpora spread, slippage, liquidez, fills parciales ni variación del win rate.</p>
+      </div>
+
+      <script>
+      (function(){
+        const $=id=>document.getElementById(id);
+        function usd(x){return new Intl.NumberFormat('es-AR',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(x)}
+        function pc(x){return new Intl.NumberFormat('es-AR',{maximumFractionDigits:2}).format(x)+'%'}
+        function oneDay(cap,bp,tp,ri,wins,losses,lp){
+          let b0=cap*bp, protectedCap=cap-b0, b=b0, wd=0;
+          for(let i=0;i<wins;i++){const gain=b*tp; const retiro=gain*(1-ri); wd+=retiro; b+=gain*ri;}
+          for(let i=0;i<losses;i++){b=Math.max(0,b*(1-lp));}
+          return {b0,bf:b,wd,close:protectedCap+b};
+        }
+        function setGoal(prefix,target,dayReached,days,amountAtPeriod,periodLabel){
+          $(prefix+'-target').textContent=usd(target);
+          if(target<=0){$(prefix+'-status').textContent='Sin meta definida';$(prefix+'-detail').textContent='';return;}
+          $(prefix+'-status').textContent=dayReached!==null?`Alcanzada el día ${dayReached}`:`No alcanzada en ${days} días`;
+          const diff=amountAtPeriod-target;
+          $(prefix+'-detail').textContent=`${periodLabel}: ${usd(amountAtPeriod)} · ${diff>=0?'Excede la meta por ':'Faltan '}${usd(Math.abs(diff))}`;
+        }
+        function calc(){
+          const initial=+$('c1090-capital').value||0;
+          const bp=(+$('c1090-bucket-pct').value||0)/100;
+          const tp=(+$('c1090-tp').value||0)/100;
+          const ri=(+$('c1090-reinvest-pct').value||0)/100;
+          const w=Math.max(0,Math.floor(+$('c1090-wins').value||0));
+          const l=Math.max(0,Math.floor(+$('c1090-losses').value||0));
+          const lp=(+$('c1090-loss-pct').value||0)/100;
+          const days=Math.max(0,Math.floor(+$('c1090-days').value||0));
+          const gd=+$('c1090-goal-daily').value||0, gw=+$('c1090-goal-weekly').value||0, gb=+$('c1090-goal-biweekly').value||0, gm=+$('c1090-goal-monthly').value||0, gc=+$('c1090-goal-custom').value||0;
+          let cap=initial, cc=0, rows='', history=[];
+          let reach={daily:null,weekly:null,biweekly:null,monthly:null,custom:null};
+          for(let d=1;d<=days;d++){
+            const start=cap, r=oneDay(cap,bp,tp,ri,w,l,lp);
+            cc+=r.wd; cap=r.close;
+            history.push({day:d,start,b0:r.b0,bf:r.bf,wd:r.wd,cc,close:cap,next:cap*bp});
+            if(reach.daily===null && gd>0 && r.wd>=gd) reach.daily=d;
+            if(reach.weekly===null && gw>0 && d>=5){
+              const sum5=history.slice(d-5,d).reduce((s,x)=>s+x.wd,0);
+              if(sum5>=gw) reach.weekly=d;
+            }
+            if(reach.biweekly===null && gb>0 && d>=10){
+              const sum10=history.slice(d-10,d).reduce((s,x)=>s+x.wd,0);
+              if(sum10>=gb) reach.biweekly=d;
+            }
+            if(reach.monthly===null && gm>0 && d>=20){
+              const sum20=history.slice(d-20,d).reduce((s,x)=>s+x.wd,0);
+              if(sum20>=gm) reach.monthly=d;
+            }
+            if(reach.custom===null && gc>0 && cc>=gc) reach.custom=d;
+            rows+=`<tr><td>${d}</td><td>${usd(start)}</td><td>${usd(r.b0)}</td><td>${usd(r.bf)}</td><td>${usd(r.wd)}</td><td>${usd(cc)}</td><td>${usd(cap)}</td><td>${usd(cap*bp)}</td></tr>`;
+          }
+          const sumFirst=n=>history.slice(0,Math.min(n,history.length)).reduce((s,x)=>s+x.wd,0);
+          const i1=sumFirst(1), i5=sumFirst(5), i10=sumFirst(10), i20=sumFirst(20);
+          $('c1090-r-initial').textContent=usd(initial);
+          $('c1090-r-capital').textContent=usd(cap);
+          $('c1090-r-cc').textContent=usd(cc);
+          $('c1090-r-wealth').textContent=usd(cap+cc);
+          $('c1090-r-roi').textContent=initial?pc((cap/initial-1)*100):'0%';
+          $('c1090-r-next').textContent=usd(cap*bp);
+          $('c1090-r-avg-daily').textContent=usd(days?cc/days:0);
+          setGoal('c1090-daily',gd,reach.daily,days,i1,'Primer día');
+          setGoal('c1090-weekly',gw,reach.weekly,days,i5,'Primeros 5 días');
+          setGoal('c1090-biweekly',gb,reach.biweekly,days,i10,'Primeros 10 días');
+          setGoal('c1090-monthly',gm,reach.monthly,days,i20,'Primeros 20 días');
+          $('c1090-custom-target').textContent=usd(gc);
+          $('c1090-custom-status').textContent=gc<=0?'Sin meta definida':reach.custom!==null?`Alcanzada el día ${reach.custom}`:`No alcanzada en ${days} días`;
+          $('c1090-custom-detail').textContent=`Cuenta Corriente acumulada al final: ${usd(cc)}`;
+          $('c1090-income1').textContent=usd(i1); $('c1090-income5').textContent=usd(i5); $('c1090-income10').textContent=usd(i10); $('c1090-income20').textContent=usd(i20);
+          $('c1090-rows').innerHTML=rows;
+        }
+        document.querySelectorAll('#calculadora-1090 input').forEach(x=>x.addEventListener('input',calc));
+        calc();
+      })();
+      </script>
+    </section>
+
   </main>
 
   <!-- PrismJS Script for highlighting -->
@@ -7228,6 +7402,18 @@ if __name__ == "__main__":
 
   <!-- Navigation and Code Injection Logic -->
   <script>
+    // Los túneles gratuitos de ngrok muestran una página de advertencia
+    // interstitial a menos que se envíe este header, lo que rompe las
+    // llamadas fetch() al bot cuando se accede vía la URL pública ngrok.
+    (function() {
+      const originalFetch = window.fetch;
+      window.fetch = function(input, init) {
+        init = init || {};
+        init.headers = Object.assign({ 'ngrok-skip-browser-warning': 'true' }, init.headers || {});
+        return originalFetch(input, init);
+      };
+    })();
+
     // ==========================================
     // ESTRATEGIAS DE CARDONA - DATA & RENDERING
     // ==========================================
@@ -8653,6 +8839,13 @@ if __name__ == "__main__":
         
         const simCupoEl = document.getElementById('sim-cupo-disponible');
         if (simCupoEl) simCupoEl.textContent = '$' + data.cupo_disponible.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        // Regla Cardona: máximo por TRADE individual = 10% del capital total
+        // (distinto del "cupo diario" de arriba, que es un tope acumulado
+        // para todo el día repartido entre estrategias). Es sólo informativo
+        // acá — el bloqueo real de la orden ocurre en ucharts_sync_userscript.js.
+        const maxPerTradeEl = document.getElementById('sim-max-per-trade');
+        if (maxPerTradeEl) maxPerTradeEl.textContent = '$' + (totalEquity * 0.10).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         
         const trdEqEl = document.getElementById('broker-trading-equity');
         if (trdEqEl) trdEqEl.textContent = '$' + tradingEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

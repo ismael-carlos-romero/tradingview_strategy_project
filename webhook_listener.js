@@ -17,9 +17,34 @@ function normalizeText(text) {
     .trim();
 }
 
+// Busca una pestaña por nombre normalizado (ignora mayúsculas, acentos y
+// espacios extra). getSheetByName() de Apps Script exige coincidencia EXACTA
+// de mayúsculas — por eso ss.getSheetByName("REGISTRO_CONTINUO") nunca
+// encontraba la pestaña real llamada "Registro Continuo", y la sincronización
+// terminaba siempre cayendo en el respaldo "UCharts Compuesto".
+function findSheetLoose(ss, name) {
+  var target = normalizeText(name).replace(/[_\s]+/g, "");
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    var candidate = normalizeText(sheets[i].getName()).replace(/[_\s]+/g, "");
+    if (candidate === target) return sheets[i];
+  }
+  return null;
+}
+
 // Helper para obtener o crear una pestaña con sus encabezados y moverla a su posición prioritaria
 function getOrCreateSheet(ss, name, headers) {
-  var sheet = ss.getSheetByName(name);
+  // Fix crítico: antes esto usaba ss.getSheetByName(name) a secas, que exige
+  // coincidencia EXACTA de mayúsculas/espacios. Como el resto del sistema
+  // llama a esta función con nombres en minúscula o con guiones bajos
+  // ("registro continuo", "RADAR_ACTUAL") que no coinciden letra por letra
+  // con el nombre real de la pestaña en la planilla ("Registro Continuo",
+  // "Radar Actual"), nunca la encontraba y silenciosamente CREABA una
+  // pestaña nueva y duplicada cada vez — la automatización escribía ahí, no
+  // en la pestaña que el usuario mira. findSheetLoose() ya existía para
+  // resolver exactamente este problema en el importador legacy; ahora se usa
+  // acá también, en el buscador principal que usan TODAS las pestañas.
+  var sheet = findSheetLoose(ss, name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
     // Aplicar estilos a los encabezados
@@ -116,6 +141,30 @@ function sortAnticipadasByDistance(sheet) {
   if (lastRow < 3) return;
   var range = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
   range.sort({column: 3, ascending: true});
+}
+
+// Encabezados completos de "registro continuo": las primeras 9 columnas ya
+// existían (datos de la señal confirmada); las 10 siguientes son nuevas y se
+// completan solas cuando el bot ejecuta la compra y luego la venta, para que
+// dejes de tipear esos datos a mano.
+var REGISTRO_CONTINUO_HEADERS = [
+  "Fecha/Hora", "Ticker", "Estrategia ID", "Timeframe", "Dirección",
+  "Precio Acción", "Distancia PM40", "Setup Score", "Setup ID",
+  "Trade ID", "Contratos", "Prima Entrada", "Costo Entrada", "Estado Operación",
+  "Fecha Cierre", "Precio Salida", "PnL %", "PnL USD", "Retorno Bruto"
+];
+
+// Agrega al final las columnas nuevas que falten en una hoja "registro
+// continuo" que ya existía con el set viejo de 9 columnas, sin tocar ni
+// reordenar lo que ya hay.
+function ensureRegistroContinuoHeaders(sheet) {
+  var lastCol = sheet.getLastColumn();
+  var currentHeaders = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  if (currentHeaders.length >= REGISTRO_CONTINUO_HEADERS.length) return;
+  var missing = REGISTRO_CONTINUO_HEADERS.slice(currentHeaders.length);
+  var range = sheet.getRange(1, currentHeaders.length + 1, 1, missing.length);
+  range.setValues([missing]);
+  range.setFontWeight("bold").setFontColor("#ffffff").setBackground("#1f4e78").setHorizontalAlignment("center");
 }
 
 function doPost(e) {
@@ -411,6 +460,22 @@ function handleRelationalWebhook(ss, data) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // B3/B4. DESACTIVADO — el bot ya no escribe fills/cierres directamente en
+  // Registro Continuo. Esta rama usaba columnas I-S con un esquema propio
+  // (Trade ID, contratos, prima, costo...) que no existe en la hoja real:
+  // ahí las columnas I/J/K/L son Saldo USD/% Ganancia/Estado/Take Profit
+  // Objetivo, y O-S es la tabla resumen (Win Rate, Total Trades, etc.) — se
+  // estaban pisando ambas cosas en cada compra/venta del bot. Registro
+  // Continuo ahora se llena únicamente desde el historial real de uCharts
+  // (handleLegacyBulkImport). Se responde "success" sin tocar ninguna hoja
+  // para que el bot (live_scanner.py) no vea errores por este evento.
+  if (data.event && (data.event.action === "trade_fill" || data.event.action === "trade_close")) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      message: "Evento recibido (registro en Sheets desactivado; Registro Continuo se sincroniza desde uCharts)"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // C. SI ES UNA SEÑAL REGULAR (PRE-ALERTA, CONFIRMADA, ETC.)
   // 1. Registrar la SEÑAL en bruto
   var senalesSheet = getOrCreateSheet(ss, "SEÑALES", ["Señal ID", "Fecha/Hora", "Ticker", "Dirección", "Estrategia ID", "Versión", "Payload Completo"]);
@@ -524,24 +589,17 @@ function handleRelationalWebhook(ss, data) {
     ]);
   }
   
-  // 4b. Registrar en REGISTRO_CONTINUO si es CONFIRMADA
-  if (state === "CONFIRMADA") {
-    var continuoSheet = getOrCreateSheet(ss, "registro continuo", [
-      "Fecha/Hora", "Ticker", "Estrategia ID", "Timeframe", "Dirección", 
-      "Precio Acción", "Distancia PM40", "Setup Score", "Setup ID"
-    ]);
-    continuoSheet.appendRow([
-      timestampStr,
-      ticker,
-      strategyId,
-      timeframe,
-      direction,
-      actionPrice,
-      distancePm40,
-      setupScore,
-      setupId
-    ]);
-  }
+  // 4b. DESACTIVADO — Registro Continuo ya NO se carga desde señales
+  // CONFIRMADA. Esta rama escribía un esquema de 19 columnas inventado que
+  // no coincide con las columnas reales de la hoja manual "Registro
+  // Continuo" (Fecha, Trade #, Ticker, Call/Put, Cantidad, Compra, Venta,
+  // Saldo USD, % Ganancia, Estado, Take Profit Objetivo, Fecha de
+  // Expiración) y que además pisaba, por columna, la tabla resumen
+  // (Win Rate / Total Trades / etc.) que vive aparte en las columnas O-S de
+  // esa misma hoja. La fuente de verdad de Registro Continuo ahora es
+  // exclusivamente el importador de historial real de uCharts
+  // (ver handleLegacyBulkImport), que sí respeta esas columnas y deja que
+  // la propia planilla calcule Saldo/% Ganancia/Estado con fórmulas.
   
   // 5. Registrar Eventos de Mercado
   if (data.market_data && data.market_data.indicators) {
@@ -560,11 +618,11 @@ function handleRelationalWebhook(ss, data) {
 
   // C. ORDENACIÓN Y FORMATO EN VIVO AL FINAL DEL ESCANEO
   if (state === "PRE-ALERTA" || state === "INMINENTE") {
-    var anticipadasSheet = ss.getSheetByName("OPORTUNIDADES_ANTICIPADAS");
+    var anticipadasSheet = findSheetLoose(ss, "OPORTUNIDADES_ANTICIPADAS");
     if (anticipadasSheet) sortAnticipadasByDistance(anticipadasSheet);
   }
   
-  var rSheet = ss.getSheetByName("RADAR_ACTUAL");
+  var rSheet = findSheetLoose(ss, "RADAR_ACTUAL");
   if (rSheet) {
     sortRadarByScore(rSheet);
     applyRadarFormatting(rSheet);
@@ -578,11 +636,112 @@ function handleRelationalWebhook(ss, data) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
+// REPARACIÓN DE UNA SOLA VEZ para las filas que ya quedaron con fórmulas
+// rotas (=SI(O(...))) antes de este fix. No se llama nunca desde el
+// webhook: hay que abrir este archivo en el editor de Apps Script
+// (script.google.com, o Extensiones > Apps Script desde la planilla),
+// elegir esta función "repairAllRegistroContinuoFormulas" en el desplegable
+// de al lado del botón ▷ Ejecutar, y ejecutarla una vez. Reescribe Saldo
+// USD / % Ganancia / Estado en TODAS las filas con Ticker no vacío,
+// siempre en inglés (IF/OR/coma), que es lo único que Range.setFormula()
+// acepta sin romperse — ver el comentario grande en applyFormulas() más
+// abajo para el detalle de por qué. No hace falta volver a desplegar el
+// webhook para correr esto: ejecutar una función a mano en el editor no
+// depende de la implementación web publicada.
+function repairAllRegistroContinuoFormulas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = findSheetLoose(ss, "Registro Continuo") || findSheetLoose(ss, "UCharts Compuesto") || ss.getActiveSheet();
+  var lastColumn = sheet.getLastColumn() || 20;
+
+  var headerRowIdx = 1;
+  var headers = [];
+  for (var r = 1; r <= 15; r++) {
+    var rowValues = sheet.getRange(r, 1, 1, lastColumn).getValues()[0];
+    var tickerIndex = rowValues.map(function(val) { return normalizeText(val); }).indexOf("ticker");
+    if (tickerIndex === -1) tickerIndex = rowValues.map(function(val) { return normalizeText(val); }).indexOf("tiker");
+    if (tickerIndex !== -1) {
+      headerRowIdx = r;
+      headers = rowValues.map(function(h) { return h.toString().trim(); });
+      break;
+    }
+  }
+  if (headers.length === 0) {
+    Logger.log("No se encontró la fila de encabezados (columna 'Ticker') en '" + sheet.getName() + "'.");
+    return;
+  }
+
+  var normalizedHeaders = headers.map(function(h) { return normalizeText(h); });
+  function getColIdx(name) {
+    var idx = normalizedHeaders.indexOf(normalizeText(name));
+    return idx !== -1 ? idx + 1 : -1;
+  }
+  var colTicker = getColIdx("ticker") !== -1 ? getColIdx("ticker") : getColIdx("tiker");
+  var colCompra = getColIdx("compra") !== -1 ? getColIdx("compra") : getColIdx("prima compra");
+  var colVenta = getColIdx("venta") !== -1 ? getColIdx("venta") : getColIdx("prima venta real");
+  var colSaldo = getColIdx("saldo usd") !== -1 ? getColIdx("saldo usd") : getColIdx("saldo");
+  var colPctGanancia = getColIdx("% ganancia") !== -1 ? getColIdx("% ganancia") : getColIdx("porcentaje ganancia");
+  var colEstado = getColIdx("estado");
+
+  // Mismo criterio que applyFormulas() en handleLegacyBulkImport (ver el
+  // comentario grande ahí): nombres de función siempre en inglés, separador
+  // de argumentos ";" cuando el locale de la planilla usa coma decimal
+  // (como España — confirmado en vivo: con "," tiraba "Error de análisis de
+  // fórmula", con ";" calculó bien). La corrida anterior de esta función
+  // (30/8, 4:59) reparó 292 filas usando coma — con el locale de esta
+  // planilla eso las dejó en #ERROR!, por eso hay que volver a correrla.
+  var _locale = (ss.getSpreadsheetLocale() || "en_US").toLowerCase();
+  var _periodDecimalLocales = ["en_us","en_gb","en_ca","en_au","en_ie","en_nz","en_za","en_ph","en_in","zh_cn","zh_tw","zh_hk","ja_jp","ko_kr","th_th"];
+  var _usesCommaDecimal = _periodDecimalLocales.indexOf(_locale) === -1;
+  var F_SEP = _usesCommaDecimal ? ";" : ",";
+
+  function columnToLetter(col) {
+    var letter = "";
+    while (col > 0) {
+      var rem = (col - 1) % 26;
+      letter = String.fromCharCode(65 + rem) + letter;
+      col = Math.floor((col - 1) / 26);
+    }
+    return letter;
+  }
+
+  function applyFormulasFixed(rowNum) {
+    if (colSaldo !== -1 && colVenta !== -1 && colCompra !== -1) {
+      var ventaRef = columnToLetter(colVenta) + rowNum;
+      var compraRef = columnToLetter(colCompra) + rowNum;
+      sheet.getRange(rowNum, colSaldo).setFormula(
+        "=IF(OR(" + ventaRef + "=\"\"" + F_SEP + compraRef + "=\"\")" + F_SEP + "\"\"" + F_SEP + ventaRef + "-" + compraRef + ")"
+      );
+    }
+    if (colPctGanancia !== -1 && colSaldo !== -1 && colCompra !== -1) {
+      var saldoRef = columnToLetter(colSaldo) + rowNum;
+      var compraRef2 = columnToLetter(colCompra) + rowNum;
+      sheet.getRange(rowNum, colPctGanancia).setFormula(
+        "=IF(OR(" + saldoRef + "=\"\"" + F_SEP + compraRef2 + "=0)" + F_SEP + "\"\"" + F_SEP + saldoRef + "/" + compraRef2 + ")"
+      );
+    }
+    if (colEstado !== -1 && colVenta !== -1 && colSaldo !== -1) {
+      var ventaRef2 = columnToLetter(colVenta) + rowNum;
+      var saldoRef2 = columnToLetter(colSaldo) + rowNum;
+      sheet.getRange(rowNum, colEstado).setFormula(
+        "=IF(" + ventaRef2 + "=\"\"" + F_SEP + "\"Abierto\"" + F_SEP + "IF(" + saldoRef2 + ">0" + F_SEP + "\"Ganado\"" + F_SEP + "IF(" + saldoRef2 + "<0" + F_SEP + "\"Perdido\"" + F_SEP + "\"Empate\")))"
+      );
+    }
+  }
+
+  var lastRow = sheet.getLastRow();
+  var fixedCount = 0;
+  for (var rowNum = headerRowIdx + 1; rowNum <= lastRow; rowNum++) {
+    var tickerVal = colTicker !== -1 ? sheet.getRange(rowNum, colTicker).getValue() : "";
+    if (!tickerVal) continue; // fila vacía (o solo del tablero O-S), no tocar
+    applyFormulasFixed(rowNum);
+    fixedCount++;
+  }
+  Logger.log("Fórmulas reparadas en " + fixedCount + " filas de '" + sheet.getName() + "'.");
+}
+
 function handleLegacyBulkImport(ss, data) {
-  var sheet = ss.getSheetByName("REGISTRO_CONTINUO") 
-           || ss.getSheetByName("registro continuo")
-           || ss.getSheetByName("UCharts Compuesto")
-           || ss.getSheetByName("Ucharts Compuesto")
+  var sheet = findSheetLoose(ss, "Registro Continuo")
+           || findSheetLoose(ss, "UCharts Compuesto")
            || ss.getActiveSheet();
            
   var headerRowIdx = 1; // default
@@ -637,6 +796,95 @@ function handleLegacyBulkImport(ss, data) {
   if (colCompra === -1) colCompra = 7;
   if (colEstado === -1) colEstado = 11;
 
+  // Convierte una celda "Fecha" (objeto Date o texto) a "yyyy-MM-dd" sin
+  // importar el formato de origen. FIX: antes, las fechas nuevas que llegan
+  // de uCharts como texto "DD/MM/YYYY hh:mm:ss" se comparaban tal cual contra
+  // fechas ya guardadas como objeto Date formateadas "yyyy-MM-dd" — nunca
+  // coincidían, así que la deduplicación fallaba siempre y cada
+  // sincronización volvía a insertar TODO el historial de nuevo, duplicando
+  // filas en cada corrida. Con esta normalización ambos lados quedan en el
+  // mismo formato antes de compararse.
+  function normalizeDateKey(value) {
+    if (value instanceof Date) {
+      return Utilities.formatDate(value, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+    }
+    var datePart = String(value || "").trim().split(" ")[0].trim();
+    if (!datePart) return "";
+    var dmy = datePart.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (dmy) {
+      return dmy[3] + "-" + ("0" + dmy[2]).slice(-2) + "-" + ("0" + dmy[1]).slice(-2);
+    }
+    var ymd = datePart.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
+    if (ymd) {
+      return ymd[1] + "-" + ("0" + ymd[2]).slice(-2) + "-" + ("0" + ymd[3]).slice(-2);
+    }
+    return datePart;
+  }
+
+  // Convierte un índice de columna (1 = A, 2 = B, ...) a su letra A1, para
+  // poder armar fórmulas dinámicamente según dónde esté cada columna real.
+  function columnToLetter(col) {
+    var letter = "";
+    while (col > 0) {
+      var rem = (col - 1) % 26;
+      letter = String.fromCharCode(65 + rem) + letter;
+      col = Math.floor((col - 1) / 26);
+    }
+    return letter;
+  }
+
+  // Carga en Saldo USD / % Ganancia / Estado FÓRMULAS reales de la planilla
+  // (no valores calculados por este script) para que sea la hoja la que
+  // calcule todo a partir de Compra y Venta, tal como se pidió: la
+  // automatización solo aporta los hechos crudos (fecha, ticker, cantidad,
+  // compra, venta); el resto lo calcula la planilla sola y se recalcula
+  // solo si alguna vez se corrige Compra/Venta a mano.
+  // FIX #NAME?/#ERROR! real (segunda vuelta — el primer intento seguía mal):
+  // hay DOS reglas independientes en juego, no una sola de "locale sí/no":
+  //   1) Range.setFormula() exige nombres de función en INGLÉS siempre
+  //      (IF/OR), nunca SI/O — probado en vivo: con SI/O la celda tiraba
+  //      "Función desconocida: SI".
+  //   2) El separador de argumentos depende de si el locale de la planilla
+  //      usa COMA como separador decimal (como España: "$13.990,00"). En
+  //      esos locales Sheets exige PUNTO Y COMA como separador de
+  //      argumentos — con coma tira "Error de análisis de fórmula", porque
+  //      la coma se confunde con el separador decimal. Esto se confirmó
+  //      escribiendo a mano en la hoja: "=IF(OR(H2=\"\";G2=\"\");\"\";H2-G2)"
+  //      (inglés + punto y coma) calculó bien y Sheets lo mostró traducido
+  //      como SI/O; la misma fórmula con comas dio error de nuevo.
+  // Conclusión: SIEMPRE nombres en inglés, separador según si el locale usa
+  // coma decimal (la inmensa mayoría fuera de en/zh/ja/ko/th).
+  var _locale = (ss.getSpreadsheetLocale() || "en_US").toLowerCase();
+  var _periodDecimalLocales = ["en_us","en_gb","en_ca","en_au","en_ie","en_nz","en_za","en_ph","en_in","zh_cn","zh_tw","zh_hk","ja_jp","ko_kr","th_th"];
+  var _usesCommaDecimal = _periodDecimalLocales.indexOf(_locale) === -1;
+  var F_IF = "IF";
+  var F_OR = "OR";
+  var F_SEP = _usesCommaDecimal ? ";" : ",";
+
+  function applyFormulas(rowNum) {
+    if (colSaldo !== -1 && colVenta !== -1 && colCompra !== -1) {
+      var ventaRef = columnToLetter(colVenta) + rowNum;
+      var compraRef = columnToLetter(colCompra) + rowNum;
+      sheet.getRange(rowNum, colSaldo).setFormula(
+        "=" + F_IF + "(" + F_OR + "(" + ventaRef + "=\"\"" + F_SEP + compraRef + "=\"\")" + F_SEP + "\"\"" + F_SEP + ventaRef + "-" + compraRef + ")"
+      );
+    }
+    if (colPctGanancia !== -1 && colSaldo !== -1 && colCompra !== -1) {
+      var saldoRef = columnToLetter(colSaldo) + rowNum;
+      var compraRef2 = columnToLetter(colCompra) + rowNum;
+      sheet.getRange(rowNum, colPctGanancia).setFormula(
+        "=" + F_IF + "(" + F_OR + "(" + saldoRef + "=\"\"" + F_SEP + compraRef2 + "=0)" + F_SEP + "\"\"" + F_SEP + saldoRef + "/" + compraRef2 + ")"
+      );
+    }
+    if (colEstado !== -1 && colVenta !== -1 && colSaldo !== -1) {
+      var ventaRef2 = columnToLetter(colVenta) + rowNum;
+      var saldoRef2 = columnToLetter(colSaldo) + rowNum;
+      sheet.getRange(rowNum, colEstado).setFormula(
+        "=" + F_IF + "(" + ventaRef2 + "=\"\"" + F_SEP + "\"Abierto\"" + F_SEP + F_IF + "(" + saldoRef2 + ">0" + F_SEP + "\"Ganado\"" + F_SEP + F_IF + "(" + saldoRef2 + "<0" + F_SEP + "\"Perdido\"" + F_SEP + "\"Empate\")))"
+      );
+    }
+  }
+
   var lastRow = sheet.getLastRow();
   
   // Leer registros existentes para deduplicación
@@ -646,6 +894,28 @@ function handleLegacyBulkImport(ss, data) {
   }
   
   var rowMap = {};
+  // FIX (Compra/Venta en $0 en filas nuevas): la clave de rowMap de arriba
+  // exige que coincidan ticker+tipo+cantidad+PRECIO DE COMPRA+FECHA DE
+  // COMPRA. Cuando el Tampermonkey manda una venta/vencimiento "huérfano"
+  // (sin haber podido emparejar su compra del lado del navegador — ver el
+  // fix de persistencia en ucharts_sync_userscript.js), ese trade llega acá
+  // con buyPrice=0 y buyDate="", así que NUNCA calza con esa clave, aunque
+  // la fila "Abierto" real de esa misma posición ya esté cargada en la
+  // planilla. Este segundo mapa (más flexible: ticker+tipo+cantidad+
+  // vencimiento, ignorando precio/fecha de compra) sirve de red de
+  // seguridad para encontrar esa fila "Abierto" igual y actualizarle la
+  // Venta, en vez de insertar una fila nueva con Compra Y Venta en $0.
+  // NOTA: la clave de este mapa NO incluye el vencimiento a propósito —
+  // "Fecha de Expiración" puede llegar en formatos de 2 dígitos de año
+  // ("DD/MM/YY" o "YY/MM/DD" según el texto original de UCharts) que
+  // normalizeDateKey no sabe normalizar de forma fiable, y encima Sheets
+  // suele autoconvertir esa celda a un objeto Date propio con su propia
+  // interpretación de esos dígitos ambiguos — comparar por ese campo
+  // fallaría en silencio la mayoría de las veces. Ticker+tipo+cantidad ya
+  // alcanza en la práctica (una sola cuenta, pocas posiciones abiertas a la
+  // vez); si hubiera más de una posición idéntica abierta, se cierra la
+  // más vieja primero (FIFO), que es el criterio contable correcto igual.
+  var openFallbackMap = {};
   for (var i = 0; i < dataRangeValues.length; i++) {
     var row = dataRangeValues[i];
     var rowNum = headerRowIdx + 1 + i;
@@ -655,27 +925,48 @@ function handleLegacyBulkImport(ss, data) {
     var exCallPut = colCallPut !== -1 ? String(row[colCallPut - 1] || "").toUpperCase().trim() : "";
     var exQty = colCantidad !== -1 ? parseInt(row[colCantidad - 1]) || 0 : 0;
     var exCompra = colCompra !== -1 ? parseFloat(row[colCompra - 1]) || 0.0 : 0.0;
+    var exEstado = colEstado !== -1 ? String(row[colEstado - 1] || "").toUpperCase().trim() : "";
     
-    // Normalizar fecha de la fila
-    var dateStr = "";
-    if (exFecha instanceof Date) {
-      dateStr = Utilities.formatDate(exFecha, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
-    } else {
-      dateStr = String(exFecha || "").split(" ")[0].trim();
-    }
+    // Normalizar fecha de la fila (ver normalizeDateKey más arriba)
+    var dateStr = normalizeDateKey(exFecha);
     
     // Generar clave única para evitar duplicados
     var key = exTicker + "||" + exCallPut + "||" + exQty + "||" + exCompra.toFixed(2) + "||" + dateStr;
     rowMap[key] = {
       rowNum: rowNum,
-      estado: colEstado !== -1 ? String(row[colEstado - 1] || "").toUpperCase().trim() : "",
+      estado: exEstado,
       ventaVal: colVenta !== -1 ? parseFloat(row[colVenta - 1]) || 0.0 : 0.0
     };
+
+    // Sólo entran al mapa de respaldo las filas todavía ABIERTAS: una fila
+    // ya Cerrada no debería recibir una segunda venta.
+    if (exEstado === "ABIERTO" || exEstado === "OPEN") {
+      var fallbackKey = exTicker + "||" + exCallPut + "||" + exQty;
+      // Si hay más de una posición abierta idéntica (mismo ticker/tipo/
+      // cantidad/vencimiento), preferimos la más vieja (menor rowNum de
+      // inserción original = mayor rowNum actual, porque se inserta al
+      // tope) para no romper el orden FIFO de cierre.
+      if (!openFallbackMap[fallbackKey] || rowNum > openFallbackMap[fallbackKey].rowNum) {
+        openFallbackMap[fallbackKey] = {
+          rowNum: rowNum,
+          estado: exEstado,
+          ventaVal: colVenta !== -1 ? parseFloat(row[colVenta - 1]) || 0.0 : 0.0
+        };
+      }
+    }
   }
   
   var addedCount = 0;
   var updatedCount = 0;
+  var skippedCount = 0;
+  var skippedDetails = [];
   var trades = data.trades || [];
+  // Cada inserción nueva (siempre en headerRowIdx+1) corre una posición hacia
+  // abajo a TODAS las filas existentes que ya estaban cacheadas en rowMap con
+  // su rowNum de antes de empezar. Sin este contador, una actualización a una
+  // fila existente (p.ej. marcar una venta) apuntaría a la fila equivocada
+  // apenas se insertara una fila nueva antes en el mismo lote.
+  var insertedSoFar = 0;
   
   for (var j = 0; j < trades.length; j++) {
     var t = trades[j];
@@ -686,49 +977,83 @@ function handleLegacyBulkImport(ss, data) {
     var tSellPrice = parseFloat(t.sellPrice || t.exit_price) || 0.0;
     var tStatus = String(t.status || t.state || "Cerrado").toUpperCase().trim();
     
-    // Normalizar fecha del webhook (buyDate suele venir como "DD/MM/YYYY hh:mm:ss" o similar)
-    var tBuyDateStr = String(t.buyDate || t.date || "").split(" ")[0].trim();
+    // Normalizar fecha del webhook (buyDate suele venir como "DD/MM/YYYY hh:mm:ss")
+    var tBuyDateStr = normalizeDateKey(t.buyDate || t.date || "");
     
     var key = tTicker + "||" + tType + "||" + tQty + "||" + tBuyPrice.toFixed(2) + "||" + tBuyDateStr;
     var exRecord = rowMap[key];
+
+    // Red de seguridad (ver comentario junto a openFallbackMap más arriba):
+    // si esta venta/vencimiento llega "huérfana" (sin compra emparejada del
+    // lado del navegador, buyPrice=0 o sin fecha de compra) y no calzó con
+    // ninguna fila por la clave exacta, buscamos si ya existe una fila
+    // ABIERTA con el mismo ticker+tipo+cantidad y la actualizamos a Cerrado
+    // en vez de insertar una fila nueva con Compra Y Venta en $0 (el bug
+    // reportado: filas sin datos reales que no sirven para calcular ni
+    // identificar el trade).
+    var isClosingEvent = (tStatus === "CERRADO" || tStatus === "CLOSED");
+    var looksOrphan = (tBuyPrice === 0 || !tBuyDateStr);
+    if (!exRecord && isClosingEvent && looksOrphan) {
+      var fallbackKey = tTicker + "||" + tType + "||" + tQty;
+      var fallbackRecord = openFallbackMap[fallbackKey];
+      if (fallbackRecord) {
+        exRecord = fallbackRecord;
+        delete openFallbackMap[fallbackKey]; // no reusar la misma fila abierta dos veces en este mismo lote
+      }
+    }
     
     if (exRecord) {
+      // Corregir la fila real: puede haberse corrido hacia abajo por
+      // inserciones nuevas hechas antes, en este mismo lote.
+      var realRowNum = exRecord.rowNum + insertedSoFar;
       // Si la transacción ya existe pero pasó de Abierto a Cerrado, actualizamos el precio de salida
       if ((exRecord.estado === "ABIERTO" || exRecord.estado === "OPEN") && (tStatus === "CERRADO" || tStatus === "CLOSED")) {
         if (colVenta !== -1) {
-          sheet.getRange(exRecord.rowNum, colVenta).setValue(tSellPrice);
+          sheet.getRange(realRowNum, colVenta).setValue(tSellPrice);
         }
-        if (colEstado !== -1) {
-          sheet.getRange(exRecord.rowNum, colEstado).setValue("Cerrado");
-        }
-        
-        // Recalcular saldo y ganancia localmente
-        if (colSaldo !== -1) {
-          sheet.getRange(exRecord.rowNum, colSaldo).setValue((tSellPrice - tBuyPrice) * tQty * 100);
-        }
-        if (colPctGanancia !== -1 && tBuyPrice > 0) {
-          sheet.getRange(exRecord.rowNum, colPctGanancia).setValue((tSellPrice - tBuyPrice) / tBuyPrice);
-        }
+        // Saldo USD / % Ganancia / Estado los recalcula la planilla sola
+        // (fórmulas), no este script.
+        applyFormulas(realRowNum);
         updatedCount++;
       }
+    } else if (isClosingEvent && looksOrphan) {
+      // Ni la clave exacta ni el mapa de respaldo encontraron una fila
+      // "Abierto" real para esta venta/vencimiento huérfano. NO insertamos
+      // una fila nueva con Compra Y Venta en $0 (el bug reportado: una fila
+      // así no sirve para identificar ni calcular el trade) — se descarta
+      // y queda registrada acá para que se pueda revisar a mano.
+      skippedCount++;
+      skippedDetails.push(tTicker + " " + tType + " x" + tQty + " (" + (t.expiry || "?") + ", " + (t.sellDate || t.date || "?") + ")");
     } else {
-      // Agregar nueva transacción
-      var nextRow = sheet.getLastRow() + 1;
-      var tradeNum = "T-" + Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), "yyyyMMdd") + "-" + nextRow;
-      
-      var saldoVal = 0.0;
-      var pctGananciaVal = 0.0;
-      if (tStatus === "CERRADO" || tStatus === "CLOSED") {
-        saldoVal = (tSellPrice - tBuyPrice) * tQty * 100;
-        if (tBuyPrice > 0) pctGananciaVal = (tSellPrice - tBuyPrice) / tBuyPrice;
-      }
+      // Insertar SIEMPRE justo debajo del encabezado, no al final: así el
+      // trade más nuevo queda arriba y el más viejo va bajando — el orden
+      // que se pidió (más nuevo a más antiguo). Como los trades del payload
+      // ya vienen ordenados de más antiguo a más nuevo (ver el sort en
+      // ucharts_history_migration.js), insertar cada uno en esa misma
+      // posición fija hace que el último procesado (el más reciente) termine
+      // literalmente arriba de todo.
+      var nextRow = headerRowIdx + 1;
+      sheet.insertRowBefore(nextRow);
+      insertedSoFar++;
+      var tradeNum = "T-" + Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), "yyyyMMdd") + "-" + Utilities.getUuid().slice(0, 8);
       
       var rowValues = [];
       for (var c = 0; c < headers.length; c++) {
         rowValues.push("");
       }
       
-      if (colIndex !== -1) rowValues[colIndex - 1] = nextRow - headerRowIdx;
+      // Esta automatización solo carga los HECHOS reales que vienen de
+      // uCharts (fecha, ticker, cantidad, compra, venta). Saldo USD,
+      // % Ganancia, Estado y Take Profit Objetivo NO se tocan acá: Saldo/%
+      // Ganancia/Estado quedan como fórmulas (ver applyFormulas) y Take
+      // Profit Objetivo se deja en blanco porque uCharts no informa ningún
+      // objetivo real — inventar un número ahí solo ensuciaría la columna.
+      //
+      // La columna "°" (numeración) se deja en blanco: con inserción al
+      // tope, la posición de cada fila cambia con cada sincronización
+      // nueva, así que un número fijo asignado acá quedaría desactualizado
+      // enseguida. Si esa columna tiene una fórmula propia armada en la
+      // hoja (p.ej. =ROW()-1), se recalcula sola.
       if (colFecha !== -1) rowValues[colFecha - 1] = t.buyDate || t.date || "";
       if (colTradeNum !== -1) rowValues[colTradeNum - 1] = tradeNum;
       if (colTicker !== -1) rowValues[colTicker - 1] = tTicker;
@@ -739,30 +1064,18 @@ function handleLegacyBulkImport(ss, data) {
       if (colVenta !== -1) {
         rowValues[colVenta - 1] = (tStatus === "CERRADO" || tStatus === "CLOSED") ? tSellPrice : "";
       }
-      if (colSaldo !== -1) {
-        rowValues[colSaldo - 1] = (tStatus === "CERRADO" || tStatus === "CLOSED") ? saldoVal : "";
-      }
-      if (colPctGanancia !== -1) {
-        rowValues[colPctGanancia - 1] = (tStatus === "CERRADO" || tStatus === "CLOSED") ? pctGananciaVal : "";
-      }
-      if (colEstado !== -1) {
-        rowValues[colEstado - 1] = t.status || "Cerrado";
-      }
-      if (colTPObj !== -1) {
-        rowValues[colTPObj - 1] = tBuyPrice * 1.50; // Ejemplo: 50% de ganancia pretendida
-      }
       if (colExpiracion !== -1) {
         rowValues[colExpiracion - 1] = t.expiry || "";
       }
       
-      sheet.appendRow(rowValues);
+      sheet.getRange(nextRow, 1, 1, headers.length).setValues([rowValues]);
+      applyFormulas(nextRow);
       
       // Aplicar formato de moneda y porcentajes a la nueva fila
       if (colCompra !== -1) sheet.getRange(nextRow, colCompra).setNumberFormat("$#,##0.00");
       if (colVenta !== -1) sheet.getRange(nextRow, colVenta).setNumberFormat("$#,##0.00");
       if (colSaldo !== -1) sheet.getRange(nextRow, colSaldo).setNumberFormat("$#,##0.00");
       if (colPctGanancia !== -1) sheet.getRange(nextRow, colPctGanancia).setNumberFormat("0.00%");
-      if (colTPObj !== -1) sheet.getRange(nextRow, colTPObj).setNumberFormat("$#,##0.00");
       
       addedCount++;
     }
@@ -770,9 +1083,11 @@ function handleLegacyBulkImport(ss, data) {
   
   return ContentService.createTextOutput(JSON.stringify({
     status: "success",
-    message: "Historial sincronizado automáticamente en REGISTRO_CONTINUO",
+    message: "Historial sincronizado automáticamente en Registro Continuo",
     added: addedCount,
-    updated: updatedCount
+    updated: updatedCount,
+    skipped: skippedCount,
+    skippedDetails: skippedDetails
   })).setMimeType(ContentService.MimeType.JSON);
 }
   

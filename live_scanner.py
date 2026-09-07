@@ -249,6 +249,54 @@ def send_telegram_notification(message, strategy_id=None):
     except Exception as e:
         print(f"[Telegram] Excepción al enviar alerta simple: {e}")
 
+def log_trade_fill_to_sheet(setup_id, ticker, strategy_id, trade_id, qty, price, cost):
+    """Avisa al webhook relacional que la compra automática se ejecutó, para que
+    complete solo (sin carga manual) la fila de 'Registro Continuo' con
+    Trade ID, contratos, prima y costo de la orden."""
+    if not WEBHOOK_URL or WEBHOOK_URL == "TU_WEBHOOK_URL_AQUÍ":
+        return
+    payload = {
+        "webhook_token": "LAB_SIM_SECURE_TOKEN",
+        "setup_id": setup_id,
+        "ticker": ticker,
+        "strategy_id": strategy_id,
+        "event": {"action": "trade_fill"},
+        "execution": {
+            "trade_id": trade_id,
+            "qty": qty,
+            "price": price,
+            "cost": cost
+        }
+    }
+    try:
+        r = requests.post(WEBHOOK_URL, json=payload, headers={"Content-Type": "text/plain"}, verify=False, timeout=15)
+        print(f"[Scanner] Registro Continuo (compra) actualizado para {trade_id}: {r.status_code}")
+    except Exception as e:
+        print(f"[Scanner] Error al registrar compra en Sheets: {e}")
+
+def log_trade_close_to_sheet(trade_id, exit_price, pnl_pct, pnl_usd, retorno_bruto):
+    """Avisa al webhook relacional que la venta automática se ejecutó, para que
+    cierre sola (sin carga manual) la fila de 'Registro Continuo' que abrió
+    la compra, con precio de salida, PnL y retorno bruto."""
+    if not WEBHOOK_URL or WEBHOOK_URL == "TU_WEBHOOK_URL_AQUÍ":
+        return
+    payload = {
+        "webhook_token": "LAB_SIM_SECURE_TOKEN",
+        "event": {"action": "trade_close"},
+        "execution": {
+            "trade_id": trade_id,
+            "exit_price": exit_price,
+            "pnl_pct": pnl_pct,
+            "pnl_usd": pnl_usd,
+            "retorno_bruto": retorno_bruto
+        }
+    }
+    try:
+        r = requests.post(WEBHOOK_URL, json=payload, headers={"Content-Type": "text/plain"}, verify=False, timeout=15)
+        print(f"[Scanner] Registro Continuo (venta) actualizado para {trade_id}: {r.status_code}")
+    except Exception as e:
+        print(f"[Scanner] Error al registrar venta en Sheets: {e}")
+
 def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, price, distance_pm40, volume, rel_vol, slope_pm40, spy_trend, vix_value, session_type, direction, strategy_version):
     """Guarda localmente en la base SQLite y transmite la actualización al webhook relacional."""
     if not os.path.exists(DB_NAME):
@@ -395,6 +443,7 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
                     f"✅ Orden de compra autorizada por Risk Engine e inscripta en el Ledger."
                 )
                 send_telegram_notification(msg_sim)
+                log_trade_fill_to_sheet(setup_id, ticker, strategy_id, res_sim.get("trade_id"), res_sim.get("qty"), res_sim.get("price"), res_sim.get("cost"))
             else:
                 # Antes esto se descartaba en silencio total. Ahora al menos
                 # queda en la consola para poder diagnosticar rechazos reales
@@ -2167,6 +2216,7 @@ def actualizar_seguimiento_simulador():
                         f"💎 <b>Balance Cuenta:</b> ${nuevo_cap:.2f}"
                     )
                     send_telegram_notification(notif_msg)
+                    log_trade_close_to_sheet(op_id, precio_actual_opcion, pnl_pct, pnl_usd, retorno)
         conn.commit()
         conn.close()
     except Exception as e:

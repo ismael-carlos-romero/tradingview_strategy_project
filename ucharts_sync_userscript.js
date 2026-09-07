@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UCharts to Google Sheets Sync Tool
 // @namespace    http://tampermonkey.net/
-// @version      5.0.12
+// @version      5.0.27
 // @description  Agrega un panel de control con sincronización automática en tiempo real para UCharts y Google Sheets.
 // @author       Antigravity
 // @match        https://app.ucharts.com/*
@@ -120,6 +120,51 @@
   let autoCheckbox = null;
   let statusIndicator = null;
   let autoSyncEnabled = false;
+
+  // Estado de la Bandera Automática (declarado ACÁ arriba, no más abajo junto
+  // al resto de sus funciones): init() llama a renderBanderinToggle(), que
+  // lee banderinEnabled, de forma SÍNCRONA la primera vez que corre —  y
+  // safeInit()/init() se ejecutan ya en la carga inicial del script, antes
+  // de que la ejecución llegue a la línea donde estas variables se
+  // declaraban antes. Con "let"/"const" eso es un Temporal Dead Zone:
+  // acceder a la variable antes de que su propia línea de declaración se
+  // ejecute tira ReferenceError. Ese error, atrapado por el try/catch de
+  // safeInit(), cortaba en seco el resto del cableado de init() — por eso
+  // dejaron de funcionar TODOS los botones y bucles que se conectan después
+  // en el código (Sincronizar Planilla, Sincronizar Día, Lanzar Tester,
+  // Compra Call/Put, Pánico, y los setInterval de monitoreo/auto-trader/
+  // heartbeat), no sólo la Bandera. Manteniendo sólo la declaración de estas
+  // variables acá arriba (las funciones que las usan pueden seguir abajo,
+  // las funciones sí se izan completas) se evita el problema.
+  let banderinEnabled = localStorage.getItem('ucharts_banderin_enabled') === 'true';
+  let banderinRunning = false;
+  // Interruptor MAESTRO del Auto-Trader: arranca SIEMPRE en pausa (false) la
+  // primera vez, y sólo pasa a true cuando el usuario aprieta "Iniciar
+  // Auto-Trader" a propósito — así una recarga de página, un estado "ARMED"
+  // colgado del servidor, o el propio arranque del script nunca pueden
+  // comprar/vender solos sin que el usuario lo haya prendido él mismo.
+  // Declarado ACÁ ARRIBA junto a banderinEnabled por la misma razón de TDZ
+  // explicada en el comentario de arriba: renderAutoTraderMasterToggle() lo
+  // lee de forma síncrona la primera vez que corre init().
+  let autoTraderMasterOn = localStorage.getItem('ucharts_autotrader_master_on') === 'true';
+  // cachedAccountBalance: mismo motivo de TDZ que las variables de arriba.
+  // extractAccountBalance() (llamada desde startHeartbeatLoop, que corre
+  // síncronamente dentro de init()) la necesitaba estando declarada MÁS
+  // ABAJO en el archivo — así que un remontaje del panel (retry de la SPA)
+  // podía tirar "Cannot access 'cachedAccountBalance' before initialization"
+  // y abortar el resto de init() a mitad de camino (incluida la Bandera,
+  // el heartbeat, y todo lo que viene después en el archivo).
+  let cachedAccountBalance = null;
+  // Máquina de estados POR TICKER (antes era una única variable global
+  // "banderinCycle", que sólo permitía correr Bandera en un activo a la vez).
+  // Cada entrada del Map es el ciclo probing/evaluating de ESE ticker.
+  const banderinCycles = new Map();
+  const banderinTrackedPositions = new Map();
+  // Bucket diario compartido: capital comprometido por Cardona (real, vía
+  // Auto-Trader) en su propio sub-pool. Ver "DAILY OPERATIONAL BUCKET" más
+  // abajo para la lógica de reparto con Bandera.
+  const cardonaTrackedPositions = new Map();
+  const BANDERIN_EDGE_PCT = 2.0;
 
   // Estilos CSS para el panel premium flotante
   const style = document.createElement('style');
@@ -349,16 +394,21 @@
     panel.className = 'sheets-sync-panel';
     panel.innerHTML = `
       <div class="sync-tabs">
-        <div class="sync-tab active" data-tab="tab-sheet">Planilla 📊 v5.0.12</div>
+        <div class="sync-tab active" data-tab="tab-sheet">Planilla 📊 v5.0.23</div>
         <div class="sync-tab" data-tab="tab-trader">Auto-Trader 🤖</div>
       </div>
 
       <!-- PESTAÑA 1: PLANILLA -->
       <div class="tab-content active" id="tab-sheet">
-        <button class="sheets-sync-btn">
+        <button class="sheets-sync-btn" title="Baja TODO el historial disponible en UCharts. Puede tardar varios minutos si hay muchas operaciones acumuladas.">
           <span class="sync-icon">📊</span>
           <span class="sync-spinner"></span>
           <span class="btn-text">Sincronizar Planilla</span>
+        </button>
+        <button class="sheets-sync-btn" id="btn-sync-day" style="margin-top: 6px;" title="Rápido: sólo baja y carga las operaciones de los últimos días (no todo el historial). Ideal para el uso diario.">
+          <span class="sync-icon">📅</span>
+          <span class="sync-spinner"></span>
+          <span class="btn-text">Sincronizar Día</span>
         </button>
         <div class="auto-sync-container">
           <label class="auto-sync-label">
@@ -371,6 +421,20 @@
 
       <!-- PESTAÑA 2: AUTO-TRADER -->
       <div class="tab-content" id="tab-trader">
+        <!-- INTERRUPTOR MAESTRO: controla si el Auto-Trader puede operar
+             SOLO (compra automática por señal del servidor, auto-cierre
+             TP/SL, y Bandera Automática). Comprar/vender a mano con
+             COMPRA CALL / COMPRA PUT / CERRAR TODO de más abajo funciona
+             igual esté pausado o no — esto sólo frena lo 100% automático,
+             para dejar tiempo de intervenir manualmente cuando se quiera. -->
+        <div class="auto-sync-container" style="margin-bottom: 8px; flex-direction: column; align-items: stretch; gap: 6px;">
+          <div id="autotrader-master-status" style="font-size: 12px; font-weight: 600; text-align: center;">⏸️ Auto-Trader: PAUSADO</div>
+          <div class="btn-action-group">
+            <button class="sheets-sync-btn btn-action-green" id="btn-autotrader-start">▶️ Iniciar Auto-Trader</button>
+            <button class="sheets-sync-btn btn-action-red" id="btn-autotrader-pause">⏸️ Pausar Auto-Trader</button>
+          </div>
+        </div>
+
         <div class="profile-selector">
           <button class="profile-btn active" data-profile="corto">CORTO</button>
           <button class="profile-btn" data-profile="medio">MEDIO</button>
@@ -380,6 +444,11 @@
         <div class="form-row">
           <span>Contratos:</span>
           <input type="number" id="trader-qty" class="form-input" value="1000">
+        </div>
+
+        <div class="form-row">
+          <span>Días de Vencimiento:</span>
+          <input type="number" id="dte-target" class="form-input" value="0" min="0">
         </div>
 
         <div class="form-row">
@@ -434,6 +503,26 @@
           </label>
           <span class="sync-status-indicator active" id="trader-indicator" title="Monitoreando PnL" style="background-color: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
         </div>
+
+        <!-- BANDERA AUTOMÁTICA: straddle 1 Call + 1 Put para detectar la
+             tendencia dominante e invertir en ella, repitiendo el ciclo. -->
+        <div class="auto-sync-container" style="margin-top: 8px; flex-direction: column; align-items: stretch; gap: 6px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 8px;">
+          <div class="form-row">
+            <span>🧮 Bucket diario compartido Cardona+Bandera (%):</span>
+            <input type="number" id="daily-bucket-pct" class="form-input" value="10" min="1" max="100" step="1">
+          </div>
+          <div class="form-row">
+            <span>🚩 Activos Bandera (tickers separados por coma):</span>
+            <input type="text" id="banderin-symbols" class="form-input" value="SPY" placeholder="SPY, QQQ, AAPL...">
+          </div>
+          <button class="sheets-sync-btn btn-action-blue" id="btn-banderin-toggle" title="Compra 1 Call + 1 Put por cada activo habilitado para detectar la tendencia dominante (2% de diferencia), invierte en esa dirección respetando el Take Profit, y repite el ciclo mientras alcance el bucket del día.">
+            🚩 Activar Bandera Automática
+          </button>
+          <div class="form-row" style="font-size: 10px; color: #9ca3af;">
+            <span id="banderin-status-text">Bandera inactiva</span>
+            <span id="banderin-bucket-status">Bandera $0.00/$0.00 · Cardona $0.00/$0.00</span>
+          </div>
+        </div>
       </div>
     `;
     document.body.appendChild(panel);
@@ -457,9 +546,9 @@
     // Manejo de Perfiles
     const profileBtns = panel.querySelectorAll('.profile-btn');
     const profileConfigs = {
-      corto: { qty: 1000, tpPct: 15, tpUsd: 1000, usePct: true, useUsd: false, slPct: 10, slUsd: 500, useSlPct: true, useSlUsd: false },
-      medio: { qty: 200, tpPct: 40, tpUsd: 5000, usePct: true, useUsd: false, slPct: 15, slUsd: 1500, useSlPct: true, useSlUsd: false },
-      largo: { qty: 50, tpPct: 100, tpUsd: 10000, usePct: true, useUsd: false, slPct: 25, slUsd: 2500, useSlPct: true, useSlUsd: false }
+      corto: { qty: 1000, tpPct: 15, tpUsd: 1000, usePct: true, useUsd: false, slPct: 10, slUsd: 500, useSlPct: true, useSlUsd: false, dte: 0 },
+      medio: { qty: 200, tpPct: 40, tpUsd: 5000, usePct: true, useUsd: false, slPct: 15, slUsd: 1500, useSlPct: true, useSlUsd: false, dte: 5 },
+      largo: { qty: 50, tpPct: 100, tpUsd: 10000, usePct: true, useUsd: false, slPct: 25, slUsd: 2500, useSlPct: true, useSlUsd: false, dte: 30 }
     };
 
     profileBtns.forEach(pBtn => {
@@ -486,8 +575,29 @@
         panel.querySelector('#sl-pct-val').disabled = !config.useSlPct;
         panel.querySelector('#sl-usd-val').disabled = !config.useSlUsd;
 
+        // El perfil sólo propone un DTE por defecto — si el usuario ya editó
+        // el campo "Días de Vencimiento" a mano, no lo pisamos con el preset.
+        if (!panel.querySelector('#dte-target').dataset.userEdited) {
+          panel.querySelector('#dte-target').value = config.dte;
+          localStorage.setItem('ucharts_dte_target', String(config.dte));
+        }
+
         localStorage.setItem('ucharts_trader_profile', profile);
       });
+    });
+
+    // "Días de Vencimiento": persistir y marcar como editado a mano apenas
+    // el usuario lo toca, para que cambiar de perfil (CORTO/MEDIO/LARGO) no
+    // le pise el valor que puso a propósito.
+    const dteInput = panel.querySelector('#dte-target');
+    const savedDte = localStorage.getItem('ucharts_dte_target');
+    if (savedDte !== null) {
+      dteInput.value = savedDte;
+      dteInput.dataset.userEdited = 'true'; // para que el click de restaurar perfil (más abajo) no lo pise
+    }
+    dteInput.addEventListener('input', (e) => {
+      e.target.dataset.userEdited = 'true';
+      localStorage.setItem('ucharts_dte_target', e.target.value);
     });
 
     // Restaurar perfil guardado
@@ -519,6 +629,85 @@
     chkAutoCloseEl.checked = savedAutoClose === null ? true : savedAutoClose === 'true';
     chkAutoCloseEl.addEventListener('change', (e) => {
       localStorage.setItem('ucharts_auto_close_pnl', e.target.checked ? 'true' : 'false');
+    });
+
+    // Bucket diario compartido (Cardona + Bandera) (%) — persistir el valor elegido
+    const dailyBucketPctInput = panel.querySelector('#daily-bucket-pct');
+    const savedDailyBucketPct = localStorage.getItem('ucharts_daily_bucket_pct');
+    if (savedDailyBucketPct !== null) dailyBucketPctInput.value = savedDailyBucketPct;
+    dailyBucketPctInput.addEventListener('input', (e) => {
+      localStorage.setItem('ucharts_daily_bucket_pct', e.target.value);
+      // Si el % cambia, recalcular el bucket de hoy contra el balance ya conocido
+      localStorage.removeItem('ucharts_daily_bucket_date');
+    });
+
+    // Bandera Automática: lista de activos habilitados — persistir (sección
+    // 3: sin ningún ticker hardcodeado en la lógica).
+    const banderinSymbolsInput = panel.querySelector('#banderin-symbols');
+    const savedBanderinSymbols = localStorage.getItem('ucharts_banderin_symbols');
+    if (savedBanderinSymbols !== null) banderinSymbolsInput.value = savedBanderinSymbols;
+    banderinSymbolsInput.addEventListener('input', (e) => {
+      localStorage.setItem('ucharts_banderin_symbols', e.target.value);
+    });
+
+    // Interruptor MAESTRO del Auto-Trader: Iniciar/Pausar. Arranca siempre
+    // pausado (autoTraderMasterOn declarado arriba del archivo). Comprar o
+    // vender a mano con los botones COMPRA CALL / COMPRA PUT / CERRAR TODO
+    // sigue funcionando igual, esté pausado o no — este interruptor sólo
+    // bloquea los ciclos 100% automáticos (pollPendingTradesFromServer,
+    // el auto-cierre TP/SL de monitorPositionsPnL, y banderinTick).
+    const autoTraderStartBtn = panel.querySelector('#btn-autotrader-start');
+    const autoTraderPauseBtn = panel.querySelector('#btn-autotrader-pause');
+    const autoTraderStatusEl = panel.querySelector('#autotrader-master-status');
+    function renderAutoTraderMasterToggle() {
+      if (autoTraderMasterOn) {
+        autoTraderStatusEl.textContent = '🟢 Auto-Trader: ACTIVO';
+        autoTraderStatusEl.style.color = '#22c55e';
+        autoTraderStartBtn.disabled = true;
+        autoTraderPauseBtn.disabled = false;
+      } else {
+        autoTraderStatusEl.textContent = '⏸️ Auto-Trader: PAUSADO';
+        autoTraderStatusEl.style.color = '#facc15';
+        autoTraderStartBtn.disabled = false;
+        autoTraderPauseBtn.disabled = true;
+      }
+    }
+    renderAutoTraderMasterToggle();
+    autoTraderStartBtn.addEventListener('click', () => {
+      autoTraderMasterOn = true;
+      localStorage.setItem('ucharts_autotrader_master_on', 'true');
+      renderAutoTraderMasterToggle();
+    });
+    autoTraderPauseBtn.addEventListener('click', () => {
+      autoTraderMasterOn = false;
+      localStorage.setItem('ucharts_autotrader_master_on', 'false');
+      renderAutoTraderMasterToggle();
+    });
+
+    // Bandera Automática: botón de activar/detener
+    const banderinToggleBtn = panel.querySelector('#btn-banderin-toggle');
+    function renderBanderinToggle() {
+      if (banderinEnabled) {
+        banderinToggleBtn.textContent = '🛑 Detener Bandera Automática';
+        banderinToggleBtn.classList.remove('btn-action-blue');
+        banderinToggleBtn.classList.add('btn-action-red');
+      } else {
+        banderinToggleBtn.textContent = '🚩 Activar Bandera Automática';
+        banderinToggleBtn.classList.remove('btn-action-red');
+        banderinToggleBtn.classList.add('btn-action-blue');
+      }
+    }
+    renderBanderinToggle();
+    banderinToggleBtn.addEventListener('click', () => {
+      if (!banderinEnabled && extractAccountBalance() === null) {
+        alert('⚠️ Todavía no se detectó tu capital disponible.\n\nEl script busca el widget "Fondos disponibles para operar" (o "Valor de la cuenta") en la pantalla actual. Si no aparece en ningún lado visible ahora, andá a una pantalla donde se vea ese resumen de cuenta y volvé a activar la Bandera Automática — así puede calcular el bucket del ' + getDailyBucketPct() + '% diario.');
+        return;
+      }
+      banderinEnabled = !banderinEnabled;
+      localStorage.setItem('ucharts_banderin_enabled', banderinEnabled ? 'true' : 'false');
+      renderBanderinToggle();
+      const statusEl = document.getElementById('banderin-status-text');
+      if (statusEl) statusEl.textContent = banderinEnabled ? 'Bandera activa: buscando tendencia...' : 'Bandera detenida (ciclo en curso se respeta hasta terminar)';
     });
 
     // Event listener: Lanzar Tester
@@ -628,6 +817,48 @@
       }
     });
 
+    // Botón "Sincronizar Día": versión rápida que NO baja todo el historial
+    // (eso puede tener semanas de operaciones y tardar minutos), sino sólo
+    // lo necesario para cubrir los últimos días — por defecto 3, con margen
+    // de sobra para no perderse nada por husos horarios o por sincronizar
+    // justo pasada la medianoche. Pensado para el uso diario, una vez que
+    // ya se hizo al menos una sincronización completa con "Sincronizar
+    // Planilla". Como la deduplicación en la planilla es por fecha+ticker+
+    // cantidad+precio, no genera duplicados aunque se solape con datos ya
+    // cargados.
+    const dayBtn = panel.querySelector('#btn-sync-day');
+    dayBtn.addEventListener('click', async () => {
+      if (!WEBHOOK_URL || WEBHOOK_URL.includes("TU_WEBHOOK_URL_AQUÍ")) {
+        alert("❌ CONFIGURACIÓN REQUERIDA:\n\nPor favor edita el script de Tampermonkey e ingresa la URL de tu Google Apps Script en la variable WEBHOOK_URL.");
+        return;
+      }
+
+      const spinner = dayBtn.querySelector('.sync-spinner');
+      const icon = dayBtn.querySelector('.sync-icon');
+      const textEl = dayBtn.querySelector('.btn-text');
+      spinner.style.display = 'block';
+      icon.style.display = 'none';
+      dayBtn.disabled = true;
+      btn.disabled = true; // evita disparar los dos botones de sync a la vez
+
+      try {
+        textEl.innerText = "Abriendo historial...";
+        await ensureHistoryView();
+        textEl.innerText = "Extrayendo últimos días...";
+        const result = await syncHistory(false, { maxDaysBack: 3 });
+        if (!result || !result.ok) throw new Error(result?.error || "La sincronización no devolvió un resultado válido.");
+      } catch (err) {
+        console.error("[Sheets Sync - Día]", err);
+        alert(`❌ Sincronización detenida\n\n${err.message || err}\n\nNo se envió ninguna orden; este flujo sólo lee el historial.`);
+      } finally {
+        spinner.style.display = 'none';
+        icon.style.display = 'block';
+        dayBtn.disabled = false;
+        btn.disabled = false;
+        textEl.innerText = "Sincronizar Día";
+      }
+    });
+
     // ==========================================
     // LÓGICA DE MONITOREO Y AUTOSINCRO EN BACKGROUND
     // ==========================================
@@ -660,10 +891,20 @@
     setInterval(monitorPositionsPnL, 2000);
     // Iniciar bucle de polling para ejecución autónoma del Auto-Trader
     setInterval(pollPendingTradesFromServer, 5000);
+    // Iniciar bucle de la Bandera Automática (straddle 1C+1P -> tendencia dominante)
+    setInterval(banderinTick, 2500);
     // Iniciar bucle de reporte de latido (Heartbeat) de uCharts
     startHeartbeatLoop();
     // Iniciar bucle de sincronización del estado del sistema
     setInterval(fetchAndSyncSystemState, 5000);
+    // Iniciar bucle de reconciliación diaria completa de "Registro
+    // Continuo": a diferencia del chequeo de fondo de 15s, esta corrida no
+    // depende de que la pestaña ya esté en Historial — navega ella sola una
+    // vez por día calendario para no perder operaciones si el día se pasó
+    // entero en Negociar/Posiciones sin abrir Historial ni tocar "Sincronizar
+    // Día" a mano.
+    setInterval(runDailyFullHistorySync, 10 * 60 * 1000);
+    runDailyFullHistorySync();
   }
 
   async function ensureHistoryView() {
@@ -728,6 +969,51 @@
     if (autoSyncInterval) {
       clearInterval(autoSyncInterval);
       autoSyncInterval = null;
+    }
+  }
+
+  // Reconciliación diaria automática de "Registro Continuo". A diferencia de
+  // checkAndSyncBackground (que sólo actúa si la pestaña YA está en
+  // Historial/Posiciones y nunca scrollea), esta función navega ella misma a
+  // Historial una vez por día calendario y sí scrollea (vía maxDaysBack en
+  // syncHistory) lo necesario para cubrir los últimos días — así "Registro
+  // Continuo" queda al día sin que el usuario tenga que acordarse de abrir
+  // Historial ni de clickear "Sincronizar Día" a mano.
+  let dailyFullSyncRunning = false;
+
+  async function runDailyFullHistorySync() {
+    if (!autoSyncEnabled) return;
+    if (!WEBHOOK_URL || WEBHOOK_URL.includes("TU_WEBHOOK_URL_AQUÍ")) return;
+    if (dailyFullSyncRunning || !btn || btn.disabled) return;
+
+    const todayKey = new Date().toDateString();
+    if (localStorage.getItem('ucharts_full_daysync_date') === todayKey) return;
+
+    dailyFullSyncRunning = true;
+    // setLoading(true) también pone btn.disabled=true: de paso evita que el
+    // chequeo de fondo de 15s (checkAndSyncBackground) o un click manual se
+    // pisen con esta corrida mientras está en curso.
+    setLoading(true);
+    statusIndicator.style.backgroundColor = '#facc15';
+    statusIndicator.style.boxShadow = '0 0 8px #facc15';
+
+    try {
+      await ensureHistoryView();
+      const result = await syncHistory(true, { maxDaysBack: 3 });
+      if (result && result.ok) {
+        localStorage.setItem('ucharts_full_daysync_date', todayKey);
+        console.log(`✅ [AutoSync diario] Registro Continuo reconciliado (${result.count} operaciones revisadas).`);
+      } else {
+        console.warn('⚠️ [AutoSync diario] No se pudo completar, se reintentará en el próximo chequeo (10 min):', result && result.error);
+      }
+    } catch (error) {
+      console.warn('⚠️ [AutoSync diario] Error, se reintentará en el próximo chequeo (10 min):', error);
+    } finally {
+      navigateToTab('Posiciones');
+      setLoading(false);
+      statusIndicator.style.backgroundColor = '';
+      statusIndicator.style.boxShadow = '';
+      dailyFullSyncRunning = false;
     }
   }
 
@@ -1272,7 +1558,16 @@
     if (targetExpiryKey) {
       selectedExpiry = expiryButtons.find(item => item.expiryKey === targetExpiryKey);
     } else {
-      const targetDte = dteProfile === 'largo' ? 30 : dteProfile === 'medio' ? 5 : 0;
+      // Antes el DTE salía fijo del perfil (CORTO=0, MEDIO=5, LARGO=30), lo
+      // que en la práctica siempre terminaba operando opciones que vencen
+      // el mismo día (0DTE) salvo que se cambiara de perfil manualmente.
+      // Ahora se lee directo del campo "Días de Vencimiento" del panel, que
+      // el usuario puede ajustar a cualquier número — se elige igual el
+      // vencimiento disponible más cercano a ese valor.
+      const dteInputEl = document.getElementById('dte-target');
+      const targetDte = dteInputEl
+        ? (parseInt(dteInputEl.value, 10) || 0)
+        : (dteProfile === 'largo' ? 30 : dteProfile === 'medio' ? 5 : 0);
       selectedExpiry = expiryButtons.sort((a, b) => Math.abs(a.dte - targetDte) - Math.abs(b.dte - targetDte))[0];
     }
     if (!selectedExpiry) {
@@ -1362,7 +1657,7 @@
 
   // Ejecuta una orden completa de compra
   async function executeOrder(ticker, type, dteProfile, quantity, targetExpiryKey = null, options = {}) {
-    const { skipAutoTP = false } = options;
+    const { skipAutoTP = false, banderinBucketCheck = false, cardonaBucketCheck = false } = options;
     await waitForTradeFormFree();
     isTradeFormBusy = true;
     let buyResult = null;
@@ -1413,6 +1708,7 @@
       console.info(`[Auto-Trader] Iniciando compra directa de ${type} de ${ticker}...`);
       let submitSuccess = false;
       let fillPricePerContract = null;
+      let orderAmount = null;
       let reviewBtn = null;
       try {
         reviewBtn = await waitForReviewButton();
@@ -1438,9 +1734,71 @@
         // puede leer. Esto es lo que permite espejar la compra real de
         // UCharts en el ledger interno (Meliora Sim Broker) con el precio
         // correcto en vez de adivinarlo.
-        const orderAmount = extractOrderSummaryAmount();
+        orderAmount = extractOrderSummaryAmount();
         if (orderAmount !== null && quantity > 0) {
           fillPricePerContract = orderAmount / (quantity * 100);
+        }
+
+        // Tope Cardona: ningún trade puede invertir más del 10% del capital
+        // total de la cuenta (ej. capital $1.000 → máximo $100 por trade).
+        // Se valida acá, con el "Monto de la operación" real que muestra el
+        // resumen de UCharts, porque es el único momento con el costo exacto
+        // de la orden ANTES de confirmarla — así aplica tanto a los botones
+        // manuales (Comprar Call/Put) como al Auto-Trader autónomo, que
+        // comparten esta misma función. Si no se conoce el capital todavía
+        // (no se visitó la pestaña Cuenta en esta sesión), no se bloquea —
+        // sólo se avisa por consola — para no frenar el trading por falta de
+        // un dato que el propio script todavía no pudo leer.
+        const accountBalance = extractAccountBalance();
+        if (accountBalance === null) {
+          console.warn('[Auto-Trader] Tope del 10% por trade no verificado: todavía no se conoce el capital de la cuenta (visitá la pestaña Cuenta una vez para que se detecte).');
+        }
+        const maxPerTrade = accountBalance !== null ? accountBalance * 0.10 : null;
+        const exceedsCap = orderAmount !== null && maxPerTrade !== null && orderAmount > maxPerTrade;
+
+        if (exceedsCap) {
+          console.warn(`[Auto-Trader] Orden BLOQUEADA por tope del 10%: monto $${orderAmount.toFixed(2)} supera el máximo $${maxPerTrade.toFixed(2)} (10% de capital $${accountBalance.toFixed(2)}).`);
+          const cancelBtn = findActionButton(['cancelar', 'cancel', 'cerrar', 'close']);
+          if (cancelBtn) superClick(cancelBtn);
+          return traderFail('Tope de capital (10% Cardona)', `La orden de $${orderAmount.toFixed(2)} supera el 10% del capital ($${maxPerTrade.toFixed(2)} máximo sobre $${accountBalance.toFixed(2)}). No se confirmó la compra.`);
+        }
+
+        // Bucket diario de la Bandera Automática: además del tope por trade
+        // de arriba, las órdenes que vienen del ciclo de bandera (probe 1C+1P
+        // e inversión en la tendencia dominante) no pueden superar lo que
+        // queda disponible del bucket reciclable del día (ver sección
+        // "BANDERA AUTOMÁTICA" más abajo). El bucket se libera solo cuando
+        // esas posiciones se cierran, así que si ya está comprometido en
+        // otras posiciones abiertas de la bandera, esta orden se cancela acá
+        // en vez de comprometer más capital del que el usuario definió como
+        // presupuesto del día.
+        if (banderinBucketCheck) {
+          const bucketAvailable = getBanderinAvailable();
+          const exceedsBucket = orderAmount !== null && orderAmount > bucketAvailable;
+          if (exceedsBucket) {
+            console.warn(`[Bandera] Orden BLOQUEADA por bucket diario agotado: monto $${orderAmount.toFixed(2)} supera el disponible $${bucketAvailable.toFixed(2)} del bucket de hoy.`);
+            const cancelBtn = findActionButton(['cancelar', 'cancel', 'cerrar', 'close']);
+            if (cancelBtn) superClick(cancelBtn);
+            return traderFail('Bucket diario de Bandera', `La orden de $${orderAmount.toFixed(2)} supera el bucket disponible ($${bucketAvailable.toFixed(2)}) del día. No se confirmó la compra.`);
+          }
+        }
+
+        // Sub-pool CARDONA del bucket diario compartido: igual criterio que
+        // el de Bandera de arriba, pero para el lado real de Cardona
+        // (Auto-Trader vía pollPendingTradesFromServer). Antes Cardona no
+        // tenía ningún acumulador diario de capital comprometido, sólo el
+        // Tope Cardona por orden individual de arriba — este chequeo agrega
+        // el acumulador sin tocar ese tope existente (son límites distintos
+        // y complementarios).
+        if (cardonaBucketCheck) {
+          const cardonaBucketAvailable = getCardonaAvailable();
+          const exceedsCardonaBucket = orderAmount !== null && orderAmount > cardonaBucketAvailable;
+          if (exceedsCardonaBucket) {
+            console.warn(`[Auto-Trader] Orden BLOQUEADA por bucket diario de Cardona agotado: monto $${orderAmount.toFixed(2)} supera el disponible $${cardonaBucketAvailable.toFixed(2)} del sub-pool de hoy.`);
+            const cancelBtn = findActionButton(['cancelar', 'cancel', 'cerrar', 'close']);
+            if (cancelBtn) superClick(cancelBtn);
+            return traderFail('Bucket diario de Cardona', `La orden de $${orderAmount.toFixed(2)} supera el bucket disponible ($${cardonaBucketAvailable.toFixed(2)}) del sub-pool de Cardona hoy. No se confirmó la compra.`);
+          }
         }
 
         if (confirmBtn) {
@@ -1463,7 +1821,7 @@
 
       if (submitSuccess) {
         console.info(`[Auto-Trader] ${type} de ${ticker} comprado y ejecutado.`);
-        buyResult = { expiryKey: optionSelected.expiryKey, ticker, type, quantity, price: fillPricePerContract, strike: optionSelected.strike, submitted: true };
+        buyResult = { expiryKey: optionSelected.expiryKey, ticker, type, quantity, price: fillPricePerContract, amount: orderAmount, strike: optionSelected.strike, submitted: true };
       } else {
         return traderFail('Envío de orden', 'No se encontró el botón para revisar o confirmar la orden de compra.');
       }
@@ -1521,6 +1879,461 @@
     }
 
     return true;
+  }
+
+  // =========================================================================
+  // BANDERA AUTOMÁTICA
+  // -------------------------------------------------------------------------
+  // Compra 1 Call + 1 Put (mismo vencimiento) como "sonda" para detectar la
+  // tendencia dominante del mercado. En cuanto una de las dos patas saca al
+  // menos 2 puntos porcentuales de ventaja sobre la otra, se considera
+  // ganadora: se le coloca el Take Profit automático de siempre y además se
+  // compra la cantidad de contratos configurada en "Contratos" en esa misma
+  // dirección (también con su Take Profit normal). La pata perdedora NO se
+  // toca — queda abierta tal cual, gestionada por el mismo Take
+  // Profit/Stop Loss general del panel si algún día los cruza. Resuelto el
+  // ciclo, se repite: se lanza una sonda nueva de 1 Call + 1 Put.
+  //
+  // El presupuesto del día es un "bucket reciclable": al arrancar el día se
+  // aparta un % configurable (por defecto 10%) del capital total de la
+  // cuenta. Cada compra que hace la Bandera descuenta su costo real de ese
+  // bucket, y en cuanto una de esas posiciones se cierra (Take Profit, Stop
+  // Loss o cierre manual), su costo se le devuelve al bucket — por eso es
+  // "reciclable": no es un gasto acumulado que sólo crece durante el día,
+  // sino el capital que hoy está realmente en juego en posiciones abiertas
+  // de la Bandera. Importante: como el bucket se calcula sobre lo que cuesta
+  // ABRIR cada posición (no sobre la ganancia/pérdida ya realizada al
+  // cerrarla), esto no reproduce al centavo la reinversión compuesta de
+  // ganancias de la calculadora 10/90 — es la aproximación más fiel que se
+  // puede leer de forma confiable desde la pantalla de UCharts en tiempo
+  // real, sin depender de que una orden límite ya se haya llenado.
+  //
+  // (El estado — banderinEnabled, banderinRunning, banderinCycles (Map
+  // por-ticker), banderinTrackedPositions, cardonaTrackedPositions,
+  // BANDERIN_EDGE_PCT — se declara arriba de todo el archivo, junto a "let
+  // panel = null" y compañía; ver el comentario ahí para el porqué.)
+  // =========================================================================
+
+  function banderinTodayKey() {
+    return new Date().toDateString();
+  }
+
+  function banderinUsd(x) {
+    return '$' + (Number(x) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function getDailyBucketPct() {
+    const el = document.getElementById('daily-bucket-pct');
+    const val = el ? parseFloat(el.value) : NaN;
+    return Number.isFinite(val) && val > 0 ? val : 10;
+  }
+
+  function getBanderinEnabledSymbols() {
+    const el = document.getElementById('banderin-symbols');
+    const raw = el && el.value ? el.value : 'SPY';
+    const list = raw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    return list.length > 0 ? list : ['SPY'];
+  }
+
+  // ==========================================
+  // DAILY OPERATIONAL BUCKET (compartido Cardona real + Bandera)
+  // ==========================================
+  // Un único bucket diario = % configurado del capital de cuenta (por
+  // defecto 10%), partido en 2 sub-pools FIJOS de 50/50 (CARDONA y
+  // BANDERIN) — nunca un 10% independiente por estrategia, para no
+  // multiplicar el techo global (10% -> 20%, 30%, etc. si se suman más
+  // estrategias/activos). Cada sub-pool puede usar el espacio libre del
+  // otro (préstamo/spillover) cuando éste no lo está usando, y ese espacio
+  // se libera apenas el dueño original vuelve a necesitarlo — no hace falta
+  // "devolver" nada explícitamente porque la disponibilidad se recalcula en
+  // caliente a partir de lo realmente comprometido en cada momento.
+
+  // Calcula (una sola vez por día calendario) el bucket total de hoy a
+  // partir del capital de cuenta ya conocido. Si el % configurado cambia a
+  // mitad del día, el usuario lo ve reflejado recién al otro día (evita que
+  // el bucket "salte" de valor con posiciones ya abiertas a mitad de sesión).
+  function ensureDailyBucketForToday() {
+    const today = banderinTodayKey();
+    const savedDate = localStorage.getItem('ucharts_daily_bucket_date');
+    const savedTotal = parseFloat(localStorage.getItem('ucharts_daily_bucket_total') || '0');
+    // FIX 3 (heredado del bucket viejo de Bandera): si el bucket de hoy ya
+    // había quedado cacheado en $0 (por ejemplo porque extractAccountBalance()
+    // todavía no detectaba el capital la primera vez que corrió hoy), no
+    // dejar el panel pegado en $0 el resto del día — recalcular igual aunque
+    // la fecha coincida, para autocorregirse.
+    if (savedDate === today && savedTotal > 0) return;
+    const balance = extractAccountBalance();
+    const pct = getDailyBucketPct();
+    const total = balance !== null ? balance * (pct / 100) : 0;
+    localStorage.setItem('ucharts_daily_bucket_date', today);
+    localStorage.setItem('ucharts_daily_bucket_total', String(total));
+    banderinTrackedPositions.clear();
+    cardonaTrackedPositions.clear();
+  }
+
+  function getDailyBucketTotal() {
+    ensureDailyBucketForToday();
+    return parseFloat(localStorage.getItem('ucharts_daily_bucket_total') || '0');
+  }
+
+  // Cupo propio fijo (50/50) de cada sub-pool, antes de aplicar préstamo.
+  function getSubPoolOwnShare() {
+    return getDailyBucketTotal() / 2;
+  }
+
+  function getBanderinCommitted() {
+    let sum = 0;
+    for (const pos of banderinTrackedPositions.values()) sum += pos.cost;
+    return sum;
+  }
+
+  function getCardonaCommitted() {
+    let sum = 0;
+    for (const pos of cardonaTrackedPositions.values()) sum += pos.cost;
+    return sum;
+  }
+
+  // Disponible real de Bandera: lo que le queda de su propio 5%, más lo que
+  // Cardona no esté usando de su propio 5% (préstamo).
+  function getBanderinAvailable() {
+    const ownShare = getSubPoolOwnShare();
+    const ownFree = Math.max(0, ownShare - getBanderinCommitted());
+    const borrowedFromCardona = Math.max(0, ownShare - getCardonaCommitted());
+    return ownFree + borrowedFromCardona;
+  }
+
+  // Disponible real de Cardona (mismo criterio, en espejo).
+  function getCardonaAvailable() {
+    const ownShare = getSubPoolOwnShare();
+    const ownFree = Math.max(0, ownShare - getCardonaCommitted());
+    const borrowedFromBanderin = Math.max(0, ownShare - getBanderinCommitted());
+    return ownFree + borrowedFromBanderin;
+  }
+
+  function updateBanderinBucketUI() {
+    const el = document.getElementById('banderin-bucket-status');
+    if (!el) return;
+    const ownShare = getSubPoolOwnShare();
+    el.textContent = `Bandera ${banderinUsd(getBanderinAvailable())}/${banderinUsd(ownShare)} · Cardona ${banderinUsd(getCardonaAvailable())}/${banderinUsd(ownShare)}`;
+  }
+
+  // Registro de señales de Bandera para que ninguna cruce del 2% desaparezca
+  // en silencio: cada evaluación que cruza el umbral termina anotada acá con
+  // su resultado (EXECUTED o BLOCKED_<motivo>), visible en consola y
+  // persistida (últimas 200) para poder auditar después qué pasó con cada
+  // señal, incluidas las que no se llegaron a ejecutar.
+  function banderinLogSignal(ticker, diffPct, resultCode, detail) {
+    try {
+      const entry = {
+        signal_id: `${ticker}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        ts: new Date().toISOString(),
+        ticker,
+        diffPct: (diffPct !== null && diffPct !== undefined) ? Number(diffPct.toFixed(2)) : null,
+        result: resultCode,
+        detail: detail || ''
+      };
+      const key = 'ucharts_banderin_signal_log';
+      const log = JSON.parse(localStorage.getItem(key) || '[]');
+      log.push(entry);
+      while (log.length > 200) log.shift();
+      localStorage.setItem(key, JSON.stringify(log));
+      console.log(`🚩 [Bandera][${resultCode}] ${ticker}${entry.diffPct !== null ? ' diff=' + entry.diffPct + '%' : ''} — ${detail || ''}`);
+    } catch (err) {
+      console.warn('[Bandera] No se pudo registrar el log de señal:', err);
+    }
+  }
+
+  function banderinSetStatus(text) {
+    const el = document.getElementById('banderin-status-text');
+    if (el) el.textContent = text;
+  }
+
+  function banderinRegisterPosition(result, ticker) {
+    if (!result || result.amount == null) return;
+    const key = `${ticker}-${result.type}-${result.strike}-${result.expiryKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    banderinTrackedPositions.set(key, { cost: result.amount, ticker, type: result.type, strike: result.strike, expiryKey: result.expiryKey });
+  }
+
+  // Heurística para saber si una posición que la Bandera abrió sigue viva en
+  // pantalla: como las tarjetas de Posiciones no traen un id estable, se
+  // busca por ticker + tipo (Call/Put) + strike en el texto visible, igual
+  // que hace el resto del script para encontrar tarjetas.
+  function banderinPositionStillOpen(pos) {
+    const allElems = getAllElements(document);
+    const typeWord = pos.type === 'CALL' ? 'Call' : 'Put';
+    const strikeStr = Number(pos.strike).toFixed(2);
+    return allElems.some(el => {
+      const t = (el.textContent || '').trim();
+      if (t.length > 400) return false; // evitar matchear contenedores enormes de toda la lista
+      return t.includes(pos.ticker) && t.includes(typeWord) && (t.includes(strikeStr) || t.includes(String(pos.strike)));
+    });
+  }
+
+  function banderinReconcileClosedPositions() {
+    if (banderinTrackedPositions.size === 0) return;
+    const url = window.location.href;
+    const onPositionsScreen = url.includes('/positions') || url.includes('/posiciones') || (document.body.innerText || '').includes('PRECIO DE COMPRA');
+    if (!onPositionsScreen) return; // sin la lista de posiciones en pantalla no se puede confirmar nada
+    for (const [key, pos] of Array.from(banderinTrackedPositions.entries())) {
+      if (!banderinPositionStillOpen(pos)) {
+        banderinTrackedPositions.delete(key); // se cerró (TP, SL o manual): libera su costo del bucket
+      }
+    }
+  }
+
+  // Equivalentes del registro/reconciliación de Bandera, pero para el
+  // sub-pool CARDONA del bucket compartido (hoy Cardona no tenía ningún
+  // acumulador diario de capital comprometido, sólo el Tope Cardona por
+  // orden individual — ver executeOrder). Reutiliza banderinPositionStillOpen
+  // porque esa heurística no depende de qué estrategia abrió la posición.
+  function cardonaRegisterPosition(result, ticker) {
+    if (!result || result.amount == null) return;
+    const key = `${ticker}-${result.type}-${result.strike}-${result.expiryKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    cardonaTrackedPositions.set(key, { cost: result.amount, ticker, type: result.type, strike: result.strike, expiryKey: result.expiryKey });
+  }
+
+  function cardonaReconcileClosedPositions() {
+    if (cardonaTrackedPositions.size === 0) return;
+    const url = window.location.href;
+    const onPositionsScreen = url.includes('/positions') || url.includes('/posiciones') || (document.body.innerText || '').includes('PRECIO DE COMPRA');
+    if (!onPositionsScreen) return;
+    for (const [key, pos] of Array.from(cardonaTrackedPositions.entries())) {
+      if (!banderinPositionStillOpen(pos)) {
+        cardonaTrackedPositions.delete(key);
+      }
+    }
+  }
+
+  // Idempotencia del Auto-Trader de Cardona (sección 8): si la compra se
+  // ejecutó con éxito pero el aviso posterior a /mark_executed falla (por
+  // ejemplo, un corte de red), el setup_id seguía en la cola del servidor
+  // Python y el próximo poll (cada 5s) lo volvía a comprar — una orden
+  // duplicada real por la misma señal. Este registro local, independiente
+  // del servidor, evita re-ejecutar un setup_id que este mismo navegador ya
+  // compró, aunque el aviso de "ya lo marqué" no haya llegado a destino.
+  function hasCardonaSetupAlreadyExecuted(setupId) {
+    try {
+      const done = JSON.parse(localStorage.getItem('ucharts_cardona_executed_setups') || '[]');
+      return done.includes(setupId);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function markCardonaSetupExecutedLocally(setupId) {
+    try {
+      const keyName = 'ucharts_cardona_executed_setups';
+      const done = JSON.parse(localStorage.getItem(keyName) || '[]');
+      if (!done.includes(setupId)) done.push(setupId);
+      while (done.length > 500) done.shift();
+      localStorage.setItem(keyName, JSON.stringify(done));
+    } catch (err) {
+      console.warn('[Auto-Trader] No se pudo registrar el setup_id ejecutado localmente:', err);
+    }
+  }
+
+  function banderinFindPositionCard(ticker, type, strike) {
+    const typeWord = type === 'CALL' ? 'Call' : 'Put';
+    let allElems = getAllElements(document);
+    let descElements = allElems.filter(el => {
+      let t = (el.textContent || '').trim();
+      if (!t.includes(ticker) || !t.includes(typeWord) || !/\d+/.test(t)) return false;
+      if (t.includes('Historial') || t.includes('Posiciones') || t.includes('Descripción')) return false;
+      let childHasSame = Array.from(el.children).some(c => {
+        const ct = (c.textContent || '').trim();
+        return ct.includes(ticker) && ct.includes(typeWord);
+      });
+      return !childHasSame;
+    });
+    if (descElements.length === 0) return null;
+    let target = descElements[0];
+    if (strike) {
+      const strikeStr = Number(strike).toFixed(2);
+      const withStrike = descElements.find(el => (el.textContent || '').includes(strikeStr));
+      if (withStrike) target = withStrike;
+    }
+    let card = target.parentElement, safety = 0;
+    while (card && !card.textContent.includes('Comprado en') && safety < 6) {
+      card = card.parentElement;
+      safety++;
+    }
+    return card;
+  }
+
+  function banderinReadCardPnlPct(card) {
+    if (!card) return null;
+    const cardText = card.textContent.trim().replace(/\s+/g, ' ');
+    const matchPct = cardText.match(/([+-])\s*([\d.]+)\s*%/);
+    if (!matchPct) return null;
+    return parseFloat(matchPct[2]) * (matchPct[1] === '-' ? -1 : 1);
+  }
+
+  async function banderinStartProbe(ticker) {
+    const bucketAvail = getBanderinAvailable();
+    if (bucketAvail <= 0) {
+      banderinLogSignal(ticker, null, 'BLOCKED_BUCKET_EXHAUSTED', 'Bucket compartido agotado, no se lanza sonda nueva.');
+      banderinSetStatus('Bandera activa: bucket del día agotado, esperando espacio libre...');
+      return;
+    }
+    banderinSetStatus(`Bandera activa: lanzando sonda CALL+PUT de ${ticker}...`);
+    console.log(`🚩 [Bandera] Lanzando nueva sonda 1 CALL + 1 PUT de ${ticker}...`);
+
+    const callResult = await executeOrder(ticker, 'CALL', 'corto', 1, null, { skipAutoTP: true, banderinBucketCheck: true });
+    if (!callResult) {
+      banderinLogSignal(ticker, null, 'BLOCKED_PROBE_CALL_FAILED', lastTraderError || 'Fallo al comprar la pata CALL de la sonda.');
+      console.warn(`[Bandera] Falló la pata CALL de la sonda de ${ticker}:`, lastTraderError);
+      banderinSetStatus(`Bandera activa: falló la sonda de ${ticker} (${lastTraderError || 'CALL'})`);
+      return;
+    }
+    banderinRegisterPosition(callResult, ticker);
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const putResult = await executeOrder(ticker, 'PUT', 'corto', 1, callResult.expiryKey, { skipAutoTP: true, banderinBucketCheck: true });
+    if (!putResult) {
+      banderinLogSignal(ticker, null, 'BLOCKED_PROBE_PUT_FAILED', lastTraderError || 'Fallo al comprar la pata PUT de la sonda.');
+      console.warn(`[Bandera] Falló la pata PUT de la sonda de ${ticker}:`, lastTraderError);
+      banderinSetStatus(`Bandera activa: falló la sonda de ${ticker} (${lastTraderError || 'PUT'})`);
+      return; // la pata CALL ya comprada queda abierta y sigue contando contra el bucket hasta que se cierre sola
+    }
+    banderinRegisterPosition(putResult, ticker);
+
+    banderinCycles.set(ticker, {
+      ticker,
+      expiryKey: callResult.expiryKey,
+      call: { strike: callResult.strike },
+      put: { strike: putResult.strike },
+      phase: 'probing',
+      startedAt: Date.now()
+    });
+    banderinSetStatus(`Bandera activa: sonda de ${ticker} abierta (CALL ${callResult.strike} / PUT ${putResult.strike}), esperando ${BANDERIN_EDGE_PCT}% de diferencia...`);
+    console.log(`🚩 [Bandera] Sonda de ${ticker} activa. Esperando ${BANDERIN_EDGE_PCT}% de diferencia de PnL entre las patas.`);
+  }
+
+  // Lee el PnL de ambas patas de UN ticker y decide si ya cruzó el umbral —
+  // sin ejecutar todavía. Separado de la inversión para poder juntar todas
+  // las señales listas de la ronda actual y priorizar por magnitud de
+  // diff% antes de gastar el bucket compartido (sección 13: prioridad
+  // intra-Bandera cuando varios activos compiten por el mismo sub-pool).
+  function banderinReadProbeDiff(ticker) {
+    const cycle = banderinCycles.get(ticker);
+    if (!cycle) return null;
+    const callPct = banderinReadCardPnlPct(banderinFindPositionCard(ticker, 'CALL', cycle.call.strike));
+    const putPct = banderinReadCardPnlPct(banderinFindPositionCard(ticker, 'PUT', cycle.put.strike));
+    if (callPct === null || putPct === null) {
+      banderinLogSignal(ticker, null, 'BLOCKED_DOM_READ_FAIL', 'Todavía no se puede leer el PnL de ambas patas.');
+      return null; // reintenta en el próximo tick
+    }
+    const diff = callPct - putPct;
+    if (Math.abs(diff) < BANDERIN_EDGE_PCT) return null; // sin tendencia clara todavía, no es un evento a registrar
+    return { ticker, diff, callPct, putPct, winnerType: diff > 0 ? 'CALL' : 'PUT' };
+  }
+
+  // Ejecuta la inversión en la pata ganadora de UNA señal ya lista. Se llama
+  // en orden de mayor |diff%| primero (ver banderinTick), así que acá el
+  // bucket puede haberse agotado por una señal más fuerte de otro ticker —
+  // en ese caso queda BLOCKED_BUCKET_EXHAUSTED y el ciclo sigue "probing"
+  // para reintentar en el próximo tick, nunca desaparece en silencio.
+  async function banderinInvestWinner(signal) {
+    const { ticker, diff, callPct, putPct, winnerType } = signal;
+    if (!banderinCycles.has(ticker)) return; // ya resuelto por otra vía entre que se leyó y se invierte
+
+    if (getBanderinAvailable() <= 0) {
+      banderinLogSignal(ticker, diff, 'BLOCKED_BUCKET_EXHAUSTED', 'Bucket compartido agotado antes de poder invertir en la ganadora.');
+      banderinSetStatus(`Bandera activa: ${ticker} bucket agotado, esperando espacio libre...`);
+      return; // el ciclo queda "probing"; se reevalúa en el próximo tick
+    }
+
+    console.log(`🚩 [Bandera] ${ticker}: tendencia dominante ${winnerType} (CALL ${callPct.toFixed(2)}% vs PUT ${putPct.toFixed(2)}%). Se invierte en la ganadora y la perdedora queda abierta sin tocar.`);
+    banderinSetStatus(`Bandera activa: ${ticker} tendencia ${winnerType} detectada, invirtiendo...`);
+
+    // 1) Colocar el Take Profit normal sobre la pata ganadora de la sonda,
+    // igual que a cualquier otra compra del panel.
+    try {
+      await colocarOrdenLimiteVentaTakeProfit(ticker);
+    } catch (err) {
+      console.warn(`[Bandera] No se pudo colocar el Take Profit de la pata ganadora de ${ticker}:`, err);
+    }
+
+    // 2) Comprar la cantidad configurada en "Contratos" en la dirección ganadora
+    const cycle = banderinCycles.get(ticker);
+    const qtyInput = document.getElementById('trader-qty');
+    const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
+    const investResult = await executeOrder(ticker, winnerType, 'corto', qty, cycle.expiryKey, { banderinBucketCheck: true });
+    if (investResult) {
+      banderinRegisterPosition(investResult, ticker);
+      banderinLogSignal(ticker, diff, 'EXECUTED', `Invertidos ${qty} contrato(s) de ${winnerType}.`);
+      console.log(`🚩 [Bandera] ${ticker}: invertidos ${qty} contrato(s) de ${winnerType} siguiendo la tendencia dominante (con Take Profit ya colocado).`);
+      banderinSetStatus(`Bandera activa: ${ticker} invertidos ${qty} ${winnerType}, reiniciando ciclo...`);
+    } else {
+      banderinLogSignal(ticker, diff, 'BLOCKED_ORDER_FAILED', lastTraderError || 'Fallo desconocido al ejecutar la orden.');
+      console.warn(`[Bandera] ${ticker}: no se pudo invertir en la tendencia dominante (${winnerType}): ${lastTraderError}`);
+      banderinSetStatus(`Bandera activa: ${ticker} no se pudo invertir (${lastTraderError || winnerType}), reiniciando ciclo...`);
+    }
+
+    // 3) Ciclo resuelto para este ticker: en el próximo tick se lanza una
+    // sonda nueva de ESTE mismo activo (repite el ciclo virtuoso), salvo que
+    // mientras tanto se haya apagado la Bandera o se lo haya sacado de la
+    // lista de activos habilitados.
+    banderinCycles.delete(ticker);
+  }
+
+  async function banderinTick() {
+    if (!autoTraderMasterOn) return; // interruptor maestro: pausado por el usuario
+    if (banderinRunning) return;
+    if (isTradeFormBusy || isClosingPosition || isAutoTraderRunning) return;
+
+    if (!banderinEnabled && banderinCycles.size === 0) {
+      banderinReconcileClosedPositions();
+      cardonaReconcileClosedPositions();
+      updateBanderinBucketUI();
+      return;
+    }
+
+    ensureDailyBucketForToday();
+    banderinReconcileClosedPositions();
+    cardonaReconcileClosedPositions();
+    updateBanderinBucketUI();
+
+    banderinRunning = true;
+    try {
+      const url = window.location.href;
+      if (!url.includes('/positions') && !url.includes('/posiciones')) {
+        navigateToTab('Posiciones');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+
+      // 1) Evaluar todos los ciclos en curso y juntar los que ya cruzaron el
+      // umbral, para invertir primero en el de mayor |diff%| (prioridad
+      // intra-Bandera cuando varios activos compiten por el mismo bucket).
+      const readySignals = [];
+      for (const ticker of Array.from(banderinCycles.keys())) {
+        const signal = banderinReadProbeDiff(ticker);
+        if (signal) readySignals.push(signal);
+      }
+      readySignals.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+      for (const signal of readySignals) {
+        await banderinInvestWinner(signal);
+      }
+
+      // 2) Lanzar sondas nuevas en los símbolos habilitados que todavía no
+      // tienen un ciclo en curso, mientras la Bandera esté activa y quede
+      // bucket disponible. Sin ningún ticker hardcodeado (sección 3).
+      if (banderinEnabled) {
+        for (const ticker of getBanderinEnabledSymbols()) {
+          if (banderinCycles.has(ticker)) continue;
+          if (getBanderinAvailable() <= 0) {
+            banderinSetStatus('Bandera activa: bucket del día agotado, esperando espacio libre...');
+            break;
+          }
+          await banderinStartProbe(ticker);
+        }
+      }
+    } catch (err) {
+      console.error('[Bandera] Error inesperado en el ciclo:', err);
+    } finally {
+      banderinRunning = false;
+    }
   }
 
   // Cierra una posición abierta haciendo clic en su tarjeta y confirmando
@@ -1771,7 +2584,7 @@
   async function monitorPositionsPnL() {
     // Si el auto-cierre no está marcado, o ya estamos en proceso de cerrar una posición, salir
     const chkAutoClose = document.getElementById('chk-auto-close');
-    if (!chkAutoClose || !chkAutoClose.checked || isClosingPosition || isTradeFormBusy) return;
+    if (!autoTraderMasterOn || !chkAutoClose || !chkAutoClose.checked || isClosingPosition || isTradeFormBusy) return;
 
     // Solo monitorear si estamos en la pestaña Posiciones para ver los datos en vivo
     const currentUrl = window.location.href;
@@ -1913,6 +2726,7 @@
   let isAutoTraderRunning = false;
 
   async function pollPendingTradesFromServer() {
+    if (!autoTraderMasterOn) return; // interruptor maestro: pausado por el usuario
     if (currentSystemState !== "ARMED") return;
     if (isAutoTraderRunning) return;
     if (isClosingPosition) return;
@@ -1930,6 +2744,24 @@
         let direction = trade.direction; // "CALL" o "PUT"
         
         console.info(`[Auto-Trader] Señal autónoma pendiente detectada: ${ticker} - ${direction} (Setup: ${setupId})`);
+
+        // Idempotencia (sección 8): si este mismo navegador ya ejecutó este
+        // setup_id antes (y el aviso a /mark_executed no llegó a completarse
+        // por algún corte de red), no comprar de nuevo — sólo reintentar el
+        // aviso de desencolado al servidor.
+        if (hasCardonaSetupAlreadyExecuted(setupId)) {
+          console.warn(`[Auto-Trader] Setup ${setupId} ya fue ejecutado localmente antes; no se vuelve a comprar. Reintentando sólo el desencolado.`);
+          try {
+            await fetch('http://127.0.0.1:8055/mark_executed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ setup_id: setupId })
+            });
+          } catch (e) {
+            console.error("[Auto-Trader] Error al reintentar el desencolado en servidor local:", e);
+          }
+          return;
+        }
         
         isAutoTraderRunning = true;
         
@@ -1945,7 +2777,12 @@
         
         console.info(`[Auto-Trader] Lanzando compra autónoma: Ticker=${ticker}, Tipo=${direction}, Perfil=${profile}, Cantidad=${qty}`);
         
-        let success = await executeOrder(ticker, direction, profile.toLowerCase(), qty);
+        let success = await executeOrder(ticker, direction, profile.toLowerCase(), qty, null, { cardonaBucketCheck: true });
+
+        if (success) {
+          cardonaRegisterPosition(success, ticker);
+          markCardonaSetupExecutedLocally(setupId);
+        }
         
         // Reportar el resultado de la compra al bot de Python — ahora incluye
         // el precio real de fill (capturado del diálogo de UCharts) para que
@@ -2037,17 +2874,43 @@
     }
   }
 
-  let cachedAccountBalance = null;
+  // (declarada arriba del archivo junto a banderinEnabled — ver comentario ahí)
 
   function extractAccountBalance() {
     const currentUrl = window.location.href;
-    if (!currentUrl.includes('/account') && !currentUrl.includes('tab=account')) {
-      return cachedAccountBalance;
-    }
+    // FIX (Bandera Automática no detectaba el capital fuera de la pestaña
+    // "Cuenta"): antes, esta función se negaba a leer nada si la URL actual
+    // no incluía /account o tab=account, así que activar la Bandera desde
+    // la pantalla de trading tiraba el alert de "todavía no se detectó el
+    // capital" aunque el widget "Resumen de la cuenta" con "Valor de la
+    // cuenta" estuviera visible ahí mismo. Ahora se busca esa etiqueta
+    // exacta en CUALQUIER pantalla (es específica, no debería confundirse
+    // con otra cosa); el heurístico más arriesgado de abajo (el mayor monto
+    // en $ visible en toda la pantalla) se deja restringido a la pestaña de
+    // Cuenta, para no confundir el importe de una orden con el capital.
     const elements = Array.from(document.querySelectorAll('div, span, p, h1, h2, h3, td'));
+    // El bucket de la Bandera se calcula sobre los FONDOS DISPONIBLES para
+    // operar (efectivo libre), no sobre el Valor de la cuenta (que incluye
+    // el valor de posiciones ya abiertas) — así el 10% nunca cuenta como
+    // "libre" capital que ya está comprometido. Si por algún motivo esa
+    // etiqueta no está en pantalla, se cae a "Valor de la cuenta" como
+    // respaldo antes de rendirse.
+    // FIX 2: el ".includes()" de más abajo (versión anterior) podía matchear
+    // un <div> contenedor gigante cuyo textContent concatenado incluye la
+    // frase completa de la página, ANTES de llegar a la etiqueta <p> real,
+    // porque querySelectorAll devuelve los ancestros antes que sus
+    // descendientes. Eso hacía que a veces se leyera silenciosamente el
+    // número equivocado (p. ej. "Valor de la cuenta" en vez de "Fondos
+    // disponibles"). Ahora sólo se aceptan elementos hoja (sin hijos) con
+    // texto EXACTO — así nunca puede matchear un contenedor.
     const label = elements.find(el => {
+      if (el.children.length !== 0) return false;
       const t = (el.textContent || "").trim();
-      return t === "Valor de la cuenta" || t === "Account Value" || t.includes("Valor de la cuenta");
+      return t === "Fondos disponibles para operar";
+    }) || elements.find(el => {
+      if (el.children.length !== 0) return false;
+      const t = (el.textContent || "").trim();
+      return t === "Valor de la cuenta" || t === "Account Value";
     });
     if (label) {
       const parent = label.parentElement;
@@ -2061,18 +2924,20 @@
         return val;
       }
     }
-    const moneyList = elements.map(el => {
-      const t = (el.textContent || "").trim();
-      if (/^\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?$/.test(t)) {
-        return parseFloat(t.replace(/[$,]/g, ''));
-      }
-      return null;
-    }).filter(Boolean);
-    if (moneyList.length > 0) {
-      const val = Math.max(...moneyList);
-      if (val > 1000.0) {
-        cachedAccountBalance = val;
-        return val;
+    if (currentUrl.includes('/account') || currentUrl.includes('tab=account')) {
+      const moneyList = elements.map(el => {
+        const t = (el.textContent || "").trim();
+        if (/^\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?$/.test(t)) {
+          return parseFloat(t.replace(/[$,]/g, ''));
+        }
+        return null;
+      }).filter(Boolean);
+      if (moneyList.length > 0) {
+        const val = Math.max(...moneyList);
+        if (val > 1000.0) {
+          cachedAccountBalance = val;
+          return val;
+        }
       }
     }
     return cachedAccountBalance;
@@ -2178,9 +3043,62 @@
   }
 
   // ----------------------------------------------------
+  // Persistencia de pareo compra/venta entre sincronizaciones distintas
+  // ----------------------------------------------------
+  // FIX (Compra/Venta en $0 en Registro Continuo): antes, el pareo de
+  // "Comprar..." con su "Vender.../Expired..." correspondiente sólo podía
+  // ocurrir si AMBAS líneas aparecían en la MISMA tanda scrapeada de una
+  // sola llamada a syncHistory(), porque el mapa openPositions se armaba
+  // vacío en cada corrida. "Sincronizar Día" sólo scrollea 3 días atrás
+  // (maxDaysBack:3): si la compra fue hace más de 3 días y hoy sólo se ve
+  // su venta o vencimiento, el código caía siempre en la rama "huérfana"
+  // (buyDate:"", buyPrice:0) — y esa fila sin compra real tampoco calzaba
+  // con la fila "Abierto" ya cargada en Registro Continuo (la clave de
+  // deduplicación del webhook depende justamente del precio y la fecha de
+  // compra), así que quedaba una fila nueva con Compra y/o Venta en $0 y
+  // #DIV/0! en % Ganancia — el bug reportado. Ahora las compras aún sin
+  // vender (openPositions) y el registro de transacciones ya procesadas se
+  // guardan en localStorage y se reusan/actualizan en cada sync, sin
+  // importar cuántos días separen la compra de su venta.
+  const OPEN_POS_STORAGE_KEY = 'ucharts_open_positions_v1';
+  const PROCESSED_TX_STORAGE_KEY = 'ucharts_processed_tx_v1';
+  // Ventas/vencimientos que agrupan VARIOS lotes (ej: "Expired qty=1002"
+  // repartido entre 3 compras separadas) y que en el momento de sincronizar
+  // sólo lograron emparejar ALGUNOS de esos lotes porque los demás todavía
+  // no habían aparecido: acá se guarda cuánta cantidad de ESE evento
+  // puntual sigue faltando emparejar, para que el próximo intento retome
+  // desde ahí en vez de volver a arrancar desde la cantidad original
+  // completa (lo que generaría re-emparejar de más contra compras nuevas
+  // que no tienen nada que ver con este evento).
+  const PENDING_CLOSES_STORAGE_KEY = 'ucharts_pending_closes_v1';
+  // Antigüedad máxima que se retiene en el set de transacciones procesadas
+  // antes de podarlas, para que localStorage no crezca sin techo después de
+  // meses de uso. Las posiciones aún abiertas (openPositions) NO se podan
+  // por antigüedad: representan operaciones reales todavía sin vender.
+  const PROCESSED_TX_MAX_AGE_DAYS = 180;
+
+  function loadPersistedJSON(key, fallback) {
+    try {
+      let raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function savePersistedJSON(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.warn(`[UCharts] No se pudo guardar estado persistente (${key}):`, e);
+    }
+  }
+
+  // ----------------------------------------------------
   // FUNCIÓN 2: Sincronizar Historial (Masivo)
   // ----------------------------------------------------
-  async function syncHistory(isSilent = false) {
+  async function syncHistory(isSilent = false, opts = {}) {
     let allTx = [];
     let page = 1;
 
@@ -2192,9 +3110,19 @@
         let dateText = "";
         let amountText = "";
 
+        // FIX (Fecha corrupta en Registro Continuo): esta búsqueda sólo
+        // excluía candidatos que dijeran "option(s)", pero la ETIQUETA DEL
+        // CONTRATO (ej. "26/08/25 Call 767.00" — vencimiento+tipo+strike)
+        // TAMBIÉN matchea el regex de fecha y NO contiene "options", así que
+        // se colaba como si fuera la fecha real de la operación. Resultado
+        // en vivo confirmado: 87 filas cargadas el 29/08 con "Fecha" =
+        // "26/08/25 Call 767.00" en vez de la fecha/hora real, y Venta vacía
+        // en todas. Excluir explícitamente cualquier candidato que contenga
+        // "Call"/"Put" hace que siga subiendo por los padres hasta encontrar
+        // la celda real de fecha/hora (que nunca dice Call/Put).
         let dateEl = children.find(child => {
           let t = (child.textContent || "").trim();
-          return /\d+[\/-]\d+[\/-]\d+/.test(t) && t.length < 50 && !t.includes("options") && !t.includes("option");
+          return /\d+[\/-]\d+[\/-]\d+/.test(t) && t.length < 50 && !t.includes("options") && !t.includes("option") && !/\b(call|put)\b/i.test(t);
         });
         if (dateEl) {
           dateText = dateEl.textContent.trim().replace(/\s+/g, ' ');
@@ -2217,10 +3145,17 @@
       return null;
     }
 
-    while (true) {
+    // NOTA (fix pagineo): la UI de UCharts dejó de tener un botón
+    // "Siguiente" para paginar el historial — ahora es una lista con SCROLL
+    // INFINITO que va agregando filas nuevas al fondo del DOM a medida que
+    // se scrollea hacia abajo. El código viejo buscaba un botón "Siguiente"
+    // que ya no existe, así que "rompía" (break) apenas terminaba de leer
+    // la primera tanda que ya estaba renderizada al abrir el historial —
+    // por eso sólo se sincronizaban ~12 operaciones (los vencimientos que
+    // ya estaban en pantalla) en vez de todo el historial real del día.
+    function extractDescElements() {
       let allElems = getAllElements(document);
-
-      let descElements = allElems.filter(el => {
+      return allElems.filter(el => {
         let t = (el.textContent || "").trim();
         let hasKeywords = /^Expired\/option\//i.test(t) ||
                           ((t.includes("Comprar") || t.includes("Vender") || t.includes("Compra") || t.includes("Venta") || t.includes("Buy") || t.includes("Sell")) &&
@@ -2235,77 +3170,99 @@
         });
         return !childHasKeywords;
       });
+    }
 
-      let pageTx = [];
-      for (let descEl of descElements) {
-        let descText = descEl.textContent.trim().replace(/\s+/g, ' ');
-        let rowData = findRowData(descEl);
+    function findScrollableContainer(fromEl) {
+      let el = fromEl;
+      let safety = 0;
+      while (el && el !== document.body && safety < 20) {
+        if (el.scrollHeight > el.clientHeight + 20) return el;
+        el = el.parentElement;
+        safety++;
+      }
+      return document.scrollingElement || document.documentElement;
+    }
 
-        if (rowData && rowData.date) {
-          if (!pageTx.some(tx => tx.desc === descText && tx.date === rowData.date)) {
-            pageTx.push({
-              desc: descText,
-              date: rowData.date,
-              amount: rowData.amount
-            });
+    // FASE 1: cargar todo lo que se pueda del historial haciendo scroll
+    // hacia abajo repetidamente. En modo silencioso (chequeo de fondo cada
+    // 15s) NO se scrollea nada, igual que antes: sólo se lee la tanda que
+    // ya está en pantalla, para no recargar la página con scrolls
+    // constantes. En modo manual (botón "Sincronizar Planilla") se scrollea
+    // hasta que 3 intentos seguidos no traen filas nuevas (se asume que se
+    // llegó al final real del historial), con un tope de seguridad de 400
+    // vueltas y 4 minutos totales para no dejar el botón colgado para
+    // siempre si algo sale mal.
+    // "Sincronizar Día" pasa opts.maxDaysBack (ej: 3) para frenar el scroll
+    // apenas ya se cargó una fila más vieja que ese límite, en vez de
+    // scrollear TODO el historial como hace "Sincronizar Planilla". Esto
+    // evita re-bajar meses de operaciones sólo para agregar el día de ayer.
+    let maxDaysBack = (opts && opts.maxDaysBack) ? opts.maxDaysBack : null;
+    let cutoffTs = maxDaysBack ? (Date.now() - maxDaysBack * 24 * 60 * 60 * 1000) : null;
+
+    // FIX (reconciliación diaria en silencio): antes esto sólo scrolleaba
+    // cuando isSilent=false (botones manuales). El chequeo de fondo de 15s
+    // llama a syncHistory(true) sin maxDaysBack y debe seguir sin scrollear
+    // (no recargar la página con scrolls constantes), pero
+    // runDailyFullHistorySync llama a syncHistory(true, {maxDaysBack:3}) y
+    // SÍ necesita bajar el scroll para alcanzar días anteriores aunque sea
+    // en modo silencioso — si no, nunca cubre más que lo que ya está
+    // renderizado al abrir Historial.
+    if (!isSilent || maxDaysBack) {
+      let scrollStart = Date.now();
+      let maxScrollMs = 4 * 60 * 1000;
+      let stableRounds = 0;
+      for (let round = 0; round < 400; round++) {
+        if (Date.now() - scrollStart > maxScrollMs) break;
+        let before = extractDescElements().length;
+        let sample = extractDescElements().slice(-1)[0];
+        let container = sample ? findScrollableContainer(sample) : (document.scrollingElement || document.documentElement);
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+          container.dispatchEvent(new Event('scroll', { bubbles: true }));
+        }
+        window.scrollTo(0, document.body.scrollHeight);
+
+        let grew = false;
+        for (let attempts = 0; attempts < 15; attempts++) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          if (extractDescElements().length > before) { grew = true; break; }
+        }
+        if (!grew) {
+          stableRounds++;
+          if (stableRounds >= 3) break;
+        } else {
+          stableRounds = 0;
+        }
+
+        // Corte por antigüedad (sólo aplica si vino maxDaysBack): en cuanto
+        // la fila más vieja cargada hasta ahora ya es más antigua que el
+        // límite pedido, dejamos de scrollear — ya tenemos de sobra para
+        // cubrir esos días, no hace falta seguir bajando historial viejo.
+        if (cutoffTs) {
+          let elemsNow = extractDescElements();
+          let oldestEl = elemsNow.slice(-1)[0];
+          let oldestRow = oldestEl ? findRowData(oldestEl) : null;
+          if (oldestRow && oldestRow.date) {
+            let oldestTs = historyTimestamp(oldestRow.date);
+            if (oldestTs && oldestTs < cutoffTs) break;
           }
         }
       }
+    }
 
-      if (pageTx.length === 0) break;
-
-      allTx.push(...pageTx);
-
-      // Guardar el texto del primer elemento antes de hacer clic en Siguiente
-      let firstTradeBefore = descElements[0] ? descElements[0].textContent.trim() : "";
-
-      let nextBtn = allElems.find(el => {
-        if (el.tagName !== 'BUTTON' && el.tagName !== 'A') return false;
-        if (el.disabled) return false;
-        let text = (el.textContent || el.innerText || "").trim().toLowerCase();
-        let aria = (el.getAttribute('aria-label') || "").toLowerCase();
-        let title = (el.getAttribute('title') || "").toLowerCase();
-        
-        return text.includes("siguiente") || text.includes("next") || text === ">" || text === "»" ||
-               aria.includes("next") || aria.includes("siguiente") ||
-               title.includes("next") || title.includes("siguiente");
-      });
-      if (!nextBtn) break;
-
-      nextBtn.click();
-      page++;
-
-      let changed = false;
-      for (let attempts = 0; attempts < 30; attempts++) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        let newElems = getAllElements(document);
-        let newDescElements = newElems.filter(el => {
-          let t = (el.textContent || "").trim();
-          let hasKeywords = /^Expired\/option\//i.test(t) ||
-                            ((t.includes("Comprar") || t.includes("Vender") || t.includes("Compra") || t.includes("Venta") || t.includes("Buy") || t.includes("Sell")) &&
-                             (t.includes("options") || t.includes("option") || t.includes("opción") || t.includes("opciones") || t.includes("contrato")));
-          if (!hasKeywords) return false;
-          let childHasKeywords = Array.from(el.children).some(child => {
-            let ct = (child.textContent || "").trim();
-            return /^Expired\/option\//i.test(ct) ||
-                   ((ct.includes("Comprar") || ct.includes("Vender") || ct.includes("Compra") || ct.includes("Venta") || ct.includes("Buy") || ct.includes("Sell")) &&
-                    (ct.includes("options") || ct.includes("option") || ct.includes("opción") || ct.includes("opciones") || ct.includes("contrato")));
-          });
-          return !childHasKeywords;
-        });
-        let firstTradeAfter = newDescElements[0] ? newDescElements[0].textContent.trim() : "";
-        if (firstTradeAfter !== firstTradeBefore && firstTradeAfter !== "") {
-          changed = true;
-          break;
+    // FASE 2: extracción única sobre todo lo que haya quedado cargado en el
+    // DOM (a diferencia del código viejo, que extraía "por página" y con
+    // scroll infinito eso duplicaba filas ya leídas; acá se extrae una sola
+    // vez al final, ya con todo el contenido acumulado).
+    let descElementsFinal = extractDescElements();
+    for (let descEl of descElementsFinal) {
+      let descText = descEl.textContent.trim().replace(/\s+/g, ' ');
+      let rowData = findRowData(descEl);
+      if (rowData && rowData.date) {
+        if (!allTx.some(tx => tx.desc === descText && tx.date === rowData.date)) {
+          allTx.push({ desc: descText, date: rowData.date, amount: rowData.amount });
         }
       }
-      if (!changed) {
-        console.warn("⚠️ Advertencia: La página no pareció cambiar tras hacer clic en Siguiente. Deteniendo paginación...");
-        break;
-      }
-
-      // Si es una ejecución automática de fondo, NO paginar más de 1 página
-      if (isSilent) break;
     }
 
     if (allTx.length === 0) {
@@ -2361,17 +3318,48 @@
       return null;
     }
 
-    let openPositions = {};
+    let openPositions = loadPersistedJSON(OPEN_POS_STORAGE_KEY, {});
+    let processedTx = new Set(loadPersistedJSON(PROCESSED_TX_STORAGE_KEY, []));
+    let pendingCloses = loadPersistedJSON(PENDING_CLOSES_STORAGE_KEY, {});
+    let anyParsed = false;
     let trades = [];
+    // Ventas/vencimientos que no encontraron ninguna compra abierta para
+    // emparejar (ver el "else" de más abajo) — NUNCA se mandan a la
+    // planilla como fila nueva, sólo se registran acá para avisar en la
+    // consola y en el alert final. Insertar una fila con Compra en $0 es
+    // justamente el bug reportado: una fila así no sirve para identificar
+    // ni calcular el trade.
+    let skippedOrphans = [];
 
     for (let tx of allTx) {
+      // Cada línea del historial (compra, venta o vencimiento) se procesa
+      // UNA SOLA VEZ para siempre, sin importar cuántas veces se vuelva a
+      // scrapear en syncs futuros (el scroll siempre re-lee desde arriba).
+      // Esto evita contar una misma compra dos veces: una desde el estado
+      // persistido y otra desde el re-scrapeo de hoy.
+      let txKey = `${tx.date}||${tx.desc}`;
+      // FIX: "anyParsed" tiene que reflejar si el TEXTO tiene el formato
+      // esperado, sin importar si ya se había procesado antes. Si esto se
+      // calculaba DESPUÉS del "continue" por ya-procesado (como estaba
+      // antes), una sincronización sobre movimientos que ya se habían
+      // cargado en una corrida anterior terminaba con anyParsed=false para
+      // todos, y tiraba el error "ninguno coincidió con el formato
+      // esperado" aunque en realidad todo estaba bien y sólo no había nada
+      // nuevo — el error reportado en vivo.
       let parsed = parseDesc(tx.desc);
-      if (!parsed) continue;
+      if (parsed) anyParsed = true;
+      if (processedTx.has(txKey)) continue;
+      if (!parsed) { processedTx.add(txKey); continue; }
 
       parsed.date = tx.date;
       let key = `${parsed.ticker}|${parsed.expiry}|${parsed.type}|${parsed.strike}`;
 
       if (parsed.action === 'buy') {
+        // Las compras SIEMPRE se marcan procesadas de una: quedan
+        // guardadas en openPositions (persistido), así que no hace falta
+        // volver a leerlas — ya están disponibles para emparejar con
+        // cualquier venta/vencimiento futuro, sin importar cuánto tarde.
+        processedTx.add(txKey);
         if (!openPositions[key]) openPositions[key] = [];
         openPositions[key].push({
           date: parsed.date,
@@ -2380,10 +3368,16 @@
           ticker: parsed.ticker,
           expiry: parsed.expiry,
           type: parsed.type,
-          strike: parsed.strike
+          strike: parsed.strike,
+          reportedOpen: false
         });
       } else {
-        let sellQty = parsed.quantity;
+        // Si un intento anterior ya emparejó PARTE de este mismo evento
+        // (ver PENDING_CLOSES_STORAGE_KEY más arriba), se retoma desde la
+        // cantidad que todavía faltaba, no desde la cantidad original —
+        // si no, se re-emparejaría de más contra compras nuevas que no
+        // tienen nada que ver con este evento puntual.
+        let sellQty = (pendingCloses[txKey] != null) ? pendingCloses[txKey] : parsed.quantity;
         let sellPrice = parsed.price;
         let sellDate = parsed.date;
 
@@ -2425,25 +3419,49 @@
         }
 
         if (sellQty > 0) {
-          trades.push({
+          // FIX (nunca más filas con Compra en $0): antes acá se insertaba
+          // una fila "huérfana" con buyPrice:0 cuando no se encontraba (o
+          // ya se había agotado) la compra correspondiente — exactamente
+          // el origen de las filas con Compra y/o Venta en $0 y #DIV/0!
+          // reportadas. Ahora, si no hay una compra real para emparejar,
+          // NO se manda nada a la planilla: mejor un hueco visible (que se
+          // puede completar a mano si hace falta) que una fila con datos
+          // falsos que no sirve para identificar ni calcular el trade.
+          skippedOrphans.push({
             ticker: parsed.ticker,
             type: parsed.type,
             strike: parsed.strike,
             expiry: parsed.expiry,
             quantity: sellQty,
-            buyDate: "",
-            buyPrice: 0,
-            sellDate: sellDate,
-            sellPrice: sellPrice,
-            status: 'Cerrado',
-            strategy: parsed.action === 'expire' ? "Histórico UCharts (Vencimiento sin compra visible)" : "Histórico UCharts (Venta Huérfana)"
+            date: sellDate,
+            reason: parsed.action === 'expire' ? 'Vencimiento sin compra emparejada' : 'Venta sin compra emparejada'
           });
+          // FIX (el bug de "sólo se cargan un par de trades"): esta venta/
+          // vencimiento NO se marca como procesada. Si se marcara acá iba
+          // a quedar perdida para siempre en cuanto la compra real
+          // apareciera en un sync futuro (por ejemplo al correr
+          // "Sincronizar Planilla" completo) — la próxima corrida ya no
+          // iba a volver a mirar esta línea porque figuraba en
+          // processedTx, así que la compra se quedaba "Abierta" para
+          // siempre sin poder emparejar jamás. Al no marcarla, se vuelve a
+          // intentar en cada sync hasta que su compra aparezca — y queda
+          // guardado cuánto falta todavía (ver más arriba) para no
+          // re-emparejar de más si esto es un evento multi-lote.
+          pendingCloses[txKey] = sellQty;
+        } else {
+          delete pendingCloses[txKey];
+          processedTx.add(txKey);
         }
       }
     }
 
     for (let key in openPositions) {
       for (let openBuy of openPositions[key]) {
+        // Una posición abierta ya reportada antes no se vuelve a mandar en
+        // cada sync (si no, con estado persistido se reenviaría la MISMA
+        // fila "Abierto" cada 15s para siempre) — el webhook ya la tiene
+        // cargada y sólo hace falta avisarle cuando pase a "Cerrado".
+        if (openBuy.reportedOpen) continue;
         trades.push({
           ticker: openBuy.ticker,
           type: openBuy.type,
@@ -2457,10 +3475,66 @@
           status: 'Abierto',
           strategy: "Histórico UCharts"
         });
+        openBuy.reportedOpen = true;
       }
     }
 
-    if (trades.length === 0) return { ok: false, error: `Etapa interpretación: se leyeron ${allTx.length} movimientos, pero ninguno coincidió con el formato esperado de UCharts.` };
+    // FIX (bug reportado 30/08: "Sincronizar Día" dice que ya está todo al
+    // día pero faltan trades enteros en Registro Continuo): ANTES, el
+    // estado persistido (compras/ventas ya "vistas") se guardaba en
+    // localStorage ACÁ MISMO, antes de siquiera intentar mandar `trades` al
+    // webhook. Si esa llamada fallaba (red, cuota de Apps Script, error del
+    // script, deployment caído, etc.), el navegador ya había marcado esas
+    // transacciones como procesadas para siempre — la próxima sincronización
+    // las volvía a leer del historial, pero como ya figuraban en
+    // processedTx/openPositions las descartaba silenciosamente, y el botón
+    // mostraba "ya está todo al día" aunque esos trades nunca hubieran
+    // llegado a la planilla. Confirmado en vivo: 232 transacciones del
+    // 28/08 quedaron marcadas como procesadas en localStorage sin una sola
+    // fila correspondiente en Registro Continuo.
+    //
+    // Ahora el guardado en localStorage se hace DESPUÉS de confirmar que el
+    // webhook aceptó el envío (o inmediatamente si no había nada que
+    // mandar, caso en el que no hay nada que perder). Si el envío falla, NO
+    // se persiste nada nuevo: la próxima sincronización vuelve a leer las
+    // mismas filas del historial, las vuelve a emparejar igual (el DOM no
+    // cambió) y reintenta el envío, en vez de perder esos trades para
+    // siempre.
+    let prunedProcessedTx = Array.from(processedTx).filter(k => {
+      let datePart = k.split('||')[0];
+      let ts = historyTimestamp(datePart);
+      if (!ts) return true; // fecha no parseable: mejor conservarla que perderla
+      return (Date.now() - ts) < PROCESSED_TX_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    });
+    function persistSyncState() {
+      savePersistedJSON(OPEN_POS_STORAGE_KEY, openPositions);
+      savePersistedJSON(PROCESSED_TX_STORAGE_KEY, prunedProcessedTx);
+      savePersistedJSON(PENDING_CLOSES_STORAGE_KEY, pendingCloses);
+    }
+
+    if (skippedOrphans.length > 0) {
+      console.warn(`[UCharts] ${skippedOrphans.length} movimiento(s) NO se cargaron a la planilla por no tener compra emparejada (para no ensuciarla con filas en $0):`, skippedOrphans);
+    }
+    const orphanNote = skippedOrphans.length > 0
+      ? `\n\n⚠️ ${skippedOrphans.length} movimiento(s) (venta o vencimiento) no tenían una compra emparejada y NO se cargaron a la planilla — revisá la consola del navegador (F12) para el detalle, o el historial completo con "Sincronizar Planilla".`
+      : "";
+
+    if (trades.length === 0) {
+      // Nada para mandar al webhook: no hay riesgo de persistir ya mismo
+      // (no queda ningún envío pendiente de confirmar).
+      persistSyncState();
+      if (!anyParsed && allTx.length > 0 && skippedOrphans.length === 0) {
+        return { ok: false, error: `Etapa interpretación: se leyeron ${allTx.length} movimientos, pero ninguno coincidió con el formato esperado de UCharts.` };
+      }
+      // Nada nuevo para mandar (todo lo visible ya se había sincronizado
+      // antes) — esto es un resultado normal, no un error. Igual se avisa
+      // con un alert en los botones manuales para que quede claro que el
+      // botón SÍ hizo algo (leyó el historial), en vez de no mostrar nada.
+      if (!isSilent) {
+        alert(`✅ Sincronización completa: no hay operaciones nuevas para agregar, ya está todo al día.${orphanNote}`);
+      }
+      return { ok: true, count: 0, skipped: skippedOrphans.length };
+    }
 
     console.log(`📤 Enviando ${trades.length} operaciones masivas al webhook...`);
 
@@ -2482,23 +3556,43 @@
           }
         });
       } else {
+        // FIX: mode:"no-cors" hace que fetch() SIEMPRE resuelva "success"
+        // aunque el servidor nunca haya recibido o procesado nada (la
+        // respuesta es opaca, no se puede leer el status) — con GM_grant
+        // activo (ver @grant GM_xmlhttpRequest arriba) esta rama no debería
+        // usarse nunca en la práctica, pero se deja marcado explícitamente
+        // como "no confirmado" en vez de mentir con ok:true, para que si
+        // algún día esto corre sin GM_xmlhttpRequest no vuelva a persistir
+        // como si el envío hubiera sido confirmado.
         fetch(WEBHOOK_URL, {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "text/plain" },
           body: data
-        }).then(() => resolve({ ok: true, status: 0, body: {} })).catch(() => resolve({ ok: false, status: 0, body: {} }));
+        }).then(() => resolve({ ok: false, unconfirmed: true, status: 0, body: {} }))
+          .catch(() => resolve({ ok: false, status: 0, body: {} }));
       }
     });
 
+    // Sólo se guarda el nuevo estado (compras/ventas marcadas como
+    // procesadas) si el webhook CONFIRMÓ que recibió y aceptó el envío. Si
+    // falló, se deja el localStorage tal como estaba antes de esta corrida
+    // para que el próximo intento vuelva a mandar exactamente estos mismos
+    // trades, en vez de darlos por perdidos.
+    if (ok.ok) {
+      persistSyncState();
+    } else {
+      console.warn(`[UCharts] El webhook NO confirmó el envío de ${trades.length} operación(es) — no se marcan como sincronizadas, se reintentará en la próxima sincronización.`, ok);
+    }
+
     if (!isSilent) {
       if (ok.ok) {
-        alert(`🎉 ¡Sincronización masiva completada! ${trades.length} operaciones enviadas con éxito.`);
+        alert(`🎉 ¡Sincronización masiva completada! ${trades.length} operaciones enviadas con éxito.${orphanNote}`);
       } else {
         const detail = ok.body?.message || `HTTP ${ok.status || "sin respuesta"}`;
-        return { ok: false, error: `Etapa envío: el webhook rechazó la importación (${detail}).` };
+        return { ok: false, error: `Etapa envío: el webhook rechazó la importación (${detail}). No se perdieron datos: se reintentará en la próxima sincronización.` };
       }
     }
-    return ok.ok ? { ok: true, count: trades.length } : { ok: false, error: "Etapa envío: el webhook no confirmó la importación." };
+    return ok.ok ? { ok: true, count: trades.length, skipped: skippedOrphans.length } : { ok: false, error: "Etapa envío: el webhook no confirmó la importación. No se perdieron datos: se reintentará en la próxima sincronización." };
   }
 })();
