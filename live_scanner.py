@@ -1009,7 +1009,7 @@ class BotControlServer(BaseHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning')
         BaseHTTPRequestHandler.end_headers(self)
 
     def do_OPTIONS(self):
@@ -1061,7 +1061,6 @@ class BotControlServer(BaseHTTPRequestHandler):
     def send_unauthorized(self):
         self.send_response(401)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps({"status": "error", "message": "unauthorized"}).encode('utf-8'))
 
@@ -1244,7 +1243,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         elif self.path.startswith('/api/simulador/list_accounts'):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 conn = sqlite3.connect(DB_NAME)
@@ -1276,7 +1274,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         elif self.path.startswith('/api/simulador_status'):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 from urllib.parse import urlparse, parse_qs
@@ -1491,7 +1488,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         if self.path == '/api/auth/login':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 import hashlib
@@ -1543,7 +1539,6 @@ class BotControlServer(BaseHTTPRequestHandler):
                 try:
                     self.send_response(status_code)
                     self.send_header('Content-Type', 'application/json')
-                    self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
                     self.wfile.write(json.dumps(payload).encode('utf-8'))
                 except Exception as wr_e:
@@ -1797,7 +1792,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         elif self.path == '/api/simulador/buy':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
@@ -1829,7 +1823,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         elif self.path == '/api/simulador/add_funds':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
@@ -1852,7 +1845,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         elif self.path == '/api/simulador/create_account':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
@@ -1894,7 +1886,6 @@ class BotControlServer(BaseHTTPRequestHandler):
         elif self.path == '/api/simulador/sell':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
