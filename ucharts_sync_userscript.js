@@ -172,6 +172,48 @@
   const cardonaTrackedPositions = new Map();
   const BANDERIN_EDGE_PCT = 2.0;
 
+  // EXPIRATION_GUARD del lado navegador (mejora post-análisis de trades,
+  // 19/09): la Hoja de "Resumen de Trades" mostró que los 9 sábados del
+  // histórico tienen 0% de Win Rate y suman -$4.5M en pérdidas — más del
+  // 100% de la pérdida neta total de la estrategia. Causa raíz: uCharts
+  // PaperMoney expira sus propias opciones a $0 cuando nadie las cierra
+  // antes del vencimiento (ver parseDesc(), evento "Expired/option/..."),
+  // y monitorPositionsPnL() sólo vigilaba TP/SL — nunca el vencimiento. El
+  // EXPIRATION_GUARD ya existe del lado servidor (risk_engine.py /
+  // position_manager.py) pero sólo protege el ledger simulado interno, no
+  // la cuenta real de uCharts. Estas constantes espejan esa misma lógica
+  // (mismos valores por defecto que risk_engine.py) para que el navegador
+  // fuerce el cierre real ANTES de que uCharts la expire sola.
+  // Si se cambia expiration_guard_minutes_before_close en config.json,
+  // actualizar también este valor para que ambos lados queden sincronizados.
+  const EXPIRATION_GUARD_MINUTES_BEFORE_CLOSE = 60;
+  // Cierre de mercado asumido (hora local del navegador, sin conversión de
+  // TZ) — debe coincidir con _MARKET_CLOSE_HOUR de position_manager.py.
+  const MARKET_CLOSE_HOUR = 16;
+
+  // A partir del expiryKey ("YYYY-MM-DD", asignado al leer la Cadena de
+  // opciones en selectOptionContract) reconstruye el mismo deadline que
+  // calcula _calcular_deadline_expiracion() en position_manager.py: el día
+  // de vencimiento a la hora de cierre de mercado asumida.
+  function getExpirationDeadline(expiryKey) {
+    if (!expiryKey || typeof expiryKey !== 'string') return null;
+    const match = expiryKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const [, y, m, d] = match;
+    return new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), MARKET_CLOSE_HOUR, 0, 0, 0);
+  }
+
+  // true si ya estamos dentro de la ventana de guardia antes del
+  // vencimiento (deadline - EXPIRATION_GUARD_MINUTES_BEFORE_CLOSE), la
+  // misma condición que dispara EXIT_REASON "EXPIRATION_GUARD" en
+  // position_manager.py.
+  function isWithinExpirationGuardWindow(expiryKey) {
+    const deadline = getExpirationDeadline(expiryKey);
+    if (!deadline) return false;
+    const guardThreshold = new Date(deadline.getTime() - EXPIRATION_GUARD_MINUTES_BEFORE_CLOSE * 60000);
+    return new Date() >= guardThreshold;
+  }
+
   // Estilos CSS para el panel premium flotante
   const style = document.createElement('style');
   style.innerHTML = `
@@ -2266,13 +2308,21 @@
   // página — la única fuente de verdad que el bot tiene sobre "esto lo
   // compré yo". Si no matchea ninguna, monitorPositionsPnL la deja
   // tranquila: no la vende ni la evalúa.
-  function isPositionTrackedByBot(cardText) {
+  // Devuelve el registro de posición trackeada (Cardona o Bandera) que
+  // corresponde a esta tarjeta, o null si la tarjeta no es del bot. Expone
+  // el objeto completo (no sólo un booleano) para que monitorPositionsPnL
+  // pueda leer su expiryKey y aplicar el EXPIRATION_GUARD.
+  function findTrackedPositionForCard(cardText) {
     const allTracked = [...cardonaTrackedPositions.values(), ...banderinTrackedPositions.values()];
-    return allTracked.some(pos => {
+    return allTracked.find(pos => {
       const typeWord = pos.type === 'CALL' ? 'Call' : 'Put';
       const strikeStr = Number(pos.strike).toFixed(2);
       return cardText.includes(pos.ticker) && cardText.includes(typeWord) && (cardText.includes(strikeStr) || cardText.includes(String(pos.strike)));
-    });
+    }) || null;
+  }
+
+  function isPositionTrackedByBot(cardText) {
+    return !!findTrackedPositionForCard(cardText);
   }
 
   // Idempotencia del Auto-Trader de Cardona (sección 8): si la compra se
@@ -2562,8 +2612,14 @@
       // se toca Tipo de orden ni Precio en absoluto (Mercado es el default).
       // El cálculo de precio Límite sólo aplica al Take Profit.
       // ------------------------------------------------------------------
-      if (closeReason === 'SL') {
-        console.log(`[Auto-Trader] Cierre por Stop Loss: vendiendo a Mercado para salida inmediata (sin esperar un precio límite).`);
+      // EXPIRATION_GUARD se trata igual que Stop Loss: necesita salida
+      // GARANTIZADA e inmediata (a Mercado), no un precio Límite que
+      // podría no llenarse nunca a tiempo — si eso pasara, la posición
+      // terminaría expirando igual a $0 en uCharts, exactamente lo que
+      // este guard existe para evitar.
+      if (closeReason === 'SL' || closeReason === 'EXPIRATION_GUARD') {
+        const motivoCierre = closeReason === 'SL' ? 'Stop Loss' : 'EXPIRATION_GUARD';
+        console.log(`[Auto-Trader] Cierre por ${motivoCierre}: vendiendo a Mercado para salida inmediata (sin esperar un precio límite).`);
       } else {
         // Obtener el % de ganancia pretendido (Take Profit)
         const tpPct = parseFloat(document.getElementById('tp-pct-val').value) || 15.0;
@@ -2831,7 +2887,8 @@
       // No es una posición que el bot haya comprado él mismo en esta
       // sesión (Cardona o Bandera) — se la deja tranquila. Ver el
       // comentario de isPositionTrackedByBot más arriba.
-      if (!isPositionTrackedByBot(cardText)) continue;
+      const trackedPos = findTrackedPositionForCard(cardText);
+      if (!trackedPos) continue;
 
       const matchPct = cardText.match(/([+-])\s*([\d.]+)\s*%/);
       const matchUsd = cardText.match(/([+-])\s*\$\s*([\d,.]+)/);
@@ -2872,6 +2929,21 @@
         shouldClose = true;
         closeType = 'SL';
         reason = `Limite de Perdida (Stop Loss) de $${currentUsd} USD alcanzado (Limite: -$${slUsdLimit} USD)`;
+      }
+
+      // EXPIRATION_GUARD (mejora post-análisis de trades, 19/09): a
+      // diferencia de TP/SL, esto NO depende de los checkboxes del panel —
+      // es una red de seguridad siempre activa. Si ya entramos en la
+      // ventana de guardia antes del vencimiento del contrato, se fuerza
+      // el cierre YA, sin importar el PnL actual, para que uCharts nunca
+      // llegue a expirar la posición sola a $0 (la causa confirmada de que
+      // los 9 sábados del histórico tengan 0% Win Rate). No pisa un
+      // shouldClose por TP/SL que ya se haya decidido arriba en este mismo
+      // ciclo.
+      if (!shouldClose && trackedPos.expiryKey && isWithinExpirationGuardWindow(trackedPos.expiryKey)) {
+        shouldClose = true;
+        closeType = 'EXPIRATION_GUARD';
+        reason = `EXPIRATION_GUARD: vencimiento ${trackedPos.expiryKey} a menos de ${EXPIRATION_GUARD_MINUTES_BEFORE_CLOSE} min — cierre forzado para evitar expiración a $0 en uCharts`;
       }
 
       if (shouldClose) {
