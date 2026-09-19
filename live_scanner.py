@@ -11,6 +11,8 @@ import sqlite3
 import time
 from datetime import datetime
 import sim_broker_core
+import risk_engine
+import position_manager
 
 # Deshabilitar advertencias de SSL inseguro y configurar sesión
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -431,6 +433,17 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
             # strategy_id acá). No hace falta transformar nada en esta llamada.
             conn_sim = sqlite3.connect(DB_NAME)
             res_sim = sim_broker_core.simular_compra_broker(conn_sim, ticker, strategy_id, price)
+            if res_sim.get("status") == "FILLED":
+                # PositionManager: maquina de estados + parametros de riesgo
+                # (SL/TP/time-stop/expiration guard) fijados en el momento
+                # del fill (Requisitos #4, #5, #6, #8).
+                try:
+                    position_manager.transicionar_estado(conn_sim, res_sim["trade_id"], "FILLED", "Compra simulada ejecutada via RiskEngine")
+                    position_manager.asignar_parametros_riesgo_nueva_posicion(
+                        conn_sim, res_sim["trade_id"], now_str, res_sim.get("dte", 1)
+                    )
+                except Exception as pm_err:
+                    print(f"[PositionManager] Error asignando parametros de riesgo a {res_sim.get('trade_id')}: {pm_err}")
             conn_sim.close()
             if res_sim.get("status") == "FILLED":
                 msg_sim = (
@@ -1240,6 +1253,24 @@ class BotControlServer(BaseHTTPRequestHandler):
                 }).encode('utf-8'))
             except Exception as e:
                 self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+        elif self.path.startswith('/api/risk/status'):
+            # Requisito #12: estado del RiskEngine/PositionManager para el
+            # panel flotante de Tampermonkey (cupo diario, exposicion,
+            # P&L, kill switch, reconciliacion).
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            try:
+                from urllib.parse import urlparse, parse_qs
+                parsed_url = urlparse(self.path)
+                qs = parse_qs(parsed_url.query)
+                cuenta_id = qs.get('cuenta_id', ['default'])[0]
+                conn = sqlite3.connect(DB_NAME)
+                estado = position_manager.estado_panel(conn, cuenta_id=cuenta_id)
+                conn.close()
+                self.wfile.write(json.dumps(estado).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
         elif self.path.startswith('/api/simulador/list_accounts'):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -1482,8 +1513,15 @@ class BotControlServer(BaseHTTPRequestHandler):
                 
                 conn = sqlite3.connect(DB_NAME)
                 cursor = conn.cursor()
-                cursor.execute("UPDATE system_settings SET allow_new_trades = ?, kill_switch_reason = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1",
-                               (1 if allow else 0, motivo, usuario))
+                # Unificado con configuracion.system_state (Requisito #11 -- ver
+                # risk_engine.py). Antes esto SOLO togglaba allow_new_trades, que
+                # nunca se chequeaba para bloquear nada; ahora activar/desactivar
+                # el kill switch mueve la UNICA fuente de verdad real (system_state)
+                # y sincroniza allow_new_trades para no romper /api/system/health.
+                if allow:
+                    risk_engine.desactivar_kill_switch(conn, actor=usuario)
+                else:
+                    risk_engine.activar_kill_switch(conn, motivo=motivo, actor=usuario)
                 
                 cursor.execute("INSERT INTO bot_logs (bot_id, severity, event_type, message) VALUES ('system', 'CRITICAL', 'KILL_SWITCH_TOGGLED', ?)",
                                (f"Kill Switch cambiado a: Habilitado={allow} por {usuario}. Motivo: {motivo}"))
@@ -1824,6 +1862,13 @@ class BotControlServer(BaseHTTPRequestHandler):
                 precio_subyacente = float(row[0]) if row and row[0] is not None else 100.0
                 
                 res = sim_broker_core.simular_compra_broker(conn, ticker, strategy_id, precio_subyacente, qty, expiry, cuenta_id=cuenta_id)
+                if res.get("status") == "FILLED":
+                    try:
+                        now_str_buy = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        position_manager.transicionar_estado(conn, res["trade_id"], "FILLED", "Compra manual via /api/simulador/buy")
+                        position_manager.asignar_parametros_riesgo_nueva_posicion(conn, res["trade_id"], now_str_buy, res.get("dte", 1))
+                    except Exception as pm_err:
+                        print(f"[PositionManager] Error asignando parametros de riesgo (buy manual) a {res.get('trade_id')}: {pm_err}")
                 conn.close()
                 
                 self.wfile.write(json.dumps(res).encode('utf-8'))
@@ -2019,6 +2064,11 @@ def init_simulation_tables():
             cursor.executescript(schema_sql)
             print("[Simulador] Estructura de base de datos schema.sql inicializada con éxito.")
 
+        # RiskEngine / PositionManager: tablas y columnas nuevas, aditivas.
+        risk_engine.init_risk_tables(conn)
+        position_manager.init_position_columns(conn)
+        print("[Simulador] RiskEngine/PositionManager: tablas y columnas de riesgo listas.")
+
         cursor.execute("SELECT val FROM configuracion WHERE param_id = 'capital_simulado'")
         if not cursor.fetchone():
             cursor.execute("INSERT INTO configuracion (param_id, val, type) VALUES ('capital_simulado', '3830539.59', 'FLOAT')")
@@ -2136,87 +2186,72 @@ def procesar_simulacion_compra(ticker, strategy_id, precio_subyacente):
         print(f"[Simulador] Error compra: {e}")
 
 def actualizar_seguimiento_simulador():
-    """Actualiza precios en tiempo real de operaciones simuladas y gestiona los targets."""
+    """Delega la decision de salida (Stop Loss, Take Profit, Time Stop,
+    Expiration Guard) al PositionManager (position_manager.py) -- ver
+    Requisitos #4, #5, #6. Antes esto tenia un SL/TP fijo (-15%/+30%) para
+    TODAS las posiciones sin importar estrategia ni plazo, y las ventas
+    restituian el cupo diario (contrario al Requisito #1). Se mantiene
+    intacta la logica de notificaciones/Sheets que ya existia."""
     try:
         conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, ticker, tipo, estrategia, cantidad_contratos, precio_entrada, dte_plazo, fecha_apertura, balance_referencia FROM operaciones_simuladas WHERE estado = 'OPEN'")
-        posiciones = cursor.fetchall()
-        if not posiciones:
-            conn.close()
-            return
-            
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        
-        for pos in posiciones:
-            op_id, ticker, tipo, estrategia, cantidad, precio_entrada, dte, fecha_apertura, balance_ref = pos
+
+        def obtener_precio_actual(ticker):
             try:
                 t_obj = yf.Ticker(ticker)
                 hist = t_obj.history(period="1d")
                 if hist.empty:
-                    continue
-                precio_actual_sub = hist['Close'].iloc[-1]
+                    return None
+                return hist['Close'].iloc[-1]
             except Exception:
+                return None
+
+        eventos = position_manager.evaluar_posiciones_abiertas(conn, obtener_precio_actual)
+
+        cursor = conn.cursor()
+        razones_es = {
+            "TAKE_PROFIT": "TAKE PROFIT",
+            "STOP_LOSS": "STOP LOSS",
+            "TIME_STOP": "TIME STOP (plazo máximo alcanzado)",
+            "EXPIRATION_GUARD": "EXPIRATION GUARD (cierre forzado por proximidad a vencimiento)",
+        }
+
+        for ev in eventos:
+            if ev.get("action") != "CLOSED":
                 continue
-                
-            cursor.execute("SELECT price FROM radar_actual WHERE ticker = ? LIMIT 1", (ticker,))
-            price_row = cursor.fetchone()
-            precio_entrada_sub = price_row[0] if price_row else precio_actual_sub * 0.99
-            
-            # Estimación de apalancamiento lineal por DTE
-            leverage = 12 if dte == 1 else 8 if dte == 7 else 5
-            var_sub = (precio_actual_sub - precio_entrada_sub) / precio_entrada_sub
-            pnl_pct = (var_sub if tipo == "CALL" else -var_sub) * leverage * 100
-            pnl_pct = max(-98.0, min(250.0, pnl_pct))
-            
-            precio_actual_opcion = max(0.01, round(precio_entrada * (1 + pnl_pct / 100), 2))
-            pnl_usd = (precio_actual_opcion - precio_entrada) * 100 * cantidad
-            
-            target_list = [3.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0, 100.0, 150.0, 200.0]
-            targets_alcanzados = [t for t in target_list if pnl_pct >= t]
-            
-            debe_cerrar = False
-            razon = ""
-            if pnl_pct <= -15.0:
-                debe_cerrar = True
-                razon = "STOP LOSS (-15%)"
-            elif pnl_pct >= 30.0:
-                debe_cerrar = True
-                razon = f"TAKE PROFIT ({max(targets_alcanzados):.0f}%)"
-                
-            if not debe_cerrar:
-                cursor.execute("UPDATE operaciones_simuladas SET precio_actual = ?, pnl_pct = ?, pnl_usd = ?, targets_alcanzados = ? WHERE id = ?",
-                               (precio_actual_opcion, pnl_pct, pnl_usd, json.dumps(targets_alcanzados), op_id))
-            else:
-                # Cerrar a través del core del Sim Broker (Ledger, Buckets, Retiro 90/10)
-                res_venta = sim_broker_core.simular_venta_broker(conn, op_id, precio_actual_sub)
-                if res_venta.get("status") == "CLOSED":
-                    retorno = cantidad * (precio_actual_opcion * 100 - 0.65)
-                    if dte == 1:
-                        cursor.execute("SELECT cupo_disponible, cupo_gastado FROM capital_diario_control WHERE fecha = ?", (today_str,))
-                        row_ctrl = cursor.fetchone()
-                        if row_ctrl:
-                            curr_disp, curr_gast = row_ctrl
-                            nuevo_disp = curr_disp + retorno
-                            nuevo_gast = max(0.0, curr_gast - retorno)
-                            cursor.execute("UPDATE capital_diario_control SET cupo_disponible = ?, cupo_gastado = ? WHERE fecha = ?", (nuevo_disp, nuevo_gast, today_str))
-                    
-                    cursor.execute("SELECT val FROM configuracion WHERE param_id = 'capital_simulado'")
-                    nuevo_cap = float(cursor.fetchone()[0])
-                    
-                    signo = "+" if pnl_usd >= 0 else ""
-                    notif_msg = (
-                        f"📤 <b>SIMULADOR: POSICIÓN CERRADA ({razon})</b>\n\n"
-                        f"🎯 <b>Activo:</b> {ticker} ({tipo})\n"
-                        f"📖 <b>Estrategia:</b> {estrategia}\n"
-                        f"📈 <b>PnL Realizado:</b> {signo}{pnl_pct:.2f}% ({signo}${pnl_usd:.2f})\n"
-                        f"💰 <b>Retorno Bruto:</b> ${retorno:.2f}\n"
-                        f"💵 <b>Desvío 10%:</b> ${res_venta.get('withdrawal', 0.0):.2f}\n"
-                        f"💎 <b>Balance Cuenta:</b> ${nuevo_cap:.2f}"
-                    )
-                    send_telegram_notification(notif_msg)
-                    log_trade_close_to_sheet(op_id, precio_actual_opcion, pnl_pct, pnl_usd, retorno)
+            op_id = ev["trade_id"]
+            ticker = ev["ticker"]
+            tipo = ev["tipo"]
+            estrategia = ev["estrategia"]
+            pnl_pct = ev.get("pnl_pct") or 0.0
+            pnl_usd = ev.get("pnl_usd") or 0.0
+            venta_result = ev.get("venta_result", {})
+            razon = razones_es.get(ev.get("exit_reason"), ev.get("exit_reason", "N/A"))
+            retorno_bruto = venta_result.get("return_net", 0.0) + venta_result.get("withdrawal", 0.0)
+
+            cursor.execute("SELECT val FROM configuracion WHERE param_id = 'capital_simulado'")
+            row_cap = cursor.fetchone()
+            nuevo_cap = float(row_cap[0]) if row_cap else 0.0
+
+            signo = "+" if pnl_usd >= 0 else ""
+            notif_msg = (
+                f"📤 <b>SIMULADOR: POSICIÓN CERRADA ({razon})</b>\n\n"
+                f"🎯 <b>Activo:</b> {ticker} ({tipo})\n"
+                f"📖 <b>Estrategia:</b> {estrategia}\n"
+                f"📈 <b>PnL Realizado:</b> {signo}{pnl_pct:.2f}% ({signo}${pnl_usd:.2f})\n"
+                f"💰 <b>Retorno Bruto:</b> ${retorno_bruto:.2f}\n"
+                f"💵 <b>Desvío 10%:</b> ${venta_result.get('withdrawal', 0.0):.2f}\n"
+                f"💎 <b>Balance Cuenta:</b> ${nuevo_cap:.2f}"
+            )
+            send_telegram_notification(notif_msg)
+            log_trade_close_to_sheet(op_id, ev.get("precio_actual_opcion"), pnl_pct, pnl_usd, retorno_bruto)
+
+            if ev.get("exit_reason") == "EXPIRATION_GUARD":
+                send_telegram_notification(
+                    f"🚨 <b>ALERTA CRÍTICA: EXPIRATION GUARD ACTIVADO</b>\n\n"
+                    f"La posición {op_id} ({ticker} {estrategia}) fue cerrada de forma forzada "
+                    f"por aproximarse a su vencimiento sin haber sido cerrada por la estrategia."
+                )
+
         conn.commit()
         conn.close()
     except Exception as e:
@@ -2371,7 +2406,35 @@ def run_tracker_loop():
                     try:
                         actualizar_seguimiento_simulador()
                         last_run_time = time.time()
-                        
+
+                        # RiskEngine: candado de perdida diaria (Requisito #7) y
+                        # reconciliacion (Requisito #9), evaluados una vez por
+                        # ciclo para cada cuenta activa.
+                        try:
+                            db_risk = sqlite3.connect(DB_NAME, timeout=30.0)
+                            c_risk = db_risk.cursor()
+                            c_risk.execute("SELECT id, balance_actual FROM cuentas_simuladas")
+                            cuentas = c_risk.fetchall()
+                            for cta_id, bal_actual in cuentas:
+                                _, _, bal_inicial_dia = risk_engine.obtener_o_crear_cupo_diario(db_risk, cta_id, float(bal_actual))
+                                locked, pnl_dia, just_locked = risk_engine.chequear_perdida_diaria_maxima(db_risk, cta_id, bal_inicial_dia)
+                                if just_locked:
+                                    send_telegram_notification(
+                                        f"🚨 <b>RISK ENGINE: DAILY_LOCKED ({cta_id})</b>\n\n"
+                                        f"P&L realizado de hoy: ${pnl_dia:,.2f}. Se bloquean NUEVAS entradas "
+                                        f"(las posiciones existentes NO se cierran automaticamente)."
+                                    )
+                                recon = position_manager.verificar_reconciliacion(db_risk, cta_id)
+                                if not recon["reconciliado"]:
+                                    send_telegram_notification(
+                                        f"⚠️ <b>RISK ENGINE: RECONCILIATION_ERROR ({cta_id})</b>\n\n"
+                                        f"Posiciones OPEN: ${recon['comprometido_posiciones']:,.2f} vs Buckets: "
+                                        f"${recon['comprometido_buckets']:,.2f} (diferencia ${recon['diferencia']:,.2f})"
+                                    )
+                            db_risk.close()
+                        except Exception as risk_e:
+                            print(f"[Tracker Thread] Error en chequeos de RiskEngine: {risk_e}")
+
                         db_conn = sqlite3.connect(DB_NAME, timeout=30.0)
                         c = db_conn.cursor()
                         c.execute("INSERT INTO bot_logs (bot_id, severity, event_type, message) VALUES ('tracker', 'INFO', 'TRACK_SUCCESS', 'Seguimiento de portafolio y salidas procesado con éxito.')")

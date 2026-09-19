@@ -5,6 +5,8 @@ import uuid
 import time
 from datetime import datetime
 
+import risk_engine
+
 DB_NAME = "trading_laboratory.db"
 COMMISSION_PER_CONTRACT = 0.65 # Comisión fija de uCharts
 
@@ -305,14 +307,43 @@ def simular_compra_broker(conn, ticker, strategy_id, precio_subyacente, cantidad
     # Si viene forzado (por ejemplo, compra piloto)
     if cantidad_propuesta is not None:
         cantidad = cantidad_propuesta
-        
-    costo_total = cantidad * costo_contrato
-    
-    # Validar Riesgo
-    autorizado, motivo = evaluar_riesgo_pre_trade(conn, ticker, strategy_id, costo_total, cuenta_id=cuenta_id)
-    
+
+    # --- RiskEngine (independiente del detector de estrategias) ---
+    # Ninguna estrategia puede saltarse esto, ni siquiera una cantidad
+    # forzada (piloto). RiskEngine puede REDUCIR la cantidad o RECHAZAR la
+    # orden por completo: presupuesto diario bruto, exposición total
+    # abierta, tamaño máximo por posición, kill switch, DAILY_LOCKED por
+    # pérdida diaria, y órdenes duplicadas. Ver risk_engine.py.
+    cursor.execute("SELECT balance_actual FROM cuentas_simuladas WHERE id = ?", (cuenta_id,))
+    row_bal = cursor.fetchone()
+    balance_actual_cuenta = float(row_bal[0]) if row_bal else cap_disponible
+
+    cursor.execute("""
+        SELECT COALESCE(SUM(cantidad_contratos * (precio_entrada * 100 + ?)), 0)
+        FROM operaciones_simuladas WHERE estado = 'OPEN' AND cuenta_id = ?
+    """, (COMMISSION_PER_CONTRACT, cuenta_id))
+    capital_comprometido_total = float(cursor.fetchone()[0])
+
+    eval_riesgo = risk_engine.evaluar_orden_nueva(
+        conn, cuenta_id, ticker, strategy_id, cantidad, costo_contrato,
+        balance_actual_cuenta, capital_comprometido_total,
+    )
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     trade_id = f"TRD_{ticker}_{strategy_id}_{datetime.now().strftime('%M%S')}"
+
+    if not eval_riesgo["authorized"]:
+        cursor.execute("""
+            INSERT INTO decisiones (decision_id, setup_id, source, action, rejection_reason, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (f"DEC_{trade_id}", f"SET_{trade_id}", "RISK_ENGINE", "REJECT", eval_riesgo["reason"], now_str))
+        conn.commit()
+        return {"status": "REJECTED", "reason": eval_riesgo["reason"]}
+
+    cantidad = eval_riesgo["cantidad_final"]
+    costo_total = eval_riesgo["costo_total_final"]
+
+    # Validar Riesgo (motor preexistente: capital de bucket, drawdown, max 3 posiciones por ticker)
+    autorizado, motivo = evaluar_riesgo_pre_trade(conn, ticker, strategy_id, costo_total, cuenta_id=cuenta_id)
     
     # Registrar decisión del bot
     cursor.execute("""
@@ -364,7 +395,7 @@ def simular_compra_broker(conn, ticker, strategy_id, precio_subyacente, cantidad
     recalcular_buckets_capital(conn, cuenta_id=cuenta_id)
     conn.commit()
     
-    return {"status": "FILLED", "trade_id": trade_id, "qty": cantidad, "price": prima_ejecucion, "cost": costo_total}
+    return {"status": "FILLED", "trade_id": trade_id, "qty": cantidad, "price": prima_ejecucion, "cost": costo_total, "dte": dte}
 
 def simular_venta_broker(conn, trade_id, precio_salida_subyacente):
     """Cierra la operación simulada, calcula el P&L, registra en Ledger y aplica desvío de ganancias 90/10."""
