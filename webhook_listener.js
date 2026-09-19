@@ -777,8 +777,19 @@ function handleLegacyBulkImport(ss, data) {
   }
   
   var colIndex = getColIdx("°");
-  var colFecha = getColIdx("fecha");
-  var colTradeNum = getColIdx("trade #") !== -1 ? getColIdx("trade #") : getColIdx("trade");
+  // FIX (10/09): la hoja real usa columnas SEPARADAS "Fecha Compra"/"Fecha
+  // Venta" y "Trade # Compra"/"Trade # Venta" — nunca "Fecha"/"Trade #" a
+  // secas. getColIdx("fecha") y getColIdx("trade #") devolvían SIEMPRE -1,
+  // así que en cada fila nueva estas dos columnas quedaban en blanco para
+  // siempre (Ticker/Compra/Venta sí se cargaban bien).
+  var colFechaCompra = getColIdx("fecha compra") !== -1 ? getColIdx("fecha compra") : getColIdx("fecha");
+  var colFechaVenta = getColIdx("fecha venta");
+  var colTradeCompra = getColIdx("trade # compra") !== -1 ? getColIdx("trade # compra") : (getColIdx("trade #") !== -1 ? getColIdx("trade #") : getColIdx("trade"));
+  var colTradeVenta = getColIdx("trade # venta");
+  // Alias que usa el resto de la función (deduplicación por fecha de
+  // COMPRA, que es la que identifica la fila).
+  var colFecha = colFechaCompra;
+  var colTradeNum = colTradeCompra;
   var colTicker = getColIdx("ticker") !== -1 ? getColIdx("ticker") : getColIdx("tiker");
   var colCallPut = getColIdx("call/put") !== -1 ? getColIdx("call/put") : (getColIdx("tipo") !== -1 ? getColIdx("tipo") : getColIdx("call o put"));
   var colCantidad = getColIdx("cantidad");
@@ -1011,6 +1022,15 @@ function handleLegacyBulkImport(ss, data) {
         if (colVenta !== -1) {
           sheet.getRange(realRowNum, colVenta).setValue(tSellPrice);
         }
+        // FIX (10/09): completar Fecha Venta / Trade # Venta al cerrar —
+        // antes quedaban en blanco porque el script nunca las escribía.
+        if (colFechaVenta !== -1) {
+          sheet.getRange(realRowNum, colFechaVenta).setValue(t.sellDate || "");
+        }
+        if (colTradeVenta !== -1 && colTradeCompra !== -1) {
+          var existingTradeNum = sheet.getRange(realRowNum, colTradeCompra).getValue();
+          sheet.getRange(realRowNum, colTradeVenta).setValue(existingTradeNum);
+        }
         // Saldo USD / % Ganancia / Estado los recalcula la planilla sola
         // (fórmulas), no este script.
         applyFormulas(realRowNum);
@@ -1054,8 +1074,16 @@ function handleLegacyBulkImport(ss, data) {
       // nueva, así que un número fijo asignado acá quedaría desactualizado
       // enseguida. Si esa columna tiene una fórmula propia armada en la
       // hoja (p.ej. =ROW()-1), se recalcula sola.
-      if (colFecha !== -1) rowValues[colFecha - 1] = t.buyDate || t.date || "";
-      if (colTradeNum !== -1) rowValues[colTradeNum - 1] = tradeNum;
+      if (colFechaCompra !== -1) rowValues[colFechaCompra - 1] = t.buyDate || t.date || "";
+      if (colTradeCompra !== -1) rowValues[colTradeCompra - 1] = tradeNum;
+      // FIX (10/09): si este trade ya llega CERRADO en el primer sync (abrió
+      // y cerró entre dos corridas), cargar también Fecha/Trade # Venta acá
+      // mismo — esta fila nunca vuelve a pasar por la rama "exRecord" de
+      // arriba, así que si no se cargan ahora quedan en blanco para siempre.
+      if (tStatus === "CERRADO" || tStatus === "CLOSED") {
+        if (colFechaVenta !== -1) rowValues[colFechaVenta - 1] = t.sellDate || "";
+        if (colTradeVenta !== -1) rowValues[colTradeVenta - 1] = tradeNum;
+      }
       if (colTicker !== -1) rowValues[colTicker - 1] = tTicker;
       if (colCallPut !== -1) rowValues[colCallPut - 1] = tType;
       if (colCantidad !== -1) rowValues[colCantidad - 1] = tQty;

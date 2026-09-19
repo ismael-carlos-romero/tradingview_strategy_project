@@ -1309,7 +1309,16 @@ class BotControlServer(BaseHTTPRequestHandler):
                 
                 # Cupos
                 today_str = datetime.now().strftime("%Y-%m-%d")
-                cursor.execute("SELECT cupo_disponible, cupo_gastado FROM capital_diario_control WHERE fecha = ? AND id = ?", (today_str, cuenta_id))
+                # Fix (10/09): capital_diario_control nunca tuvo columna "id" ni
+                # "cuenta_id" (ver PRAGMA table_info) — sólo ['fecha',
+                # 'balance_inicial', 'cupo_disponible', 'cupo_gastado']. El
+                # "AND id = ?" de acá tiraba "no such column: id" en CADA
+                # llamada a /api/simulador_status, pero como la respuesta ya
+                # había mandado status 200 antes de entrar al try/except, el
+                # portal nunca veía el error — sólo un JSON {status:"error"}
+                # que rompía el JS al intentar leer balance_actual de ahí, y
+                # todo el panel quedaba pegado en $0.00 / "Cargando...".
+                cursor.execute("SELECT cupo_disponible, cupo_gastado FROM capital_diario_control WHERE fecha = ?", (today_str,))
                 ctrl_row = cursor.fetchone()
                 if ctrl_row:
                     cupo_disp, cupo_gast = ctrl_row

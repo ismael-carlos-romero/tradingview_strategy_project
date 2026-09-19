@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UCharts to Google Sheets Sync Tool
 // @namespace    http://tampermonkey.net/
-// @version      5.0.27
+// @version      5.0.30
 // @description  Agrega un panel de control con sincronización automática en tiempo real para UCharts y Google Sheets.
 // @author       Antigravity
 // @match        https://app.ucharts.com/*
@@ -155,6 +155,12 @@
   // y abortar el resto de init() a mitad de camino (incluida la Bandera,
   // el heartbeat, y todo lo que viene después en el archivo).
   let cachedAccountBalance = null;
+  // Ver el comentario grande dentro de init(), justo antes de los
+  // setInterval de fondo: esta bandera evita registrar un segundo (o
+  // tercer, o cuarto...) juego completo de bucles de fondo si init()
+  // se vuelve a ejecutar porque uCharts destruyó el panel (p. ej. al
+  // redirigir a login tras expirar la sesión).
+  let backgroundLoopsStarted = false;
   // Máquina de estados POR TICKER (antes era una única variable global
   // "banderinCycle", que sólo permitía correr Bandera en un activo a la vez).
   // Cada entrada del Map es el ciclo probing/evaluating de ESE ticker.
@@ -887,24 +893,49 @@
       startAutoSync();
     }
 
-    // Iniciar bucle de monitoreo de PnL para auto-cierre
-    setInterval(monitorPositionsPnL, 2000);
-    // Iniciar bucle de polling para ejecución autónoma del Auto-Trader
-    setInterval(pollPendingTradesFromServer, 5000);
-    // Iniciar bucle de la Bandera Automática (straddle 1C+1P -> tendencia dominante)
-    setInterval(banderinTick, 2500);
-    // Iniciar bucle de reporte de latido (Heartbeat) de uCharts
-    startHeartbeatLoop();
-    // Iniciar bucle de sincronización del estado del sistema
-    setInterval(fetchAndSyncSystemState, 5000);
-    // Iniciar bucle de reconciliación diaria completa de "Registro
-    // Continuo": a diferencia del chequeo de fondo de 15s, esta corrida no
-    // depende de que la pestaña ya esté en Historial — navega ella sola una
-    // vez por día calendario para no perder operaciones si el día se pasó
-    // entero en Negociar/Posiciones sin abrir Historial ni tocar "Sincronizar
-    // Día" a mano.
-    setInterval(runDailyFullHistorySync, 10 * 60 * 1000);
-    runDailyFullHistorySync();
+    // ------------------------------------------------------------------
+    // BUG REAL del loop infinito de "Iniciar Auto-Trader": el guard de
+    // arriba ("if (document.querySelector('.sheets-sync-panel')) return")
+    // sólo evita duplicar el PANEL VISUAL, no estos setInterval. Si uCharts
+    // llega a destruir el DOM donde vive el panel — por ejemplo al
+    // redirigir a la pantalla de login cuando expira la sesión, o al
+    // re-renderizar su propia SPA — el panel desaparece, y el siguiente
+    // tick de setInterval(safeInit, 1000) (más abajo en el archivo) ya no
+    // encuentra ".sheets-sync-panel", así que vuelve a correr init()
+    // entero. Antes, eso registraba un SEGUNDO juego completo de estos
+    // bucles (pollPendingTradesFromServer, banderinTick, monitorPositionsPnL,
+    // heartbeat, etc.) sin cancelar nunca el primero, porque ninguno
+    // guardaba su ID para poder hacer clearInterval. Cada corte de sesión
+    // sumaba otra copia corriendo en paralelo para siempre — eso es lo que
+    // se veía como el botón quedando en loop, y por qué volver a iniciar
+    // sesión no lo arreglaba: la sesión no era la causa, era sólo el
+    // disparador que multiplicaba los bucles cada vez que se cortaba.
+    //
+    // Fix: estos bucles de fondo se registran UNA SOLA VEZ por carga de
+    // página, sin importar cuántas veces init() se vuelva a ejecutar para
+    // remontar el panel visual.
+    // ------------------------------------------------------------------
+    if (!backgroundLoopsStarted) {
+      backgroundLoopsStarted = true;
+      // Iniciar bucle de monitoreo de PnL para auto-cierre
+      setInterval(monitorPositionsPnL, 2000);
+      // Iniciar bucle de polling para ejecución autónoma del Auto-Trader
+      setInterval(pollPendingTradesFromServer, 5000);
+      // Iniciar bucle de la Bandera Automática (straddle 1C+1P -> tendencia dominante)
+      setInterval(banderinTick, 2500);
+      // Iniciar bucle de reporte de latido (Heartbeat) de uCharts
+      startHeartbeatLoop();
+      // Iniciar bucle de sincronización del estado del sistema
+      setInterval(fetchAndSyncSystemState, 5000);
+      // Iniciar bucle de reconciliación diaria completa de "Registro
+      // Continuo": a diferencia del chequeo de fondo de 15s, esta corrida no
+      // depende de que la pestaña ya esté en Historial — navega ella sola una
+      // vez por día calendario para no perder operaciones si el día se pasó
+      // entero en Negociar/Posiciones sin abrir Historial ni tocar "Sincronizar
+      // Día" a mano.
+      setInterval(runDailyFullHistorySync, 10 * 60 * 1000);
+      runDailyFullHistorySync();
+    }
   }
 
   async function ensureHistoryView() {
@@ -1962,13 +1993,27 @@
     // dejar el panel pegado en $0 el resto del día — recalcular igual aunque
     // la fecha coincida, para autocorregirse.
     if (savedDate === today && savedTotal > 0) return;
+    const isNewCalendarDay = savedDate !== today;
     const balance = extractAccountBalance();
     const pct = getDailyBucketPct();
     const total = balance !== null ? balance * (pct / 100) : 0;
     localStorage.setItem('ucharts_daily_bucket_date', today);
     localStorage.setItem('ucharts_daily_bucket_total', String(total));
-    banderinTrackedPositions.clear();
-    cardonaTrackedPositions.clear();
+    // Fix (08/09): esto se llama en CADA ciclo de banderinTick (cada 2.5s)
+    // mientras el bucket de hoy siga en $0 (por ejemplo, si todavía no se
+    // detectó el capital de la cuenta) — antes vaciaba estos dos Map en
+    // CADA reintento, no sólo cuando de verdad arrancaba un día nuevo. Eso
+    // ya rompía la contabilidad del cupo comprometido, y ahora además hace
+    // que isPositionTrackedByBot() deje de "reconocer" una posición que la
+    // Bandera acaba de comprar segundos antes — quedaría sin protección de
+    // Stop Loss por este mismo bug. Sólo tiene sentido vaciarlos cuando
+    // arranca un día calendario nuevo de verdad (las posiciones de ayer ya
+    // no cuentan contra el bucket de hoy); reintentar la detección del
+    // capital en el mismo día no debe tocarlos.
+    if (isNewCalendarDay) {
+      banderinTrackedPositions.clear();
+      cardonaTrackedPositions.clear();
+    }
   }
 
   function getDailyBucketTotal() {
@@ -2104,6 +2149,26 @@
     }
   }
 
+  // Fix crítico (08/09): monitorPositionsPnL evaluaba CUALQUIER tarjeta
+  // visible en Posiciones contra el TP/SL configurado, sin importar si el
+  // bot la había comprado él mismo. Eso incluía posiciones viejas, manuales
+  // o de pruebas de días anteriores que seguían abiertas en la cuenta —
+  // apenas se prendía Auto-Trader, todas las que ya estaban por debajo del
+  // Stop Loss se vendían solas en cascada a Mercado, una tras otra. Esta
+  // función dice si una tarjeta corresponde a una posición que el bot
+  // registró como propia (Cardona o Bandera) en esta misma carga de
+  // página — la única fuente de verdad que el bot tiene sobre "esto lo
+  // compré yo". Si no matchea ninguna, monitorPositionsPnL la deja
+  // tranquila: no la vende ni la evalúa.
+  function isPositionTrackedByBot(cardText) {
+    const allTracked = [...cardonaTrackedPositions.values(), ...banderinTrackedPositions.values()];
+    return allTracked.some(pos => {
+      const typeWord = pos.type === 'CALL' ? 'Call' : 'Put';
+      const strikeStr = Number(pos.strike).toFixed(2);
+      return cardText.includes(pos.ticker) && cardText.includes(typeWord) && (cardText.includes(strikeStr) || cardText.includes(String(pos.strike)));
+    });
+  }
+
   // Idempotencia del Auto-Trader de Cardona (sección 8): si la compra se
   // ejecutó con éxito pero el aviso posterior a /mark_executed falla (por
   // ejemplo, un corte de red), el setup_id seguía en la cola del servidor
@@ -2178,7 +2243,15 @@
     banderinSetStatus(`Bandera activa: lanzando sonda CALL+PUT de ${ticker}...`);
     console.log(`🚩 [Bandera] Lanzando nueva sonda 1 CALL + 1 PUT de ${ticker}...`);
 
-    const callResult = await executeOrder(ticker, 'CALL', 'corto', 1, null, { skipAutoTP: true, banderinBucketCheck: true });
+    // Fix (08/09, pedido explícito de Ismael): antes las dos patas de la
+    // sonda se compraban con skipAutoTP:true — a propósito, quedaban SIN
+    // take profit hasta que una le ganara 2% a la otra. Eso dejaba las
+    // posiciones expuestas sin protección mientras "sondeaban", y no
+    // coincide con cómo Ismael quiere que trabaje el bot: comprar y ponerle
+    // el take profit configurado una sola vez, siempre, sin excepción. Ahora
+    // cada pata de la sonda recibe su take profit apenas se compra, igual
+    // que cualquier otra compra del panel.
+    const callResult = await executeOrder(ticker, 'CALL', 'corto', 1, null, { banderinBucketCheck: true });
     if (!callResult) {
       banderinLogSignal(ticker, null, 'BLOCKED_PROBE_CALL_FAILED', lastTraderError || 'Fallo al comprar la pata CALL de la sonda.');
       console.warn(`[Bandera] Falló la pata CALL de la sonda de ${ticker}:`, lastTraderError);
@@ -2189,7 +2262,7 @@
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const putResult = await executeOrder(ticker, 'PUT', 'corto', 1, callResult.expiryKey, { skipAutoTP: true, banderinBucketCheck: true });
+    const putResult = await executeOrder(ticker, 'PUT', 'corto', 1, callResult.expiryKey, { banderinBucketCheck: true });
     if (!putResult) {
       banderinLogSignal(ticker, null, 'BLOCKED_PROBE_PUT_FAILED', lastTraderError || 'Fallo al comprar la pata PUT de la sonda.');
       console.warn(`[Bandera] Falló la pata PUT de la sonda de ${ticker}:`, lastTraderError);
@@ -2247,15 +2320,14 @@
     console.log(`🚩 [Bandera] ${ticker}: tendencia dominante ${winnerType} (CALL ${callPct.toFixed(2)}% vs PUT ${putPct.toFixed(2)}%). Se invierte en la ganadora y la perdedora queda abierta sin tocar.`);
     banderinSetStatus(`Bandera activa: ${ticker} tendencia ${winnerType} detectada, invirtiendo...`);
 
-    // 1) Colocar el Take Profit normal sobre la pata ganadora de la sonda,
-    // igual que a cualquier otra compra del panel.
-    try {
-      await colocarOrdenLimiteVentaTakeProfit(ticker);
-    } catch (err) {
-      console.warn(`[Bandera] No se pudo colocar el Take Profit de la pata ganadora de ${ticker}:`, err);
-    }
+    // Fix (08/09): antes acá se llamaba a colocarOrdenLimiteVentaTakeProfit
+    // de nuevo sobre la pata ganadora — pero ahora banderinStartProbe ya le
+    // puso su take profit apenas se compró (ver fix ahí). Volver a llamarlo
+    // acá era un segundo intento de "Vender" sobre una posición que ya
+    // podía tener una orden límite pendiente puesta — exactamente lo que
+    // Ismael pidió evitar (el take profit se pone UNA sola vez por compra).
 
-    // 2) Comprar la cantidad configurada en "Contratos" en la dirección ganadora
+    // Comprar la cantidad configurada en "Contratos" en la dirección ganadora
     const cycle = banderinCycles.get(ticker);
     const qtyInput = document.getElementById('trader-qty');
     const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
@@ -2649,6 +2721,11 @@
       // pusimos una venta límite pendiente, no volver a intentarlo.
       const positionKey = descEl.textContent.trim().replace(/\s+/g, ' ');
       if (positionsWithPendingClose.has(positionKey)) continue;
+
+      // No es una posición que el bot haya comprado él mismo en esta
+      // sesión (Cardona o Bandera) — se la deja tranquila. Ver el
+      // comentario de isPositionTrackedByBot más arriba.
+      if (!isPositionTrackedByBot(cardText)) continue;
 
       const matchPct = cardText.match(/([+-])\s*([\d.]+)\s*%/);
       const matchUsd = cardText.match(/([+-])\s*\$\s*([\d,.]+)/);

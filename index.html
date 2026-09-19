@@ -7421,25 +7421,60 @@ if __name__ == "__main__":
     // ==========================================
     const strategiesData = [
       {
-        id: "gap-normal-alza",
-        name: "Gap Normal al Alza",
+        id: "ruptura-techo",
+        name: "Ruptura del Techo (RT)",
         type: "CALL",
-        prob: "51.02%",
-        description: "Señal alcista clásica de alta rentabilidad. Ocurre cuando el precio abre con un salto (gap) positivo respecto al cierre anterior y cotiza en tendencia alcista (o rompe el techo de un canal bajista). Exige que las dos primeras velas horarias del día sean VERDES y sólidas. La compra se ejecuta al finalizar la segunda vela, confirmando la fuerza.",
+        prob: "N/D",
+        description: "Estrategia CALL base (Método Cardona) evaluada en HORA. Se debe venir de una CAÍDA; dos o más velas rojas tocan y/o rompen las líneas PM20 y PM40. Se crea una línea de techo uniendo los puntos de las principales subidas previas (por encima del PM40, tendencia al alza). Si entre las 11am y 3:59pm aparece un martillo verde seguido de una vela verde final de volumen alcista (más de 20M) que rompe esa línea de techo, es la oportunidad ideal para comprar CALL. Nota: en canal alcista, el PM40 también se convierte en piso fuerte tras la ruptura.",
         rules: [
-          "Tendencia diaria alcista (Cierre > SMA 100) O ruptura del techo de un canal bajista (cruce por encima de la PM 40 en 1H).",
-          "Apertura con Salto (Gap al alza) mayor a 0.1% respecto al cierre del día anterior.",
-          "Primera vela horaria (9:30 - 10:00 AM EST) tiene que ser verde sólida.",
-          "Segunda vela horaria (10:00 - 11:00 AM EST) tiene que ser verde sólida (¡evitar martillos desvalorizados o velas rojas!).",
-          "Nota de Oro: Esperar obligatoriamente a las 11:00 AM EST (12:00 Argentina) para confirmar ambas velas verdes antes de comprar CALL.",
-          "Filtro Premium: Si el gap y las velas ocurren cerca del promedio móvil de 40 (PM 40), la señal es mucho más fuerte y confiable."
+          "Se evalúa en la línea de tiempo HORA, trazando una línea de TECHO que une los puntos de las principales subidas de la acción.",
+          "Debe venir de una CAÍDA previa, con 2 o más velas rojas que tocan o rompen las líneas PM20 y PM40.",
+          "Entre las 11:00 am y 3:59 pm debe aparecer un martillo verde seguido de una vela verde final de alto volumen (más de 20M) que rompe la línea de techo.",
+          "Nota: en Canal Alcista, el PM40 también se convierte en piso fuerte tras la ruptura."
         ],
         steps: [
-          "Paso 1: Confirmar estructura alcista diaria o que el gap al alza está rompiendo el techo de un canal bajista anterior.",
-          "Paso 2: A las 9:30 AM EST, verificar la apertura con gap positivo (> 0.1%).",
-          "Paso 3: A las 10:00 AM EST, confirmar que la primera vela horaria cerró verde.",
-          "Paso 4: A las 11:00 AM EST, confirmar que la segunda vela horaria cerró verde (Caso 1). Si alguna fue roja o martillo débil, descartar (Falso Gap).",
-          "Paso 5: Comprar opción CALL. Si el precio consolida el primer día pero el mercado está fuerte, sostener ya que suele abrir al alza el día siguiente (Caso 2)."
+          "Paso 1: Confirmar que la acción viene de una caída y trazar la línea de techo uniendo las subidas previas en HORA.",
+          "Paso 2: Vigilar que 2 o más velas rojas rompan PM20/PM40.",
+          "Paso 3: Entre las 11am y 3:59pm, esperar el martillo verde seguido de la vela verde final de volumen que rompe el techo.",
+          "Paso 4: Comprar CALL en el cierre de esa vela de ruptura."
+        ],
+        chart: {
+          candles: [
+            { x: 80, o: 175, h: 165, l: 180, c: 170, isGreen: false, label: "" },
+            { x: 140, o: 170, h: 165, l: 178, c: 172, isGreen: false, label: "" },
+            { x: 200, o: 172, h: 168, l: 180, c: 176, isGreen: false, label: "" },
+            { x: 260, o: 176, h: 140, l: 178, c: 148, isGreen: true, label: "Ruptura" }
+          ],
+          trendlines: [
+            { x1: 60, y1: 168, x2: 230, y2: 178, text: "Techo" }
+          ],
+          lines: [
+            { name: "PM 40", color: "#ef4444", points: [{ x: 50, y: 185 }, { x: 260, y: 182 }] }
+          ],
+          arrow: { x: 260, y: 140, dir: "up", text: "COMPRA CALL" }
+        }
+      },
+      {
+        id: "gap-normal-alza",
+        name: "Gap Normal al Alza (GAP-NA)",
+        type: "CALL",
+        prob: "51.02%",
+        description: "Señal BIEN ALCISTA (Método Cardona). Se evalúa y decide en la línea de tiempo HORA, por lo general en tendencia al alza (en DIARIO, PM100 y PM200 paralelos). La bolsa cierra a las 4pm con velas verdes y/o rojas de tendencia alcista y al día siguiente el mercado abre al ALZA con un salto de la 1ra vela verde final de las 9:30am, seguida sí o sí de una 2da vela verde final sólida de las 10am (o un martillo verde). La 3ra vela final de las 11:00am puede ser verde y/o roja de alto volumen con tendencia alcista. Se compra CALL entre las 11am y 12pm.",
+        rules: [
+          "Se evalúa y se decide en la línea de tiempo HORA; por lo general en tendencia al alza (PM100/PM200 diarios paralelos).",
+          "El día anterior cierra a las 4pm con velas verdes y/o rojas de tendencia alcista.",
+          "Al día siguiente el mercado abre al ALZA con un SALTO de la 1ra vela verde final de las 9:30am.",
+          "La 2da vela final de las 10am tiene que ser SÍ o SÍ verde sólida (o un martillo verde).",
+          "La 3ra vela final de las 11:00am puede ser verde y/o roja de alto volumen, siempre con tendencia alcista.",
+          "También se puede implementar en canal bajista hasta que aparezca la ruptura de la línea de techo del canal por una vela verde final.",
+          "Nota: los GAP-NA en canales bajistas son inestables; el GAP-NA se da por fuertes órdenes de compra en el premarket, por cierre-apertura, o terminándose de formar a las 11am."
+        ],
+        steps: [
+          "Paso 1: Confirmar tendencia alcista diaria (PM100/PM200 paralelos) o que el gap está rompiendo el techo de un canal bajista.",
+          "Paso 2: A las 9:30 AM, verificar la apertura con salto (GAP) al alza y que la 1ra vela final sea verde.",
+          "Paso 3: A las 10:00 AM, confirmar que la 2da vela final cerró verde sólida (o martillo verde).",
+          "Paso 4: A las 11:00 AM, verificar la 3ra vela final (verde o roja de alto volumen, tendencia alcista).",
+          "Paso 5: Comprar CALL entre las 11:00 am y 12:00 pm (Regla de Oro)."
         ],
         chart: {
           candles: [
@@ -7456,22 +7491,25 @@ if __name__ == "__main__":
       },
       {
         id: "gap-bajista-alza",
-        name: "Gap Bajista al Alza",
+        name: "Gap Bajista al Alza (GAP-BA)",
         type: "CALL",
         prob: "41.45%",
-        description: "Patrón alcista de gran potencia que marca el final de un canal bajista y el inicio de un cambio de tendencia. Ocurre cuando el precio abre abajo con un gap negativo respecto al cierre anterior (ej: abre en 95 tras cerrar en 100), pero reacciona al alza cerrando dos velas horarias verdes consecutivas. Se compra al finalizar la segunda vela.",
+        description: "Señal ALCISTA (Método Cardona) evaluada en la línea de tiempo HORA, que por lo general se presenta en un canal bajista. La bolsa cierra al ALZA con una vela verde de tendencia bajista (contra-tendencia). Al día siguiente el mercado abre ABAJO, pero la 1ra vela final del día es VERDE con tendencia alcista, y la 2da vela final de las 10am debe ser SÍ o SÍ verde alcista, seguida de una 3ra vela verde y/o roja final de las 11am de alto volumen con tendencia alcista. Indica que la ruptura del techo está por llegar; el efecto puede durar de 3 a 4 días seguidos en canal bajista.",
         rules: [
-          "Apertura con Salto negativo (Gap a la baja) del subyacente < -0.1% respecto al cierre anterior.",
-          "Primera vela horaria (9:30 - 10:00 AM EST) tiene que ser verde y sólida.",
-          "Segunda vela horaria (10:00 - 11:00 AM EST) tiene que ser verde y sólida.",
-          "Nota de Oro: Esperar obligatoriamente a las 11:00 AM EST para confirmar ambas velas verdes sólidas antes de entrar.",
-          "¡Mucho Cuidado con Gaps Imperfectos!: Si las velas tienen mechas superiores/inferiores gigantescas, o cuerpos diminutos que demuestren alta volatilidad e indecisión, la señal se cancela inmediatamente."
+          "Es una señal ALCISTA que se evalúa en la línea de tiempo HORA; por lo general se presenta en un canal BAJISTA.",
+          "La bolsa de valores cierra al ALZA (o arriba) con una VELA VERDE de tendencia bajista.",
+          "Al día siguiente el mercado abre ABAJO, pero la 1ra vela final del día es VERDE con tendencia alcista.",
+          "La 2da vela final de las 10am debe ser SÍ o SÍ verde alcista.",
+          "La 3ra vela verde y/o roja final de las 11:00am debe ser de ALTO volumen con tendencia alcista.",
+          "En tendencia/canal bajista este efecto puede durar 3 a 4 días seguidos; en el techo de un canal alcista puede ser inestable y durar solo 1-2 días.",
+          "El GAP-BA es una señal muy alcista: indica que la ruptura del techo está por llegar. Se recomienda vender las opciones de manera escalonada."
         ],
         steps: [
-          "Paso 1: Detectar una apertura con gap a la baja (< -0.1%), frecuentemente al final de una caída prolongada o testeando el soporte de un canal bajista.",
-          "Paso 2: A las 10:00 AM EST, verificar que la primera vela horaria cerró verde y sólida.",
-          "Paso 3: A las 11:00 AM EST, verificar que la segunda vela horaria cerró verde y sólida (Caso Perfecto). Si hay indecisión, dojis o mechas excesivas, descartar (Caso Imperfecto).",
-          "Paso 4: Si se cumplen las condiciones, comprar CALL a las 11:00 AM EST esperando la continuidad del cambio de tendencia."
+          "Paso 1: Detectar, en canal bajista, un cierre al ALZA con vela verde (contra la tendencia bajista de fondo).",
+          "Paso 2: Al día siguiente, confirmar apertura ABAJO con la 1ra vela final del día VERDE.",
+          "Paso 3: A las 10:00 AM, confirmar que la 2da vela final cerró verde alcista.",
+          "Paso 4: A las 11:00 AM, verificar la 3ra vela final (verde o roja) con ALTO volumen y tendencia alcista.",
+          "Paso 5: Comprar CALL entre las 11:00 am y 3:59 pm (Regla de Oro), vendiendo de forma escalonada."
         ],
         chart: {
           candles: [
@@ -7489,24 +7527,25 @@ if __name__ == "__main__":
       },
       {
         id: "piso-fuerte",
-        name: "Piso Fuerte (Diario/Hora)",
+        name: "Piso Fuerte (PF)",
         type: "CALL",
         prob: "28.00%",
-        description: "Estrategia de doble marco temporal de altísima precisión. Ocurre cuando un activo en gráfico diario está en tendencia alcista estructurada (SMA 100 > SMA 200), sufre una caída hasta tocar la SMA 100 o SMA 200 diaria, y en gráfico de 1 hora rompe al alza un canal descendente local. La confirmación final en diario da inicio a un movimiento que suele durar de 2 a 4 días alcistas consecutivos.",
+        description: "Estrategia de doble marco temporal (Método Cardona), evaluada en DIARIO y HORA, donde los PM100 y PM200 son reconocidos como PISO FUERTE. Se presenta DURANTE una caída: en DIARIO las velas rojas finales tocan y/o rompen el PM100/PM200 (si rompen el PM200 puede venir una caída larga de 2-4 meses), y aparece un martillo o velas verdes finales alcistas que rompen la línea de techo del canal bajista. En HORA se busca la misma ruptura, confirmando en DIARIO con una vela cerca del PM40. Ocurre cada 3-4 meses y la subida puede durar de 3 a 5 días seguidos.",
         rules: [
-          "Marco Diario: La media móvil SMA 100 diaria debe estar por encima de la SMA 200 diaria (tendencia alcista estructurada).",
-          "Marco Diario: El precio debe sufrir una caída diaria y testear/tocar la SMA 100 o SMA 200 diaria (piso fuerte).",
-          "Marco Horario: El precio en 1H debe consolidar en un canal descendente local (se traza la directriz bajista).",
-          "Ruptura en 1H: El momento exacto de compra es cuando una vela horaria rompe al alza la directriz bajista (máximo de 10 velas) con cuerpo verde sólido.",
-          "Marco Diario Post-Ruptura: Se confirma visualmente en diario con una vela verde de rebote.",
-          "Nota Académica: Este patrón es de baja frecuencia (ocurre cada 2 a 3 meses), pero al activarse es ideal para swing prolongado de 2 a 4 días."
+          "Se evalúa en DIARIO y HORA. Las líneas PM100 y PM200 son reconocidas como PISO FUERTE.",
+          "Se presenta DURANTE una caída.",
+          "En DIARIO, las velas rojas finales tocan y/o rompen el PM100 y/o PM200, con posterior martillo o velas verdes finales alcistas que rompen la línea de techo del canal bajista.",
+          "Ojo: si las velas rojas rompen el PM200, puede venir una caída LARGA de 2 a 4 meses.",
+          "En HORA, si las velas rojas rompen PM20/PM40 y siguen cayendo hasta tocar/romper PM100/PM200, la aparición de un martillo o velas verdes finales que rompen el techo del canal confirma la señal (revisar en DIARIO que las velas estén cerca del PM40).",
+          "En canales alcistas, en HORA, el PM40 también se convierte en un piso fuerte.",
+          "Esta oportunidad se presenta cada 3-4 meses; la subida puede durar de 3 a 5 días seguidos."
         ],
         steps: [
-          "Paso 1: Identificar activos en gráfico diario donde la SMA 100 esté sobre la SMA 200 y que estén cayendo hacia estas medias.",
-          "Paso 2: En cuanto el precio toque o esté muy cerca de la SMA 100 o 200 diaria, pasar al gráfico de 1 hora.",
-          "Paso 3: En el gráfico de 1H, identificar el canal descendente local y trazar su línea de tendencia de resistencia.",
-          "Paso 4: Comprar CALL de inmediato cuando una vela horaria verde sólida rompa al alza el canal (superando el máximo de las últimas 10 velas).",
-          "Paso 5: Mantener la operación en modalidad swing por 2, 3 o hasta 4 días mientras continúe el impulso alcista diario."
+          "Paso 1: En DIARIO, identificar activos con PM100/PM200 paralelos que estén cayendo hacia estas medias (piso fuerte).",
+          "Paso 2: Confirmar que las velas rojas finales tocan o rompen el PM100 y/o PM200.",
+          "Paso 3: Esperar el martillo o vela verde final alcista que rompe la línea de techo del canal bajista.",
+          "Paso 4: Pasar a HORA para confirmar la misma ruptura y verificar cercanía al PM40 en DIARIO.",
+          "Paso 5: Comprar CALL al confirmarse la ruptura; mantener en modalidad swing de 3 a 5 días."
         ],
         chart: {
           candles: [
@@ -7524,50 +7563,59 @@ if __name__ == "__main__":
       },
       {
         id: "techo-fuerte",
-        name: "Techo Fuerte",
-        type: "PUT",
+        name: "Techo Fuerte (TF)",
+        type: "CALL",
         prob: "40.15%",
-        description: "Ocurre cuando el precio está cerca de un nivel de resistencia mayor en diario (como la SMA 100 o 200 diaria), y tras la apertura muestra rechazo. La segunda vela horaria es una vela roja sólida que confirma la debilidad del mercado.",
+        description: "Estrategia CALL (Método Cardona) evaluada en TRES líneas de tiempo: SEMANA, DIARIO y HORA. Se presenta principalmente en una subida o tendencia alcista: en SEMANA y/o DIARIO se traza una línea de TECHO FUERTE uniendo las subidas más altas de la acción, con los PM100/PM200 cruzados o invertidos (PM200 sobre PM100), lo que indica resistencia. Cuando el precio está cerca de esa línea se cambia a HORA y se espera la ruptura de esa resistencia con una vela verde final para confirmar la compra de CALL, buscando una subida de 3 a 5 días seguidos.",
         rules: [
-          "Precio diario cerca de SMA 100 o SMA 200 (resistencia).",
-          "La primera vela horaria fue bajista o débil.",
-          "La segunda vela horaria es sólida roja (confirmación de caída)."
+          "Se evalúa en tres líneas de tiempo: SEMANA, DIARIO y HORA.",
+          "Se presenta principalmente en una SUBIDA o tendencia alcista.",
+          "En SEMANA y/o DIARIO se traza la línea de TECHO FUERTE uniendo las subidas más altas de la acción.",
+          "En DIARIO, los PM100 y PM200 deben estar cruzados o invertidos (PM200 por encima de PM100), señal de resistencia (techo fuerte).",
+          "Cuando el precio se acerca al PM100/PM200 en DIARIO, se pasa a HORA y se vigilan dos velas rojas finales que NO rompen la línea de techo fuerte.",
+          "La señal de compra CALL es la ruptura definitiva de la línea de TECHO FUERTE por una vela verde final que la rompe con el cuerpo, con Pb de subida de 3 a 5 días continuos.",
+          "Esta oportunidad se presenta cada 3-4 meses; se recomienda vender las opciones de manera escalonada."
         ],
         steps: [
-          "Paso 1: Monitorear activos en resistencia diaria clave (SMA 100/200).",
-          "Paso 2: A las 10:30 AM EST, verificar que el precio no pudo superar la resistencia.",
-          "Paso 3: A las 11:30 AM EST, si la segunda vela cierra roja sólida, comprar un contrato PUT."
+          "Paso 1: En SEMANA y/o DIARIO, trazar la línea de TECHO FUERTE uniendo las subidas más altas de la acción.",
+          "Paso 2: Confirmar que los PM100 y PM200 diarios están cruzados/invertidos (PM200 sobre PM100).",
+          "Paso 3: Cuando el precio esté cerca de esa zona, pasar a HORA y monitorear velas rojas que NO rompen el techo fuerte.",
+          "Paso 4: Comprar CALL en cuanto una vela verde final rompa con el cuerpo la línea de TECHO FUERTE.",
+          "Paso 5: Mantener la posición 3 a 5 días, vendiendo de forma escalonada."
         ],
         chart: {
           candles: [
-            { x: 80, o: 140, h: 120, l: 145, c: 125, isGreen: true, label: "" },
-            { x: 140, o: 120, h: 118, l: 130, c: 125, isGreen: false, label: "" },
-            { x: 200, o: 125, h: 125, l: 150, c: 145, isGreen: false, label: "Vela 2" }
+            { x: 80, o: 150, h: 145, l: 158, c: 152, isGreen: false, label: "" },
+            { x: 140, o: 152, h: 148, l: 160, c: 155, isGreen: false, label: "" },
+            { x: 200, o: 155, h: 120, l: 158, c: 128, isGreen: true, label: "Ruptura" }
           ],
           lines: [
-            { name: "PM 200", color: "#a78bfa", points: [{ x: 40, y: 115 }, { x: 300, y: 115 }] }
+            { name: "Techo Fuerte (PM100/PM200)", color: "#a78bfa", points: [{ x: 40, y: 145 }, { x: 300, y: 140 }] }
           ],
-          arrow: { x: 200, y: 150, dir: "down", text: "COMPRA PUT" }
+          arrow: { x: 200, y: 118, dir: "up", text: "COMPRA CALL" }
         }
       },
       {
         id: "primer-gap-alza",
-        name: "Primer Gap al Alza",
+        name: "1er Gap al Alza (1GAP-A)",
         type: "CALL",
         prob: "37.50%",
-        description: "Estrategia para swing trading de alta precisión. Ocurre cuando el precio viene de una caída previa, alcanza una zona de piso fuerte diario (SMA 100, SMA 200, TLP semanal o soporte horizontal PISO+ABAJO), abre con un gap positivo, y la primera vela horaria cierra verde. La compra se ejecuta al final del día si el piso de esa primera vela se mantuvo respetado.",
+        description: "Estrategia (Método Cardona) evaluada en DIARIO y HORA (la decisión final se toma en HORA). El activo debe venir de una CAÍDA; el día anterior puede terminar en vela roja o verde. Al día siguiente, en la apertura, se presenta un SALTO y la vela de la primera hora tiene que ser VERDE, con las siguientes velas del día respetando SÍ o SÍ la línea de piso del GAP de esa primera vela (vela con volumen, llena y sólida). Solo ocurre en zona de piso fuerte (PM100/PM200 en diario). Se compra CALL 2 minutos antes del cierre (3:58 pm), incluso si la última vela es roja, siempre que el piso del gap no se haya roto.",
         rules: [
-          "El activo debe venir de una caída previa (precio diario bajando o por debajo de la SMA 20 / SMA 50).",
-          "Estar en zona de piso fuerte diario: SMA 100, SMA 200, Tendencia de Largo Plazo (TLP semanal), o soporte horizontal respetado 3 veces en los últimos 3-6 meses (PISO+ABAJO).",
-          "Temporalidad Hora (1H): La primera vela del día (9:30 - 10:30 AM EST) tiene que ser VERDE.",
-          "El mínimo de la primera vela marca el piso del GAP. Este nivel NUNCA debe romperse durante toda la sesión (floor respected).",
-          "Se compra al final de la jornada (3:00 PM EST / 4:00 PM Argentina) en modalidad swing para mantener la posición para el día siguiente."
+          "Se evalúa en DIARIO y HORA; la decisión final se toma en HORA.",
+          "El activo debe venir de una CAÍDA. El día anterior puede terminar con vela roja o verde.",
+          "Al día siguiente, en la apertura (HORA), se presenta un SALTO y la vela de la primera hora tiene que ser VERDE con volumen (llena y sólida).",
+          "Las siguientes velas del día (rojas y/o verdes) deben SÍ o SÍ respetar la línea de piso del GAP de la primera vela.",
+          "Puede ocurrir después de la estrategia de piso fuerte o el mismo día; en DIARIO se debe estar cerca o tocar las zonas de piso de PM100 y PM200.",
+          "Esta estrategia solo ocurre en zona de piso fuerte; su aparición refleja un cambio de tendencia con alta Pb de alza.",
+          "Señal de salida: la vela ROJA que rompe el piso del GAP."
         ],
         steps: [
-          "Paso 1: Confirmar el contexto de caída previa (precio en diario por debajo de la SMA 20 o canal bajista).",
-          "Paso 2: Confirmar que el precio ha tocado una zona de soporte mayor (SMA 100/200, TLP semanal o el mínimo horizontal de 60-120 días).",
-          "Paso 3: A las 10:30 AM EST, verificar que el mercado abrió con GAP y que la primera vela horaria cerró VERDE.",
-          "Paso 4: A las 3:00 PM EST, verificar que el precio nunca perforó el mínimo de la primera vela. Si es así, comprar un contrato CALL para mantenerlo al día siguiente (swing)."
+          "Paso 1: Confirmar el contexto de caída previa en DIARIO, cerca de zonas de piso fuerte (PM100/PM200).",
+          "Paso 2: En la apertura (HORA), verificar el salto (GAP) y que la primera vela sea VERDE con volumen.",
+          "Paso 3: Durante el día, vigilar que las velas siguientes respeten la línea de piso del GAP de la primera vela.",
+          "Paso 4: Comprar CALL 2 minutos antes del cierre (3:58 pm), aun si la última vela es roja, mientras el piso del gap no se rompa.",
+          "Paso 5: Salir de la posición en cuanto una vela roja rompa el piso del GAP."
         ],
         chart: {
           candles: [
@@ -7584,24 +7632,22 @@ if __name__ == "__main__":
       },
       {
         id: "primera-vela-roja",
-        name: "Primera Vela Roja de Apertura (PUT)",
+        name: "1ra Vela Roja de las 10am (1V-R)",
         type: "PUT",
         prob: "50.00%",
-        description: "Única estrategia horaria que se ejecuta al instante a las 10:00 AM EST. Ocurre cuando un activo abre con gap positivo (al alza) cerca de una resistencia clave (como el techo de un canal bajista o la PM 40/PM 200), pero la primera vela de 30 minutos (9:30 - 10:00 AM EST) se desploma con volumen alto, cerrando como vela roja sólida. Es una operación intradía sumamente rápida y explosiva.",
+        description: "Única estrategia que se compra exactamente a las 10am (Método Cardona). Tiene alto poder de decisión en tendencia y canal bajista; se evalúa en HORA. El mercado abre con una vela roja que está por debajo del PM40 o cerca de él (techo/zona cara), preferiblemente de tendencia bajista y/o hanger de alto volumen: alta Pb de señal de caída. En tendencia alcista, si la última vela del día anterior es roja y la de apertura también es roja por encima del PM40 (distancia spot-strike ≥ 7.5 dólares), hay que esperar la vela roja final de las 11am que rompa con el cuerpo la línea de piso del GAP.",
         rules: [
-          "Filtro Horario Único: Es la única señal que se compra exactamente a las 10:00 AM EST (máximo a las 10:05 AM EST, al cierre de la primera vela).",
-          "Vela de Apertura (9:30 - 10:00 AM EST): Debe cerrar como una vela roja sólida (is_solid_red).",
-          "Volumen Institucional: La primera vela del día debe registrar un volumen alto (superior a la media móvil de volumen de las últimas 20 barras).",
-          "Apertura con Gap: El activo debe abrir con un gap alcista y chocar o aproximarse mucho a una resistencia (techo de canal bajista, PM 40 o PM 200).",
-          "Filtro de Prima: Se busca comprar un contrato PUT con un costo de prima de entre $1.50 y $2.50 dólares.",
-          "Gestión de Salida: Trade muy rápido debido a la volatilidad. Se sale de la posición apenas se doble la prima (100% de ganancia). Si es viernes, se opera estrictamente intradía (comprar para el mismo día)."
+          "Única estrategia que se compra a las 10am; se evalúa en la línea de tiempo HORA.",
+          "Debe estar en una tendencia y CANAL BAJISTA.",
+          "El mercado abre con una vela roja por debajo del PM40 o cerca de él (techo/zona cara), preferiblemente de tendencia bajista y/o hanger de alto volumen.",
+          "En tendencias y canales ALCISTAS: si la última vela de cierre del día anterior es roja y la de apertura también es roja de tendencia bajista por ENCIMA del PM40 (distancia spot-strike ≥ 7.5 dólares), esperar la vela roja final de las 11am que rompa con el cuerpo la línea de piso del GAP.",
+          "Se observa mayormente en acciones de volatilidad como NETFLIX, META, etc."
         ],
         steps: [
-          "Paso 1: Identificar activos en canales bajistas o testeando resistencias de mediano plazo antes de la apertura.",
-          "Paso 2: A las 9:30 AM EST, verificar que la acción abra con un gap alcista.",
-          "Paso 3: A las 10:00 AM EST, verificar que la primera vela del día cerró roja sólida, con alto volumen y chocando contra la resistencia.",
-          "Paso 4: Comprar la opción PUT de inmediato entre las 10:00 AM y 10:05 AM EST (costo de prima entre $1.50 y $2.50).",
-          "Paso 5: Colocar orden de venta límite para doblar la prima (100% profit lock) y salir rápidamente ante la volatilidad."
+          "Paso 1: Confirmar tendencia y canal bajista antes de la apertura.",
+          "Paso 2: A las 9:30 AM, verificar que el mercado abre con vela roja por debajo o cerca del PM40.",
+          "Paso 3: Si la vela de apertura está por encima del PM40 (tendencia alcista), esperar la vela roja final de las 11am que rompa el piso del GAP.",
+          "Paso 4: Comprar la opción PUT exactamente a las 10am (única estrategia con este horario de entrada)."
         ],
         chart: {
           candles: [
@@ -7616,23 +7662,22 @@ if __name__ == "__main__":
       },
       {
         id: "ruptura-piso-gap",
-        name: "Ruptura del Piso del Gap (PUT)",
+        name: "Ruptura del Piso del Gap (RP-GAP)",
         type: "PUT",
         prob: "37.78%",
-        description: "Estrategia bajista (PUT) de alta probabilidad al inicio de una reversión. Ocurre tras una apertura alcista (con gap) donde la primera vela horaria cierra verde estableciendo un soporte. Cuando el precio rompe a la baja ese soporte con una vela roja sólida a partir de las 11:00 AM, se inicia la compra de PUT, siempre que no vengamos de caídas previas prolongadas.",
+        description: "Estrategia PUT (Método Cardona) en dos contextos: (1) En canal ALCISTA, en zona cara/de techo, velas por ENCIMA del PM40 (distancia spot-strike ≥ 20 en DIARIO / ≥ 10 en HORA), la bolsa abre entre 9:30-10am con vela verde final de bajo volumen, seguida a las 11am de una vela roja final de alto volumen que rompe con el cuerpo la línea del piso del GAP; alta Pb de caída. (2) En canal BAJISTA, cerca/debajo del PM40, con la misma apertura verde de bajo volumen seguida a las 11am de la vela roja de ruptura. En ambos casos se recomienda vender las opciones de manera escalonada (límites 50%, 30%, 20%).",
         rules: [
-          "Primera vela horaria (9:30 - 10:00 AM EST) tiene que ser VERDE.",
-          "Piso del Gap: Se traza una línea horizontal en el precio mínimo de la primera vela verde.",
-          "Filtro Horario Estricto: La ruptura y entrada de compra de PUT solo se permite a partir de las 11:00 AM EST (no antes).",
-          "Vela de Ruptura: Debe ser una vela roja sólida que cierre claramente por debajo del piso del gap.",
-          "Contexto Óptimo: Mayor éxito cuando el precio está LEJOS y por encima de los promedios móviles de 20 y 40 (en zona muy alta). Si está cerca de la PM 40, hay alto riesgo de rebote.",
-          "Advertencia de Agotamiento (OJO): Si el activo ya viene cayendo durante 3, 4 o 5 días seguidos en diario, el riesgo de fallo es extremo. Buscar activos en zonas de techo."
+          "Contexto 1 (Canal Alcista): zona cara/techo, velas por ENCIMA del PM40 con distancia spot-strike ≥ 20 en DIARIO (≥ 10 en HORA); apertura 9:30-10am con vela verde de bajo volumen.",
+          "Contexto 2 (Canal Bajista): zona cara/techo, velas cerca o por DEBAJO del PM20/PM40; misma apertura con vela verde de bajo volumen.",
+          "A las 11:00 AM debe aparecer una VELA ROJA final de ALTO volumen que rompe con el CUERPO la línea horizontal del piso del GAP (borde inferior del cuerpo de la vela anterior).",
+          "La Pb de caída es ALTA en ambos contextos.",
+          "Cerca de las líneas PM20/PM40 el riesgo de rebote (ALZA) aumenta: se recomienda vender las opciones de manera escalonada (50%, 30%, 20%)."
         ],
         steps: [
-          "Paso 1: Al abrir el mercado, confirmar una apertura con gap positivo donde la primera vela (9:30 - 10:00 AM EST) cierra verde.",
-          "Paso 2: Trazar una línea en el precio mínimo de esa primera vela (Piso del Gap).",
-          "Paso 3: A partir de las 11:00 AM EST, monitorear si el precio rompe el piso a la baja. Si una vela horaria cierra roja sólida por debajo, se confirma el setup.",
-          "Paso 4: Comprar opción PUT en el cierre de la vela de ruptura, asegurándose de que el activo no venga arrastrando 3 o más días consecutivos a la baja en diario."
+          "Paso 1: Confirmar el contexto (canal alcista en zona cara, o canal bajista cerca del PM40) y la distancia spot-strike adecuada.",
+          "Paso 2: Entre 9:30-10am, verificar la apertura con vela verde final de bajo volumen y trazar el piso del GAP en su mínimo.",
+          "Paso 3: A las 11:00 AM, confirmar que una vela roja final de alto volumen rompe con el cuerpo esa línea de piso.",
+          "Paso 4: Comprar PUT en el cierre de esa vela de ruptura, vendiendo de forma escalonada (50%, 30%, 20%)."
         ],
         chart: {
           candles: [
@@ -7649,21 +7694,23 @@ if __name__ == "__main__":
       },
       {
         id: "modelo-4-pasos",
-        name: "Modelo de los 4 Pasos (PUT)",
+        name: "Modelo de los 4 Pasos (M4P-CB)",
         type: "PUT",
         prob: "40.94%",
-        description: "Estrategia bajista (PUT) de continuación de tendencia. Ocurre cuando el precio está consolidado en un canal bajista (PM 20 < PM 40). Tras una subida temporal (rebote local), el precio choca contra el techo (PM 40 o resistencia) y se forma un patrón verde/rojo donde la vela roja borra el cuerpo anterior. La entrada se realiza al romperse el piso local de la subida.",
+        description: "Estrategia PUT de 4 pasos en canal bajista (Método Cardona), evaluada en HORA. Paso 1: estar dentro de un canal bajista (PM40 como referencia de zona cara). Paso 2: estar en zona de techo/zona cara y ver el efecto de 'trata de subir y cae' (vela verde borrada totalmente por una roja, un hanger, o varias velitas verdes/rojas). Paso 3: mientras sube se traza una línea de piso; cuando una vela roja rompe esa línea posterior al 'verde-rojo', se compra PUT (a partir de las 11am, o antes por la primera vela roja).",
         rules: [
-          "Paso 1 (Canal): El activo debe cotizar dentro de un canal bajista estructurado en gráfico horario (PM 20 < PM 40).",
-          "Paso 2 (Zona de Techo): El precio debe realizar un rebote de corto plazo y alcanzar la parte alta del canal (zona de resistencia).",
-          "Paso 3 (Borrado Verde/Rojo): El intento de subida debe ser completamente borrado por un patrón de vela verde seguida de vela roja sólida bajista (envolvente).",
-          "Paso 4 (Ruptura de Piso): Se traza una línea de tendencia alcista uniendo los mínimos de la subida local. La compra de PUT se ejecuta cuando la vela roja rompe a la baja ese piso local (mínimo de las últimas 3 velas)."
+          "Paso 1: Tenemos que estar dentro de un canal bajista (PM40 como referencia de zona cara).",
+          "Paso 2: Estar en zona de techo, en zona cara (acercarse al techo).",
+          "Paso 3: En zona cara debemos ver el efecto de que trata de subir y cae: una vela verde trata de tocar el techo y es borrada totalmente por una roja (verde-rojo); también puede ser un hanger, varias velitas verdes/rojas, o una vela verde donde la roja da un gap (como una vela roja invisible).",
+          "Paso 4: Mientras la subida se presenta, se traza una línea en la parte inferior (piso) siguiendo la subida; cuando una vela roja rompe esa línea posterior al verde-rojo (o negación de la subida), se indica la compra del PUT.",
+          "Se compra a partir de las 11:00 am (o un poco antes por la primera vela roja); por lo general el PM40 pasa a un segundo plano en esta estrategia."
         ],
         steps: [
-          "Paso 1: Confirmar canal bajista activo en el gráfico de 1 hora (PM 20 por debajo de la PM 40).",
-          "Paso 2: Identificar un rebote temporal hacia la línea de la PM 40 o el techo del canal.",
-          "Paso 3: Trazar una línea de tendencia alcista de corto plazo (Piso Local) uniendo los mínimos de ese rebote.",
-          "Paso 4: Esperar a que se forme una vela roja sólida que envuelva a la verde anterior y rompa a la baja la línea de Piso Local (cierre inferior al mínimo de 3 barras). Comprar PUT de inmediato."
+          "Paso 1: Confirmar canal bajista activo en HORA (PM40 como zona cara/techo).",
+          "Paso 2: Esperar a que el precio suba hacia la zona de techo (zona cara).",
+          "Paso 3: Identificar el patrón verde-rojo (vela verde borrada por una roja) o un hanger en esa zona.",
+          "Paso 4: Trazar la línea de piso de la subida y esperar la vela roja que la rompe posterior al verde-rojo.",
+          "Paso 5: Comprar PUT a partir de las 11:00 am (o antes, por la primera vela roja)."
         ],
         chart: {
           candles: [
@@ -7679,22 +7726,24 @@ if __name__ == "__main__":
       },
       {
         id: "hanger-diario",
-        name: "Hanger en Diario (PUT)",
+        name: "Hanger en Diario (HD)",
         type: "PUT",
         prob: "42.86%",
-        description: "Patrón de reversión bajista de alta precisión para swing trading. Ocurre al final del día. En gráfico diario se debe observar un Hanger (hombre colgado: cuerpo pequeño en la parte superior, sombra inferior muy larga y mecha superior muy corta), situándose en tendencia alcista estructurada (SMA 100 > SMA 200). La señal anticipa una caída para la jornada siguiente.",
+        description: "El Hanger es una señal muy bajista: el mercado trató de subir y no tuvo la fuerza suficiente. Se busca en el marco DIARIO (estrategia poco frecuente); hay que esperar a que termine de formarse, por eso se compra minutos antes de las 4:00 pm (3:58-3:59). El hanger puede ser verde o rojo, pero lo importante es que tenga cola larga (mayor al cuerpo de la vela) y que esté en zona cara/techo, lejos de pisos fuertes, para tener más espacio de caída. Contexto A: en marco 100/200 alcista, alejado de los promedios, un hanger indica intención de caída. Contexto B: en canal bajista y zona de techo, aplica también en diario y semanal.",
         rules: [
-          "Tendencia alcista estructurada en diario: La media móvil SMA 100 diaria debe estar por encima de la SMA 200 diaria (SMA 100 > SMA 200).",
-          "Precio diario sobre soporte: El precio de cierre diario debe cotizar por encima de la SMA 100 diaria.",
-          "Vela Hanger en Diario: Cuerpo muy pequeño en la parte alta (cuerpo <= 35% del rango de la vela), mecha inferior muy larga (sombra inferior >= 55% del rango) que demuestra rechazo, y mecha superior muy pequeña o inexistente (sombra superior <= 15% del rango).",
-          "Nota Horaria Definitiva: El Hanger debe monitorearse y confirmarse en la fase final de la sesión de mercado, entre las 3:55 PM y las 3:58 PM EST (no antes).",
-          "Operativa Swing: Se ingresa al final del día comprando PUT para mantener la posición al día siguiente."
+          "El HANGER es una señal muy bajista: el mercado trató de subir y no tuvo la fuerza suficiente.",
+          "Se busca en el marco de tiempo DIARIO; es una estrategia poco frecuente.",
+          "Hay que esperar a que se termine de formar el hanger, por eso se compra minutos antes de las 4:00 pm (3:58, 3:59).",
+          "Contexto A: en marco DIARIO 100/200 (tendencia al alza) y lejos de los promedios, un hanger es señal de que el mercado tiene intención de caer.",
+          "Contexto B: en canal bajista y zona de techo, un hanger en diario (aplica también semanal) es señal de que es muy probable que los precios caigan los próximos 2-3 días (o 2-3 semanas en semanal).",
+          "El hanger puede ser verde o rojo, pero lo importante es que tenga cola larga (mayor al cuerpo de la vela) y que esté en zona cara/techo, lejos de pisos fuertes.",
+          "El escenario perfecto tras comprar PUT es que la apertura del día siguiente sea vela roja para asegurar la continuidad de la caída."
         ],
         steps: [
-          "Paso 1: Monitorear activos en tendencia alcista diaria (SMA 100 > SMA 200) que estén cotizando sobre la SMA 100.",
-          "Paso 2: A las 3:55 PM EST (faltando 5 minutos para el cierre), abrir el gráfico diario y verificar si la vela diaria tiene la forma de un Hanger (cuerpo pequeño arriba y cola de piso larga abajo).",
-          "Paso 3: Validar que la mecha superior sea casi imperceptible (doji de rechazo).",
-          "Paso 4: Si se confirman todas las condiciones a las 3:57 PM EST, comprar la opción PUT y sostenerla (swing) para la caída del día siguiente."
+          "Paso 1: Monitorear activos en zona cara/techo en DIARIO (Contexto A: 100/200 alcista lejos de promedios; Contexto B: canal bajista en zona de techo).",
+          "Paso 2: Cerca de las 3:55 PM, verificar si la vela diaria está formando un Hanger (cola larga, mayor al cuerpo, cualquier color).",
+          "Paso 3: Confirmar que el hanger está lejos de pisos fuertes (más espacio para caer).",
+          "Paso 4: Comprar PUT minutos antes del cierre (3:58-3:59 pm), esperando que el día siguiente abra con vela roja."
         ],
         chart: {
           candles: [
@@ -7709,23 +7758,57 @@ if __name__ == "__main__":
         }
       },
       {
-        id: "pm40-bounce",
-        name: "Promedio Móvil de 40",
-        type: "CALL",
-        prob: "47.88%",
-        description: "Patrón de rebote dinámico de gran precisión en tendencia alcista horaria. Ocurre cuando la PM 20 está por encima de la PM 40 (tendencia al alza), el precio retrocede localmente hasta testear o tocar la línea de la PM 40, y rompe al alza la pendiente de la caída con una vela de fuerza alcista (sólida o martillo normal), descartando indecisiones.",
+        id: "vela-roja-envolvente",
+        name: "Vela Roja Final Envolvente del Día (VRFED)",
+        type: "PUT",
+        prob: "N/D",
+        description: "Estrategia PUT (Método Cardona) evaluada en HORA. Se observa una subida alterna de 3 a 4 horas consecutivas con velas verdes o rojas débiles/de tendencia bajista y, en las últimas horas o minutos antes del cierre, aparece una Vela Roja Final Envolvente de tendencia bajista y/o con cola hacia arriba (hanger), que borra o rompe con el cuerpo la línea de gap de la vela verde y/o roja anterior, presentando el doble del volumen de la vela anterior. Alta Pb de caída al día siguiente; se recomienda comprar PUT entre las 3:55 y 3:58 pm. Es más efectiva en tendencia alcista si está lejos del piso fuerte o del PM40 (zona cara).",
         rules: [
-          "Tendencia horaria alcista: El promedio móvil de 20 en 1H debe estar por encima del promedio móvil de 40 en 1H (PM 20 > PM 40).",
-          "Retroceso local: El precio debe sufrir una caída y testear, tocar o acercarse estrechamente al promedio móvil de 40 (PM 40).",
-          "Trazado de Directriz: Se traza una línea de tendencia bajista de corto plazo uniendo los máximos de la caída.",
-          "Vela de Ruptura: La vela de confirmación de compra (CALL) debe romper al alza la directriz y el máximo de las últimas 3 velas.",
-          "Filtro de Forma: La vela de ruptura debe ser verde sólida o un martillo normal (mecha inferior larga y cuerpo arriba). Se prohíben terminantemente los martillos invertidos (mechas superiores largas) y dojis de indecisión."
+          "Es una señal BAJISTA que se observa en la línea de tiempo HORA.",
+          "Se observa una subida alterna de 3 a 4 horas consecutivas con velas verdes o rojas débiles/de tendencia bajista.",
+          "En las últimas horas o minutos antes del cierre aparece una vela ROJA FINAL ENVOLVENTE de tendencia bajista y/o con cola hacia arriba (hanger), que borra/rompe con el cuerpo la línea de GAP de la vela anterior.",
+          "Esa vela debe presentar el DOBLE del volumen de transacciones que la vela anterior. Alta Pb de caída al día siguiente.",
+          "Puede presentarse tanto en tendencia alcista como bajista, pero es más efectiva en tendencia alcista si está lejos de las líneas de piso fuerte o PM40 (en tendencia bajista, es más efectiva cerca del techo y/o PM40, zona cara)."
         ],
         steps: [
-          "Paso 1: Confirmar estructura alcista horaria (PM 20 por encima de PM 40).",
-          "Paso 2: Esperar a que el precio sufra un retroceso y toque o esté a milésimas de tocar la línea de soporte de la PM 40.",
-          "Paso 3: Trazar la línea de tendencia bajista (directriz) de la caída.",
-          "Paso 4: Comprar CALL en cuanto una vela horaria cierre rompiendo al alza la línea, siempre que sea una vela verde sólida o un martillo alcista perfecto."
+          "Paso 1: Vigilar 3-4 horas consecutivas de velas verdes/rojas débiles o de tendencia bajista alterna.",
+          "Paso 2: Entre las 3:55 pm y 3:58 pm, verificar la formación de una vela roja final envolvente que rompe con el cuerpo la línea de GAP anterior.",
+          "Paso 3: Confirmar que el volumen de esa vela dobla al de la vela anterior.",
+          "Paso 4: Comprar PUT entre las 3:55 pm y 3:58 pm (Regla de Oro)."
+        ],
+        chart: {
+          candles: [
+            { x: 80, o: 150, h: 145, l: 155, c: 148, isGreen: true, label: "" },
+            { x: 140, o: 148, h: 143, l: 152, c: 146, isGreen: false, label: "" },
+            { x: 200, o: 146, h: 142, l: 150, c: 145, isGreen: true, label: "" },
+            { x: 260, o: 145, h: 115, l: 148, c: 120, isGreen: false, label: "Envolvente" }
+          ],
+          lines: [
+            { name: "PM 40", color: "#ef4444", points: [{ x: 50, y: 165 }, { x: 260, y: 160 }] }
+          ],
+          arrow: { x: 260, y: 115, dir: "down", text: "COMPRA PUT" }
+        }
+      },
+      {
+        id: "pm40-bounce",
+        name: "Promedio Móvil de 40 en Hora (PM-40H)",
+        type: "CALL",
+        prob: "47.88%",
+        description: "Estrategia CALL (Método Cardona) evaluada solo en HORA; las líneas PM20 y PM40 son reconocidas como piso. Tiene que estar 20/40 (tendencia al alza), sin comprar lejos del PM40: hay que esperar la caída. Cuando el precio se acerca o toca el PM40 y sube rompiendo con una vela alcista/martillo (nunca un hanger, nunca velas rojas), es momento de comprar CALL. Los promedios 20/40/100/200 deben verse paralelos como líneas de ferrocarril; el trazo de la línea abarca 1, 2 o 3 días.",
+        rules: [
+          "Se evalúa solo en HORA; tiene que estar 20/40 (PM20 sobre PM40), no solo en tendencia diaria sino en hora.",
+          "El PM40 sirve de referencia de piso, para identificar si estamos en zona barata o en zona cara (si estoy lejos del PM40).",
+          "No comprar lejos del PM40; esperar la caída.",
+          "Cuando el precio se acerca o toca el PM40 y sube, rompe con vela alcista/martillo (nunca con un hanger, no se puede comprar en velas rojas).",
+          "Si la vela que rompe la línea tiene mucha cola en la cabeza, se puede optar por esperar la siguiente (suele ser mejor).",
+          "Los precios deben estar 20/40/100/200 en hora, con los PM20 y PM40 viéndose paralelos como líneas de ferrocarril.",
+          "El trazo de la línea abarca 1, 2 o 3 días; se puede aspirar a 1 o 2 días de subida. La vela puede romper la línea cerca de las 4:00 pm, revisar el mercado a esa hora."
+        ],
+        steps: [
+          "Paso 1: Confirmar estructura 20/40 en HORA (PM20 por encima de PM40, en paralelo).",
+          "Paso 2: Esperar a que el precio se acerque o toque la línea del PM40 (no comprar lejos).",
+          "Paso 3: Verificar que la vela de ruptura sea alcista/martillo (no hanger, no vela roja).",
+          "Paso 4: Comprar CALL al romperse la línea del PM40/PM20; si la vela tiene cola grande, esperar la siguiente."
         ],
         chart: {
           candles: [
@@ -7741,61 +7824,30 @@ if __name__ == "__main__":
         }
       },
       {
-        id: "caida-normal",
-        name: "Caída Normal",
+        id: "caida-normal-fuerte",
+        name: "Caída Normal y Caída Fuerte (CN y CF)",
         type: "CALL",
         prob: "44.83%",
-        description: "Estrategia alcista de rebote rápido en tendencia alcista. Ocurre cuando el precio sufre un retroceso pequeño en el gráfico de 1 hora (menor al 1.5%, ej: de 3 a 5 dólares en SPY). El retroceso suele detenerse y rebotar cerca de la línea del promedio móvil de 40 (PM 40). La entrada se confirma si rompe al alza la pendiente de caída con una vela verde sólida.",
+        description: "Estrategia CALL (Método Cardona) evaluada en HORA. Caída Normal: 2-3 velas rojas finales rompen la línea PM20 sin llegar a romper el PM40 (aprox. $3-$5 en SPY, < 1.5%). Caída Fuerte: 2-3 velas rojas finales rompen PM20, PM40, PM100 y PM200 y siguen cayendo (SPY > $6, > 1.5%). En ambos casos, tras la caída aparece un martillo verde seguido de una vela verde final alcista que rompe la línea de techo del canal bajista: ahí se compra CALL, idealmente los días viernes.",
         rules: [
-          "Tendencia diaria alcista general (Cierre > SMA 100).",
-          "Retroceso (caída local) en 1H de pequeña escala: entre 0.5% y 1.5% desde el máximo reciente de 10 velas.",
-          "El precio suele encontrar soporte dinámico y rebotar antes o sobre la PM 40.",
-          "Se traza una línea de tendencia local sobre el techo de la caída.",
-          "La vela actual rompe al alza el máximo de las últimas 3 velas (cross_highest_3) con cuerpo verde sólido."
+          "Se evalúa solo en HORA. Las líneas PM20 y PM40 son reconocidas como piso; los promedios están en paralelo (PM20 sobre PM40, PM100 sobre PM200 - tendencia al alza).",
+          "CAÍDA NORMAL: 2-3 velas rojas finales rompen la línea PM20 sin llegar a romper el PM40 (aprox. $3-$5 dólares en SPY, menor al 1.5%; caídas pequeñas que no llegan al PM40).",
+          "CAÍDA FUERTE: velas rojas finales rompen PM20, PM40, PM100 y PM200 y siguen cayendo (SPY mayor a $6 dólares, mayor al 1.5%).",
+          "En ambos casos, la señal de compra es la aparición de un martillo verde seguido de una vela verde final alcista que rompe la línea de techo del canal bajista.",
+          "Si en el rango 11am-3:59pm una vela verde final rompe el PM100 y/o PM40, se confirma tendencia al alza: ideal para comprar CALL, principalmente los días viernes.",
+          "Recordar que en tendencia alcista, en HORA, el PM40 se convierte en piso fuerte, pudiendo presentar un efecto de rebote de resistencia."
         ],
         steps: [
-          "Paso 1: Confirmar tendencia alcista de fondo en diario.",
-          "Paso 2: Esperar a que el precio sufra una caída leve en 1H (menor al 1.5% desde el pico de las últimas 10 barras).",
-          "Paso 3: Identificar el testeo o soporte cerca de la PM 40.",
-          "Paso 4: Trazar la línea de tendencia de la caída y esperar a que una vela horaria verde sólida la rompa y cierre sobre el máximo de las últimas 3 velas. Comprar CALL."
-        ],
-        chart: {
-          candles: [
-            { x: 80, o: 125, h: 118, l: 130, c: 120, isGreen: true, label: "Máximo" },
-            { x: 140, o: 120, h: 120, l: 145, c: 140, isGreen: false, label: "" },
-            { x: 200, o: 140, h: 138, l: 155, c: 150, isGreen: false, label: "Caída < 1.5%" },
-            { x: 260, o: 150, h: 125, l: 152, c: 130, isGreen: true, label: "Ruptura" }
-          ],
-          lines: [
-            { name: "PM 40", color: "#ef4444", points: [{ x: 50, y: 165 }, { x: 260, y: 158 }] }
-          ],
-          arrow: { x: 260, y: 125, dir: "up", text: "COMPRA CALL" }
-        }
-      },
-      {
-        id: "caida-fuerte",
-        name: "Caída Fuerte",
-        type: "CALL",
-        prob: "47.20%",
-        description: "Estrategia de rebote profundo tras ventas masivas en tendencia alcista. Ocurre cuando el precio sufre un retroceso brusco en el gráfico de 1 hora (mayor al 1.5%, ej: 10 dólares o más en SPY). En esta caída, el precio perfora a la baja las medias móviles de 20 y 40. La entrada se realiza al romperse la línea de tendencia local con una vela verde sólida.",
-        rules: [
-          "Tendencia diaria alcista general (Cierre > SMA 100).",
-          "Retroceso (caída local) en 1H de gran escala: mayor al 1.5% desde el máximo reciente de 10 velas.",
-          "El precio perfora con fuerza y cotiza por debajo de las medias de 20 y 40 períodos en 1H.",
-          "Se traza la línea de tendencia descendente extendiéndola a medida que sigue cayendo.",
-          "La confirmación se da cuando una vela verde sólida finalmente rompe al alza superando el máximo de las últimas 3 velas."
-        ],
-        steps: [
-          "Paso 1: Confirmar la estructura de tendencia alcista en velas diarias.",
-          "Paso 2: Identificar una caída fuerte (> 1.5%) que rompe las medias de 20 y 40 hacia abajo en el gráfico horario.",
-          "Paso 3: Trazar y extender la línea de tendencia bajista de la caída siguiendo su pendiente mientras continúe el descenso.",
-          "Paso 4: Esperar a que la caída se agote. Cuando una vela horaria verde sólida rompa al alza la línea y cierre superando el máximo de las últimas 3 velas, comprar CALL."
+          "Paso 1: Confirmar en HORA que los promedios están en paralelo con tendencia al alza (PM20>PM40, PM100>PM200).",
+          "Paso 2: Medir la caída: si rompe solo PM20 (< 1.5%, ~$3-$5 en SPY) es Normal; si rompe PM20/PM40/PM100/PM200 (> 1.5%, ~$6+ en SPY) es Fuerte.",
+          "Paso 3: Esperar la aparición de un martillo verde seguido de una vela verde final alcista que rompa la línea de techo del canal bajista.",
+          "Paso 4: Comprar CALL entre las 11am y 3:59pm, idealmente los días viernes."
         ],
         chart: {
           candles: [
             { x: 80, o: 110, h: 105, l: 115, c: 108, isGreen: true, label: "Máximo" },
             { x: 140, o: 115, h: 115, l: 145, c: 140, isGreen: false, label: "Rompe PM40" },
-            { x: 200, o: 140, h: 135, l: 160, c: 155, isGreen: false, label: "Caída > 1.5%" },
+            { x: 200, o: 140, h: 135, l: 160, c: 155, isGreen: false, label: "Caída" },
             { x: 260, o: 155, h: 125, l: 158, c: 130, isGreen: true, label: "Ruptura" }
           ],
           lines: [
@@ -7806,23 +7858,23 @@ if __name__ == "__main__":
       },
       {
         id: "canal-break",
-        name: "Ruptura del Canal Bajista",
+        name: "Ruptura de Canal Bajista (RCB)",
         type: "CALL",
         prob: "46.30%",
-        description: "Estrategia de cambio de tendencia a favor del movimiento. Ocurre cuando el precio está en un canal descendente estructurado de mediano plazo (3 a 4 semanas, con PM 40 por encima de PM 20). Exige la ruptura alcista del techo del canal y una **segunda vela de confirmación** que sostenga el breakout. La compra se ejecuta al cierre de esta segunda vela.",
+        description: "Estrategia CALL (Método Cardona) evaluada en HORA. Se debe estar en un canal bajista con línea de techo y de piso trazadas (mínimo 1-4 meses, identificando la tendencia en DIARIO). En HORA el PM40 está por encima del PM20 (cruzados) y en DIARIO el PM200 está por encima del PM100 (cruzados). Entre las 11am y 3:59pm aparece una vela martillo verde seguida de una vela verde final de volumen alcista que rompe la línea de techo del canal bajista: es la oportunidad ideal de comprar CALL. El PM40 se convierte entonces en piso fuerte (antes era techo fuerte), con subidas por resistencia.",
         rules: [
-          "Alineación bajista del canal: El promedio móvil de 40 en 1H debe estar por encima del de 20 (PM 40 > PM 20).",
-          "Techo del canal: Se identifica la línea de tendencia bajista uniendo los máximos decrecientes (mínimo de 3 semanas de datos).",
-          "Prohibición Estricta: Está terminantemente prohibido comprar contratos CALL dentro del canal bajista.",
-          "Vela 1 (Ruptura): Una vela horaria verde sólida rompe al alza la directriz bajista (máximo de 15 velas).",
-          "Vela 2 (Confirmación): Se debe esperar a que la siguiente vela horaria también cierre VERDE confirmando el escape.",
-          "Momento de Compra: La orden de CALL se ejecuta en el instante exacto en que cierra la segunda vela verde."
+          "Se evalúa en HORA. Estar en un CANAL BAJISTA con línea de techo y de piso trazadas (mínimo 1-4 meses en DIARIO).",
+          "En HORA, el PM40 está por encima del PM20 (cruzados/se tocan); en DIARIO, el PM200 está por encima del PM100 (cruzados/se tocan).",
+          "Entre las 11am y 3:59pm aparece una vela martillo verde seguida de una vela verde final de volumen alcista que rompe la línea de TECHO del canal bajista.",
+          "Duración típica del canal: 3 a 4 semanas (o 3, 5, 6, 9 días; 2-3 semanas; 1-9 meses).",
+          "Nota clave: en canal bajista, si las velas están por DEBAJO del PM40, este actúa como TECHO (resistencia, con posibles caídas de rebote); si las velas rompen el PM40 y quedan por ENCIMA, este pasa a ser PISO FUERTE (con posibles subidas de resistencia).",
+          "Comprar CALL dentro de un canal bajista tiene riesgo; si las velas de ruptura no son claras, esperar una señal más clara."
         ],
         steps: [
-          "Paso 1: Identificar un canal descendente prolongado (3-4 semanas) con la PM 40 por encima de la PM 20.",
-          "Paso 2: Trazar el techo del canal y monitorear el máximo de las últimas 15 velas.",
-          "Paso 3: Esperar a que la primera vela de ruptura cruce el techo del canal bajista y cierre verde sólida (Vela 1). No comprar todavía.",
-          "Paso 4: Esperar a que la segunda vela horaria cierre. Si cierra verde, comprar CALL de inmediato al finalizar esa segunda vela (Vela 2)."
+          "Paso 1: En DIARIO, trazar el canal bajista (línea de techo y de piso) de 1-4 meses.",
+          "Paso 2: Confirmar en HORA que el PM40 está por encima del PM20 (cruzados) y en DIARIO que el PM200 está por encima del PM100.",
+          "Paso 3: Entre las 11am y 3:59pm, esperar el martillo verde seguido de la vela verde final de volumen que rompe el techo del canal.",
+          "Paso 4: Comprar CALL en el cierre de esa vela de ruptura, sabiendo que el PM40 pasará a ser piso fuerte."
         ],
         chart: {
           candles: [
@@ -7844,59 +7896,101 @@ if __name__ == "__main__":
       },
       {
         id: "cuadro-precios",
-        name: "Cuadro de Precios",
+        name: "Cuadro de Precios y Referencia (Cardona)",
         type: "table",
         prob: "Referencia",
-        description: "Tabla de referencia de las primas y el comportamiento de las opciones (CALL / PUT) de Alejandro Cardona. Muestra el comportamiento y la sensibilidad de las opciones frente al movimiento del activo subyacente.",
+        description: "Tabla de referencia de costo, volumen y distancia spot-strike de los ETF/acciones que usa Alejandro Cardona en sus estrategias, más notas adicionales de su método sobre el uso del SPY, el manejo del premarket/aftermarket y la regla de comprar en vela verde / vender en vela roja.",
         rules: [
-          "Delta: Elige contratos con Delta entre 0.40 y 0.60 para un comportamiento óptimo respecto al precio (In-The-Money o At-The-Money).",
-          "Theta: Ten en cuenta el decaimiento temporal, especialmente en contratos con vencimientos menores a una semana.",
-          "Volatilidad Implícita (IV): Comprar cuando la IV es baja/normal y vender o tomar ganancias cuando la IV sube de golpe."
+          "SPY: costo $0.25-$0.30, volumen 20M, distancia spot-strike 10 (70% del enfoque de Cardona está en el SPY).",
+          "META: $0.45-$0.80, 3M, 12-15. | AAPL: $0.45-$0.80, 20-25M, 2-4. | AMZN: $0.60-$0.80, 16M, 7-8. | NFLX: $1.5-$2.5, 1M, 12-15.",
+          "MRNA: $2.00, 2M, 12-15. | TSLA: $2.5-$3, 15M, 8-10. | TNA: $0.60-$0.80, 2M, 8-13. | GLD: $0.80-$1.0, 2M, 2-4.",
+          "SLV: $0.10-$0.20, 10M, 1-2. | USO: $0.10-$0.20, 1M, 2-3. | BAC: $0.10-$0.20, 10M, 1-2. | CVX: $0.60-$0.80, 2M, 3-5. | XOM: $0.60-$0.80, 4M, 3-5.",
+          "El resto de mi atención (30%) está en META, AAPL y AMZN. AAPL y META suelen comportarse parecido; XOM y CVX suben cuando sube el petróleo (USO).",
+          "AFTERMARKET (4:00-8:00pm) no es adecuado para tomar decisiones de inversión, salvo por reportes de ganancias o noticias inusuales de la economía.",
+          "Regla de Oro general: comprar en VELA VERDE y vender en VELA ROJA, siempre que el objetivo de rentabilidad se haya cumplido; no vender por pánico ante la primera vela roja."
         ],
         steps: [
           "Regla 1: En tendencias alcistas claras, opera con contratos CALL.",
           "Regla 2: En tendencias bajistas o de pánico, opera con contratos PUT.",
-          "Regla 3: Si el mercado lateraliza o no hay volumen, evita comprar opciones ya que el Theta consumirá tu prima."
+          "Regla 3: Invertir máximo $100 por operación; no comprar antes de las 11:00am (horario inestable); comprar de 11:00am a 4:00pm.",
+          "Regla 4: Nunca comprar velas en formación; usar precio LÍMITE para vender al mejor precio disponible en gaps o saltos."
         ]
       }
     ];
 
-    // Renderizar la lista de estrategias en el Sidebar
+    // Orden canónico oficial de Alejandro Cardona (Tabla "Principales Estrategias para Comprar")
+    const CALL_STRATEGY_ORDER = [
+      "ruptura-techo", "pm40-bounce", "caida-normal-fuerte", "canal-break",
+      "gap-normal-alza", "gap-bajista-alza", "piso-fuerte", "techo-fuerte", "primer-gap-alza"
+    ];
+    const PUT_STRATEGY_ORDER = [
+      "primera-vela-roja", "ruptura-piso-gap", "modelo-4-pasos", "hanger-diario", "vela-roja-envolvente"
+    ];
+
+    // Renderizar la lista de estrategias en el Sidebar (agrupadas y numeradas CALL / PUT)
     function renderStrategies() {
       const sidebar = document.getElementById('strat-list-sidebar');
       if (!sidebar) return;
 
       sidebar.innerHTML = '';
-      
-      strategiesData.forEach(strat => {
+
+      function buildItem(strat, numberLabel) {
         const item = document.createElement('div');
         const typeClass = strat.type.toLowerCase();
-        
+
         item.className = `strat-item ${typeClass}`;
         item.setAttribute('data-id', strat.id);
-        
+
         item.innerHTML = `
-          <div class="strat-item-title">${strat.name}</div>
+          <div class="strat-item-title">${numberLabel ? `<span style="opacity:.6; font-weight:800; margin-right:4px;">${numberLabel}.</span>` : ''}${strat.name}</div>
           <div class="strat-item-meta">
             <span class="strat-item-type ${typeClass}">${strat.type}</span>
             <span class="strat-item-prob">${strat.prob}</span>
           </div>
         `;
-        
+
         item.addEventListener('click', () => {
           document.querySelectorAll('.strat-item').forEach(el => el.classList.remove('active'));
           item.classList.add('active');
           showStrategyDetails(strat.id);
         });
-        
-        sidebar.appendChild(item);
-      });
-      
-      // Activar la primera por defecto
-      if (strategiesData.length > 0) {
-        const firstItem = sidebar.querySelector('.strat-item');
-        if (firstItem) firstItem.click();
+
+        return item;
       }
+
+      function addGroupHeader(text) {
+        const header = document.createElement('div');
+        header.className = 'strat-group-header';
+        header.style.cssText = 'padding: 10px 12px 4px; font-size: 11px; font-weight: 800; letter-spacing: .5px; color: var(--text-muted); text-transform: uppercase;';
+        header.textContent = text;
+        sidebar.appendChild(header);
+      }
+
+      // Grupo CALL (numerado 1..9 según el orden oficial de Cardona)
+      addGroupHeader('📈 Estrategias para Comprar CALL');
+      CALL_STRATEGY_ORDER.forEach((id, idx) => {
+        const strat = strategiesData.find(s => s.id === id);
+        if (strat) sidebar.appendChild(buildItem(strat, idx + 1));
+      });
+
+      // Grupo PUT (numerado 1..5 según el orden oficial de Cardona)
+      addGroupHeader('📉 Estrategias para Comprar PUT');
+      PUT_STRATEGY_ORDER.forEach((id, idx) => {
+        const strat = strategiesData.find(s => s.id === id);
+        if (strat) sidebar.appendChild(buildItem(strat, idx + 1));
+      });
+
+      // Resto (referencia, no numerado): cualquier estrategia que no esté en los órdenes anteriores
+      const numberedIds = new Set([...CALL_STRATEGY_ORDER, ...PUT_STRATEGY_ORDER]);
+      const restStrategies = strategiesData.filter(s => !numberedIds.has(s.id));
+      if (restStrategies.length > 0) {
+        addGroupHeader('📊 Referencia');
+        restStrategies.forEach(strat => sidebar.appendChild(buildItem(strat, null)));
+      }
+
+      // Activar la primera por defecto
+      const firstItem = sidebar.querySelector('.strat-item');
+      if (firstItem) firstItem.click();
     }
 
     // Guardar estado de la estrategia activa
@@ -7958,10 +8052,48 @@ if __name__ == "__main__":
     }
 
     // Cambiar de Sub-pestaña
+    const CARDONA_IMAGES = {
+      'ruptura-techo': 'cardona_ruptura_techo.png',
+      'pm40-bounce': 'cardona_pm40.png',
+      'caida-normal-fuerte': 'cardona_caida_normal_fuerte.png',
+      'canal-break': 'cardona_ruptura_canal_bajista.png',
+      'gap-normal-alza': 'cardona_gap_normal_alza.png',
+      'gap-bajista-alza': 'cardona_gap_bajista_alza.png',
+      'piso-fuerte': 'cardona_piso_fuerte.png',
+      'techo-fuerte': 'cardona_techo_fuerte.png',
+      'primer-gap-alza': 'cardona_1er_gap_alza.png',
+      'primera-vela-roja': 'cardona_primera_vela_roja.png',
+      'ruptura-piso-gap': 'cardona_ruptura_piso_gap.png',
+      'modelo-4-pasos': 'cardona_modelo_4_pasos.png',
+      'hanger-diario': 'cardona_hanger_diario.png',
+      'vela-roja-envolvente': 'cardona_vela_roja_envolvente.png'
+    };
+    // Imagenes reales (activo real donde se observa el patron) para la pestana Calcar.
+    // Las 14 estan completas: los primeros 4 casos vienen de capturas de uCharts, el resto
+    // son los graficos de ejemplo reales del seminario PDF de Cardona (recortados solo al grafico).
+    // Si alguna llegara a faltar, Calcar cae al canvas sintetico como respaldo.
+    const CALCAR_IMAGES = {
+      'ruptura-techo': 'calcar_ruptura_techo.png',
+      'pm40-bounce': 'calcar_pm40_bounce.png',
+      'piso-fuerte': 'calcar_piso_fuerte.png',
+      'gap-normal-alza': 'calcar_gap_normal_alza.png',
+      'caida-normal-fuerte': 'calcar_caida_normal_fuerte.jpg',
+      'canal-break': 'calcar_canal_break.jpg',
+      'gap-bajista-alza': 'calcar_gap_bajista_alza.jpg',
+      'techo-fuerte': 'calcar_techo_fuerte.jpg',
+      'primer-gap-alza': 'calcar_primer_gap_alza.jpg',
+      'primera-vela-roja': 'calcar_primera_vela_roja.jpg',
+      'ruptura-piso-gap': 'calcar_ruptura_piso_gap.jpg',
+      'modelo-4-pasos': 'calcar_modelo_4_pasos.jpg',
+      'hanger-diario': 'calcar_hanger_diario.jpg',
+      'vela-roja-envolvente': 'calcar_vela_roja_envolvente.jpg'
+    };
     function switchStratSubTab(tabId) {
       window.activeStratSubTab = tabId;
       const strat = strategiesData.find(s => s.id === window.activeStrategyId);
       if (!strat) return;
+      const stratImg = CARDONA_IMAGES[strat.id] || null;
+      const calcarImg = CALCAR_IMAGES[strat.id] || null;
 
       // Remover clases activas de botones
       ['teoria', 'calcar', 'caso', 'practicar'].forEach(t => {
@@ -7983,140 +8115,123 @@ if __name__ == "__main__":
       let stepsHtml = strat.steps.map(s => `<li>${s}</li>`).join('');
 
       if (tabId === 'teoria') {
-        let bookSlidesHtml = '';
-        if (strat.id === 'gap-normal-alza') {
-          bookSlidesHtml = `
-            <div style="margin-top: 25px; border-top: 1px solid #edf2f7; padding-top: 20px;">
-              <h3 style="margin-top: 0; color: #2d3748; font-size: 15px; display: flex; align-items: center; gap: 8px;">📖 Diapositivas Oficiales (Alejandro Cardona)</h3>
-              <p style="font-size: 13px; color: #718096; margin-bottom: 15px;">Capturas autorizadas de la bibliografía de Cardona para estudiar el modelo geométrico real.</p>
-              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 280px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;">
-                  <div style="background: #edf2f7; padding: 6px 12px; font-size: 11px; font-weight: bold; color: #4a5568;">Definición del Gap (Velas Horarias)</div>
-                  <img src="/assets/media_1787413364640.png" style="width: 100%; height: auto; display: block; object-fit: contain;">
-                </div>
-                <div style="flex: 1; min-width: 280px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;">
-                  <div style="background: #edf2f7; padding: 6px 12px; font-size: 11px; font-weight: bold; color: #4a5568;">Condiciones Técnicas de la Estrategia</div>
-                  <img src="/assets/media_1787413386603.png" style="width: 100%; height: auto; display: block; object-fit: contain;">
-                </div>
-              </div>
+        if (stratImg) {
+          container.innerHTML = `
+            <div style="display:flex; justify-content:center;">
+              <img src="/assets/${stratImg}" alt="${strat.name}" style="width: 100%; max-width: 1400px; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; display: block; background:#fff;">
             </div>
           `;
-        } else if (strat.id === 'primer-gap-alza') {
-          // Explicación técnica interactiva de la página 2 del PDF
-          bookSlidesHtml = `
-            <div style="margin-top: 25px; border-top: 1px solid #edf2f7; padding-top: 20px;">
-              <h3 style="margin-top: 0; color: #2d3748; font-size: 15px;">📖 Reglas del Primer Gap al Alza (CALL)</h3>
-              <p style="font-size: 13px; color: #718096; margin-bottom: 15px;">Análisis estructural extraído del PDF de Alejandro Cardona:</p>
-              <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; color: #2d3748;">
-                <div>
-                  <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #ef5350; text-transform: uppercase;">1. Contexto de Caída Previa</h4>
-                  <p style="font-size: 12px; line-height: 1.4; color: #4a5568;">El primer gap al alza obligatoriamente debe venir tras una caída prolongada del activo. Si no viene de caída, no califica como Primer Gap.</p>
-                  <h4 style="margin: 12px 0 8px 0; font-size: 12px; color: #319795; text-transform: uppercase;">2. Zona de Piso Fuerte (Diario)</h4>
-                  <ul style="font-size: 12px; margin: 0; padding-left: 15px; line-height: 1.4; color: #4a5568;">
-                    <li><strong>Medias Diarias:</strong> Cerca de la PM 100 y PM 200.</li>
-                    <li><strong>TLP (Largo Plazo):</strong> Tendencia alcista en gráfico semanal.</li>
-                    <li><strong>PISO+ABAJO:</strong> Soporte respetado 3 veces en un lapso de 3 a 6 meses.</li>
+        } else {
+          container.innerHTML = `
+            <div class="strat-content-split">
+              <div class="strat-info-panel">
+                <div class="strat-info-section">
+                  <h3>Descripción</h3>
+                  <p>${strat.description}</p>
+                </div>
+                <div class="strat-info-section">
+                  <h3>Criterios Técnicos</h3>
+                  <ul class="strat-rules-list">
+                    ${rulesHtml}
                   </ul>
                 </div>
-                <div style="border-left: 1px solid #e2e8f0; padding-left: 15px;">
-                  <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #48bb78; text-transform: uppercase;">3. Señal en Gráfico Horario (1H)</h4>
-                  <p style="font-size: 12px; line-height: 1.4; color: #4a5568;">El activo abre con gap positivo. La primera vela de 9:30 a 10:30 AM EST <strong>debe ser verde</strong>. Se traza una línea punteada en el mínimo de esa vela (Piso del Gap), el cual no debe ser vulnerado.</p>
-                  <div style="display: flex; gap: 8px; align-items: center; margin-top: 15px; font-size: 11px; font-weight: bold; background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #edf2f7;">
-                    <span style="color: #48bb78;">✓ Compra Swing</span>
-                    <span style="color: #718096;">|</span>
-                    <span>Se entra al final de la jornada (3:00 PM EST) si el piso se respetó.</span>
-                  </div>
+                <div class="strat-info-section">
+                  <h3>Paso a Paso</h3>
+                  <ol class="steps-list" style="margin-left: 20px; color: var(--text-muted); font-size: 13.5px;">
+                    ${stepsHtml}
+                  </ol>
+                </div>
+              </div>
+              <div class="strat-chart-box">
+                <h3 style="font-size: 12px; margin-bottom: 12px; color: var(--text-muted); text-align: center; text-transform: uppercase;">Ejemplo de Gráfico Técnico (1H)</h3>
+                <canvas id="strat-chart-canvas" width="480" height="280"></canvas>
+                <div class="chart-legend" style="margin-top: 15px;">
+                  <div class="legend-item"><div class="legend-color" style="background-color: #00ff66;"></div><span>Vela Verde (Alza)</span></div>
+                  <div class="legend-item"><div class="legend-color" style="background-color: #ff3366;"></div><span>Vela Roja (Baja)</span></div>
+                  ${strat.chart.lines ? strat.chart.lines.map(line => `
+                    <div class="legend-item"><div class="legend-color" style="background-color: ${line.color};"></div><span>${line.name}</span></div>
+                  `).join('') : ''}
                 </div>
               </div>
             </div>
           `;
+          setTimeout(() => { drawStrategyChart(strat.chart, strat.type); }, 50);
         }
 
-        container.innerHTML = `
-          <div class="strat-content-split">
-            <div class="strat-info-panel">
-              <div class="strat-info-section">
-                <h3>Descripción</h3>
-                <p>${strat.description}</p>
-              </div>
-              <div class="strat-info-section">
-                <h3>Criterios Técnicos</h3>
-                <ul class="strat-rules-list">
-                  ${rulesHtml}
-                </ul>
-              </div>
-              <div class="strat-info-section">
-                <h3>Paso a Paso</h3>
-                <ol class="steps-list" style="margin-left: 20px; color: var(--text-muted); font-size: 13.5px;">
-                  ${stepsHtml}
-                </ol>
-              </div>
-            </div>
-
-            <div class="strat-chart-box">
-              <h3 style="font-size: 12px; margin-bottom: 12px; color: var(--text-muted); text-align: center; text-transform: uppercase;">Ejemplo de Gráfico Técnico (1H)</h3>
-              <canvas id="strat-chart-canvas" width="480" height="280"></canvas>
-              
-              <div class="chart-legend" style="margin-top: 15px;">
-                <div class="legend-item"><div class="legend-color" style="background-color: #00ff66;"></div><span>Vela Verde (Alza)</span></div>
-                <div class="legend-item"><div class="legend-color" style="background-color: #ff3366;"></div><span>Vela Roja (Baja)</span></div>
-                ${strat.chart.lines ? strat.chart.lines.map(line => `
-                  <div class="legend-item"><div class="legend-color" style="background-color: ${line.color};"></div><span>${line.name}</span></div>
-                `).join('') : ''}
-              </div>
-            </div>
-          </div>
-          ${bookSlidesHtml}
-        `;
-        setTimeout(() => { drawStrategyChart(strat.chart, strat.type); }, 50);
-
       } else if (tabId === 'calcar') {
-        // Papel de calcar / Ghost Overlay
+        // Papel de calcar / Ghost Overlay (dinámico: se redibuja según la estrategia seleccionada)
+        const CALCAR_W = 480, CALCAR_H = 280;
+        // Genera las etiquetas del calco (ghost) a partir de los datos reales de strat.chart,
+        // convirtiendo las coordenadas de canvas (0-480 x 0-280) a porcentajes para el overlay absoluto.
+        function buildGhostAnnotations(chart) {
+          if (!chart) return '';
+          let html = '';
+          const toPct = (x, y) => ({ left: (x / CALCAR_W * 100).toFixed(1), top: (y / CALCAR_H * 100).toFixed(1) });
+          if (chart.gap) {
+            const p = toPct(chart.gap.x, (chart.gap.fromY + chart.gap.toY) / 2);
+            html += `<div style="position:absolute; left:${p.left}%; top:${p.top}%; transform: translate(-50%,-50%); border: 2px dashed #00b4d8; background: rgba(0,180,216,0.15); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; color: #e0f2fe; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-transform: uppercase;">${chart.gap.text || 'GAP'}</div>`;
+          }
+          (chart.candles || []).forEach(c => {
+            if (!c.label) return;
+            const p = toPct(c.x, (c.h + c.l) / 2);
+            const color = c.isGreen ? '#22c55e' : '#ef4444';
+            html += `<div style="position:absolute; left:${p.left}%; top:${p.top}%; transform: translate(-50%,-50%); border: 2px solid ${color}; background: ${c.isGreen ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}; padding: 3px 7px; border-radius: 2px; font-size: 9px; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); white-space: nowrap;">${c.label}</div>`;
+          });
+          if (chart.arrow) {
+            const p = toPct(chart.arrow.x, chart.arrow.y);
+            const isUp = chart.arrow.dir === 'up';
+            html += `<div style="position:absolute; left:${p.left}%; top:${p.top}%; transform: translate(-50%, ${isUp ? '20%' : '-120%'}); color: ${isUp ? '#06b6d4' : '#ff3366'}; font-size: 11px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.8); white-space: nowrap;">${isUp ? '▲' : '▼'} ${chart.arrow.text || ''}</div>`;
+          }
+          return html;
+        }
         container.innerHTML = `
           <div style="background: #ffffff; border: 1px solid #edf2f7; padding: 20px; border-radius: 12px; color: #2d3748;">
             <h3 style="margin-top: 0; color: #1a202c; font-size: 15px;">🧩 Papel de Calcar - Ghost Pattern Overlay</h3>
             <p style="font-size: 13px; color: #718096; margin-bottom: 20px;">
-              Usa el control de opacidad de arriba para fundir la plantilla del modelo ideal (papel vegetal) sobre las velas horarias reales del mercado. Compara visualmente tendencias, soportes y la magnitud del gap.
+              Usa el control de opacidad de arriba para fundir la plantilla del modelo ideal (papel vegetal) sobre el patrón horario de <strong>${strat.name}</strong>, o compará ambos lado a lado. Compara visualmente tendencias, soportes y la magnitud del gap.
             </p>
             
-            <div style="position: relative; width: 100%; height: 380px; background: #090c10; border-radius: 8px; overflow: hidden; border: 1px solid #2d3748;">
-              <!-- 1. CAPA DE FONDO: Mercado Real (TSLA) -->
-              <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 1;">
-                <img src="/assets/media_1787413737442.png" style="width: 100%; height: 100%; object-fit: fill; filter: brightness(0.95);">
+            <div id="calcar-stage" style="position: relative; width: 100%; height: 380px; background: #090c10; border-radius: 8px; overflow: hidden; border: 1px solid #2d3748; display: flex;">
+              <!-- PANEL IZQUIERDO (solo visible en modo Lado a Lado): patrón ideal, igual al de Teoría -->
+              <div id="calcar-panel-ideal" style="display: none; width: 50%; height: 100%; align-items: center; justify-content: center; overflow: hidden; background: #000; border-right: 1px solid #2d3748; flex-shrink: 0;">
+                ${stratImg
+                  ? `<img src="/assets/${stratImg}" style="width:100%; height:100%; object-fit: contain;" alt="${strat.name} (teoría)">`
+                  : `<canvas id="calcar-ideal-canvas" width="${CALCAR_W}" height="${CALCAR_H}" style="width:100%; height:100%;"></canvas>`
+                }
               </div>
-              
-              <!-- 2. CAPA SUPERPUESTA: Calco Vegetal (Ghost Pattern) -->
-              <div id="ghost-overlay-layer" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; opacity: 0.5; transition: opacity 0.15s ease;">
-                <div style="position: absolute; left: 35%; top: 40%; border: 2px dashed #00b4d8; background: rgba(0, 180, 216, 0.15); width: 8%; height: 28%; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #e0f2fe; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-transform: uppercase; letter-spacing: 0.5px;">
-                  GAP
+              <!-- PANEL DERECHO: patrón real de la estrategia seleccionada (canvas/imagen dinámico) -->
+              <div id="calcar-panel-real" style="position: relative; flex: 1; height: 100%; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#000;">
+                <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  ${calcarImg
+                    ? `<img src="/assets/${calcarImg}" style="width:100%; height:100%; object-fit: contain; filter: brightness(0.95);" alt="${strat.name} (activo real)">`
+                    : `<canvas id="calcar-real-canvas" width="${CALCAR_W}" height="${CALCAR_H}" style="width:100%; height:100%; filter: brightness(0.95);"></canvas>`
+                  }
                 </div>
-                <div style="position: absolute; left: 45%; top: 22%; border: 2px solid #22c55e; background: rgba(34, 197, 94, 0.25); width: 6%; height: 15%; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                  VELA 1
-                </div>
-                <div style="position: absolute; left: 52%; top: 12%; border: 2px solid #22c55e; background: rgba(34, 197, 94, 0.25); width: 6%; height: 15%; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                  VELA 2
-                </div>
-                <div style="position: absolute; left: 59%; top: 3%; color: #06b6d4; font-size: 10px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                  ▲ CONFIRMACIÓN (11:00 AM)
-                </div>
-                <div style="position: absolute; left: 20%; top: 60%; color: #eab308; font-size: 9px; font-weight: bold; border-top: 1px dashed #eab308; width: 15%; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                  CIERRE PREVIO
-                </div>
-                <div style="position: absolute; left: 40%; top: 78%; color: #ef4444; font-size: 10px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
-                  ✖ INVALIDACIÓN (Soporte Roto)
+                <!-- CAPA SUPERPUESTA: Calco Vegetal (Ghost Pattern), solo visible en modo Superpuesto -->
+                <div id="ghost-overlay-layer" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; opacity: 0.5; transition: opacity 0.15s ease;">
+                  ${buildGhostAnnotations(strat.chart)}
                 </div>
               </div>
             </div>
             
             <div style="margin-top: 15px; font-size: 12px; color: #718096; display: flex; justify-content: space-between; align-items: center;">
               <span>Modelo geométrico: <strong>${strat.name} (1 Hora)</strong></span>
-              <span>Subyacente analizado: <strong>TSLA (Tesla Inc.)</strong></span>
+              <span>Dirección: <strong style="color: ${strat.type === 'PUT' ? '#e53e3e' : '#38a169'};">${strat.type}</strong></span>
             </div>
           </div>
         `;
-        // Ajustar valor inicial del slider
+        // Dibujar el patrón real de ESTA estrategia en el canvas del calco (solo si no hay imagen real de uCharts disponible)
+        if (!calcarImg) {
+          setTimeout(() => { drawStrategyChart(strat.chart, strat.type, 'calcar-real-canvas'); }, 50);
+        }
+        // Dibujar el patrón ideal en el panel izquierdo de "Lado a Lado" (solo si no hay imagen real de Teoría)
+        if (!stratImg) {
+          setTimeout(() => { drawStrategyChart(strat.chart, strat.type, 'calcar-ideal-canvas'); }, 50);
+        }
+        // Ajustar valor inicial del slider y sincronizar el modo de vista (Lado a Lado / Superpuesto)
         const slider = document.getElementById('global-ghost-slider');
         if (slider) updateGlobalGhostOpacity(slider.value);
+        toggleUchartsViewMode(window.activeCalcarViewMode || 'super');
 
       } else if (tabId === 'caso') {
         // Caso actual (Réplica exacta de la captura de pantalla Imagen 1 del usuario)
@@ -8316,22 +8431,30 @@ if __name__ == "__main__":
       if (superOverlay) superOverlay.style.opacity = val / 100;
     }
 
-    // Cambiar modo de vista: Lado a Lado vs Superpuesto (Réplica Imagen 1)
+    // Cambiar modo de vista: Lado a Lado vs Superpuesto.
+    // Se usa en dos pestañas distintas, cada una con su propio contenido:
+    // - "Caso Actual": reordena el grid de 3 tarjetas (ucharts-layout-grid).
+    // - "Calcar": muestra el panel ideal junto al real (Lado a Lado) o funde el calco encima del real (Superpuesto).
     function toggleUchartsViewMode(mode) {
+      window.activeCalcarViewMode = mode;
       const btnSide = document.getElementById('btn-view-side');
       const btnSuper = document.getElementById('btn-view-super');
-      const grid = document.getElementById('ucharts-layout-grid');
-      
-      if (!grid || !btnSide || !btnSuper) return;
+      if (!btnSide || !btnSuper) return;
+      btnSide.classList.toggle('active', mode === 'side');
+      btnSuper.classList.toggle('active', mode !== 'side');
 
-      if (mode === 'side') {
-        btnSide.classList.add('active');
-        btnSuper.classList.remove('active');
-        grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(310px, 1fr))';
-      } else {
-        btnSide.classList.remove('active');
-        btnSuper.classList.add('active');
-        grid.style.gridTemplateColumns = '1fr'; // Fuerza a verse de forma unitaria o superpuesta en grid
+      const grid = document.getElementById('ucharts-layout-grid');
+      if (grid) {
+        grid.style.gridTemplateColumns = mode === 'side'
+          ? 'repeat(auto-fit, minmax(310px, 1fr))'
+          : '1fr'; // Fuerza a verse de forma unitaria o superpuesta en grid
+      }
+
+      const panelIdeal = document.getElementById('calcar-panel-ideal');
+      if (panelIdeal) {
+        const ghostLayer = document.getElementById('ghost-overlay-layer');
+        panelIdeal.style.display = mode === 'side' ? 'flex' : 'none';
+        if (ghostLayer) ghostLayer.style.display = mode === 'side' ? 'none' : 'block';
       }
     }
 
@@ -8477,9 +8600,9 @@ if __name__ == "__main__":
       }
     }
 
-    // Dibujar el gráfico interactivo en Canvas
-    function drawStrategyChart(chartData, type) {
-      const canvas = document.getElementById('strat-chart-canvas');
+    // Dibujar el gráfico interactivo en Canvas (canvasId opcional, por defecto el de la pestaña Teoría)
+    function drawStrategyChart(chartData, type, canvasId) {
+      const canvas = document.getElementById(canvasId || 'strat-chart-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       
