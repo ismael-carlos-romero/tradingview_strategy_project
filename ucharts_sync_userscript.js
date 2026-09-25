@@ -171,6 +171,13 @@
   // abajo para la lógica de reparto con Bandera.
   const cardonaTrackedPositions = new Map();
   const BANDERIN_EDGE_PCT = 2.0;
+  // Repuebla cardona/banderinTrackedPositions desde localStorage apenas
+  // arranca el script (función definida más abajo, junto a
+  // banderinTodayKey — hoisting la deja disponible acá igual). Ver el
+  // comentario de persistTrackedPositions()/restoreTrackedPositionsForToday()
+  // para el porqué: sin esto, cada recarga de la página dejaba el bucket
+  // diario "creyendo" que no había nada comprometido.
+  restoreTrackedPositionsForToday();
 
   // EXPIRATION_GUARD del lado navegador (mejora post-análisis de trades,
   // 19/09): la Hoja de "Resumen de Trades" mostró que los 9 sábados del
@@ -2097,6 +2104,55 @@
     return new Date().toDateString();
   }
 
+  // FIX (25/09, pedido explícito de Ismael tras revisar por qué el bot
+  // seguía abriendo posiciones muy por encima del 10% diario ya
+  // configurado en el panel): el bucket diario compartido siempre calculó
+  // bien el % y el reparto 50/50 entre Cardona y Bandera, pero
+  // cardonaTrackedPositions/banderinTrackedPositions vivían SÓLO en
+  // memoria del navegador (Map declarado con const, sin persistencia). Un
+  // reinicio de Chrome o una recarga de la pestaña — algo que pasa en una
+  // sesión que corre horas — los dejaba en $0 comprometido, aunque en la
+  // cuenta real siguieran abiertas las posiciones que el bot ya había
+  // comprado. El bucket "veía" todo el 10% libre otra vez y seguía
+  // comprando muy por encima del tope real. Ahora ambos Map se guardan en
+  // localStorage cada vez que cambian (persistTrackedPositions) y se
+  // restauran al cargar la página si son del mismo día calendario
+  // (restoreTrackedPositionsForToday) — así el disponible ya arranca
+  // correcto tras un reinicio, sin esperar a que se recompren posiciones
+  // para que el contador "se entere". Las posiciones restauradas que ya
+  // hayan cerrado mientras el script no corría se depuran solas en el
+  // próximo ciclo de banderinReconcileClosedPositions/
+  // cardonaReconcileClosedPositions, igual que cualquier otra.
+  const TRACKED_POSITIONS_DATE_KEY = 'ucharts_tracked_positions_date';
+  const CARDONA_POSITIONS_STORAGE_KEY = 'ucharts_cardona_tracked_positions_v1';
+  const BANDERIN_POSITIONS_STORAGE_KEY = 'ucharts_banderin_tracked_positions_v1';
+
+  function persistTrackedPositions() {
+    try {
+      localStorage.setItem(TRACKED_POSITIONS_DATE_KEY, banderinTodayKey());
+      localStorage.setItem(CARDONA_POSITIONS_STORAGE_KEY, JSON.stringify(Array.from(cardonaTrackedPositions.entries())));
+      localStorage.setItem(BANDERIN_POSITIONS_STORAGE_KEY, JSON.stringify(Array.from(banderinTrackedPositions.entries())));
+    } catch (err) {
+      console.warn('[Bucket diario] No se pudieron persistir las posiciones trackeadas:', err);
+    }
+  }
+
+  function restoreTrackedPositionsForToday() {
+    try {
+      const savedDate = localStorage.getItem(TRACKED_POSITIONS_DATE_KEY);
+      if (savedDate !== banderinTodayKey()) return; // de un día anterior: no restaurar, ya no cuenta contra el bucket de hoy
+      const cardonaSaved = JSON.parse(localStorage.getItem(CARDONA_POSITIONS_STORAGE_KEY) || '[]');
+      const banderinSaved = JSON.parse(localStorage.getItem(BANDERIN_POSITIONS_STORAGE_KEY) || '[]');
+      for (const [key, pos] of cardonaSaved) cardonaTrackedPositions.set(key, pos);
+      for (const [key, pos] of banderinSaved) banderinTrackedPositions.set(key, pos);
+      if (cardonaTrackedPositions.size > 0 || banderinTrackedPositions.size > 0) {
+        console.log(`[Bucket diario] Restauradas ${cardonaTrackedPositions.size} posición(es) de Cardona y ${banderinTrackedPositions.size} de Bandera tras recarga — el disponible de hoy arranca correcto.`);
+      }
+    } catch (err) {
+      console.warn('[Bucket diario] No se pudieron restaurar las posiciones trackeadas:', err);
+    }
+  }
+
   function banderinUsd(x) {
     return '$' + (Number(x) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -2161,6 +2217,7 @@
     if (isNewCalendarDay) {
       banderinTrackedPositions.clear();
       cardonaTrackedPositions.clear();
+      persistTrackedPositions(); // día nuevo: persistir también el vaciado, si no la próxima recarga restauraría lo de ayer
     }
   }
 
@@ -2245,6 +2302,7 @@
     if (!result || result.amount == null) return;
     const key = `${ticker}-${result.type}-${result.strike}-${result.expiryKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     banderinTrackedPositions.set(key, { cost: result.amount, ticker, type: result.type, strike: result.strike, expiryKey: result.expiryKey });
+    persistTrackedPositions();
   }
 
   // Heurística para saber si una posición que la Bandera abrió sigue viva en
@@ -2267,11 +2325,14 @@
     const url = window.location.href;
     const onPositionsScreen = url.includes('/positions') || url.includes('/posiciones') || (document.body.innerText || '').includes('PRECIO DE COMPRA');
     if (!onPositionsScreen) return; // sin la lista de posiciones en pantalla no se puede confirmar nada
+    let changed = false;
     for (const [key, pos] of Array.from(banderinTrackedPositions.entries())) {
       if (!banderinPositionStillOpen(pos)) {
         banderinTrackedPositions.delete(key); // se cerró (TP, SL o manual): libera su costo del bucket
+        changed = true;
       }
     }
+    if (changed) persistTrackedPositions();
   }
 
   // Equivalentes del registro/reconciliación de Bandera, pero para el
@@ -2283,6 +2344,7 @@
     if (!result || result.amount == null) return;
     const key = `${ticker}-${result.type}-${result.strike}-${result.expiryKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     cardonaTrackedPositions.set(key, { cost: result.amount, ticker, type: result.type, strike: result.strike, expiryKey: result.expiryKey });
+    persistTrackedPositions();
   }
 
   function cardonaReconcileClosedPositions() {
@@ -2290,11 +2352,14 @@
     const url = window.location.href;
     const onPositionsScreen = url.includes('/positions') || url.includes('/posiciones') || (document.body.innerText || '').includes('PRECIO DE COMPRA');
     if (!onPositionsScreen) return;
+    let changed = false;
     for (const [key, pos] of Array.from(cardonaTrackedPositions.entries())) {
       if (!banderinPositionStillOpen(pos)) {
         cardonaTrackedPositions.delete(key);
+        changed = true;
       }
     }
+    if (changed) persistTrackedPositions();
   }
 
   // Fix crítico (08/09): monitorPositionsPnL evaluaba CUALQUIER tarjeta
