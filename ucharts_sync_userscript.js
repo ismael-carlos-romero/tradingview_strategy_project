@@ -7,6 +7,8 @@
 // @match        https://app.ucharts.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
+// @connect      query1.finance.yahoo.com
+// @connect      query2.finance.yahoo.com
 // ==/UserScript==
 
 (function() {
@@ -427,52 +429,6 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    /* Panel de Riesgo (Requisito #12): siempre visible, capital/cupo/
-       exposición/P&L/posiciones abiertas + estado RiskEngine/PositionManager. */
-    .risk-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 10.5px;
-      color: #cbd5e1;
-      background: rgba(0,0,0,0.25);
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-bottom: 4px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-    .risk-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 11px;
-      font-weight: 700;
-      color: #e5e7eb;
-      margin-bottom: 2px;
-    }
-    .risk-badge {
-      font-size: 9px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 10px;
-      background: #374151;
-      color: #d1d5db;
-    }
-    .risk-badge.risk-armed { background: #14532d; color: #86efac; }
-    .risk-badge.risk-disarmed { background: #713f12; color: #fde68a; }
-    .risk-badge.risk-stop { background: #7f1d1d; color: #fca5a5; }
-    .risk-badge.risk-locked { background: #7f1d1d; color: #fca5a5; }
-    .risk-badge.risk-offline { background: #374151; color: #9ca3af; font-style: italic; }
-    .risk-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-    .risk-row .risk-val { font-weight: 600; color: #f3f4f6; }
-    .risk-val.risk-neg { color: #f87171; }
-    .risk-val.risk-pos { color: #4ade80; }
-    .risk-val.risk-warn { color: #facc15; }
   `;
 
   function init() {
@@ -497,31 +453,6 @@
       <div class="sync-tabs">
         <div class="sync-tab active" data-tab="tab-sheet">Planilla 📊 v5.0.23</div>
         <div class="sync-tab" data-tab="tab-trader">Auto-Trader 🤖</div>
-      </div>
-
-      <!-- PANEL DE RIESGO (Requisito #12): siempre visible, sin importar la
-           pestaña activa -- muestra el estado en vivo del RiskEngine y del
-           PositionManager (capital, cupo diario, exposición, P&L, posiciones
-           abiertas) y expone el STOP maestro de nuevas órdenes. Se alimenta
-           de /api/risk/status via fetchAndSyncRiskStatus() (polling 5s). -->
-      <div class="risk-panel" id="risk-panel">
-        <div class="risk-panel-header">
-          <span>🛡️ RiskEngine</span>
-          <span class="risk-badge" id="risk-state-badge">--</span>
-        </div>
-        <div class="risk-row"><span>Capital inicio día:</span><span class="risk-val" id="risk-capital-inicio">--</span></div>
-        <div class="risk-row"><span>Fondos actuales:</span><span class="risk-val" id="risk-fondos-actuales">--</span></div>
-        <div class="risk-row"><span>Cupo diario (10%):</span><span class="risk-val" id="risk-cupo-total">--</span></div>
-        <div class="risk-row"><span>Cupo consumido:</span><span class="risk-val" id="risk-cupo-gastado">--</span></div>
-        <div class="risk-row"><span>Cupo disponible:</span><span class="risk-val" id="risk-cupo-disponible">--</span></div>
-        <div class="risk-row"><span>Exposición abierta:</span><span class="risk-val" id="risk-exposicion">--</span></div>
-        <div class="risk-row"><span>P&amp;L realizado hoy:</span><span class="risk-val" id="risk-pnl-realizado">--</span></div>
-        <div class="risk-row"><span>P&amp;L no realizado:</span><span class="risk-val" id="risk-pnl-no-realizado">--</span></div>
-        <div class="risk-row"><span>Posiciones abiertas:</span><span class="risk-val" id="risk-posiciones">--</span></div>
-        <div class="risk-row"><span>PositionManager:</span><span class="risk-val" id="risk-pm-state">--</span></div>
-        <button class="sheets-sync-btn btn-action-red" id="btn-risk-stop" title="Bloquea INMEDIATAMENTE nuevas órdenes (kill switch). NO cierra posiciones ya abiertas -- eso es una acción separada (CERRAR TODO / PÁNICO).">
-          🛑 STOP Nuevas Órdenes
-        </button>
       </div>
 
       <!-- PESTAÑA 1: PLANILLA -->
@@ -644,9 +575,18 @@
           <button class="sheets-sync-btn btn-action-blue" id="btn-banderin-toggle" title="Compra 1 Call + 1 Put por cada activo habilitado para detectar la tendencia dominante (2% de diferencia), invierte en esa dirección respetando el Take Profit, y repite el ciclo mientras alcance el bucket del día.">
             🚩 Activar Bandera Automática
           </button>
+          <button class="sheets-sync-btn btn-action-blue" id="btn-banderines-generales" title="Manual, un solo pase (NO se repite solo): compra 1 Call + 1 Put de CADA activo habilitado de una sola vez para sondear el mercado. El resultado de cada sonda lo resuelve el mismo ciclo de fondo que usa la Bandera Automática.">
+            🚩🚩 Activar Banderines Generales
+          </button>
+          <button class="sheets-sync-btn btn-action-blue" id="btn-techo-piso" title="Manual, un solo pase: para cada activo habilitado compara el precio contra los promedios móviles PM10/PM20/PM40/PM100/PM200 (Yahoo Finance). Por encima de los 5: zona cara, compra PUT. Tocando o por debajo de alguno: zona barata, compra CALL.">
+            🧭 Zona de Techo y Piso
+          </button>
           <div class="form-row" style="font-size: 10px; color: #9ca3af;">
             <span id="banderin-status-text">Bandera inactiva</span>
             <span id="banderin-bucket-status">Bandera $0.00/$0.00 · Cardona $0.00/$0.00</span>
+          </div>
+          <div class="form-row" style="font-size: 10px; color: #9ca3af;">
+            <span id="techo-piso-status-text">Zona Techo/Piso: sin escanear todavía</span>
           </div>
         </div>
       </div>
@@ -656,36 +596,6 @@
     btn = panel.querySelector('.sheets-sync-btn');
     autoCheckbox = panel.querySelector('.auto-sync-checkbox');
     statusIndicator = panel.querySelector('.sync-status-indicator');
-
-    // STOP maestro del RiskEngine (Requisitos #11 y #12): bloquea nuevas
-    // órdenes de inmediato via /api/system/kill-switch. Deliberadamente
-    // SEPARADO del botón "CERRAR TODO (PÁNICO)" de más abajo -- ese sí cierra
-    // posiciones ya abiertas; activar este STOP nunca las toca por sí solo.
-    const riskStopBtn = document.getElementById('btn-risk-stop');
-    if (riskStopBtn) {
-      riskStopBtn.addEventListener('click', async () => {
-        riskStopBtn.disabled = true;
-        try {
-          const activar = riskStopBtn.dataset.active !== 'true';
-          const resp = await fetch('http://127.0.0.1:8055/api/system/kill-switch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              allow_new_trades: !activar,
-              motivo: activar ? 'STOP manual desde panel Tampermonkey' : 'Reanudado manualmente desde panel Tampermonkey',
-              usuario: 'PANEL_TAMPERMONKEY'
-            })
-          });
-          if (resp.ok) {
-            await fetchAndSyncRiskStatus();
-          }
-        } catch (e) {
-          console.error('[RiskEngine] No se pudo alternar el kill switch:', e);
-        } finally {
-          riskStopBtn.disabled = false;
-        }
-      });
-    }
 
     // Manejo de pestañas
     const tabs = panel.querySelectorAll('.sync-tab');
@@ -890,6 +800,101 @@
       }
     });
 
+    // Event listener: Banderines Generales (manual, un solo pase -- NO
+    // prende la Bandera Automática ni queda repitiéndose solo). Compra
+    // 1 Call + 1 Put de CADA activo habilitado (misma lista que la Bandera)
+    // para sondear el mercado de una sola vez; qué pata ganó el 2% y en qué
+    // dirección invertir lo sigue resolviendo el ciclo de fondo ya existente
+    // (banderinTick), que evalúa cualquier sonda en curso sin importar si
+    // la Bandera Automática está prendida o no.
+    panel.querySelector('#btn-banderines-generales').addEventListener('click', async () => {
+      const genBtn = panel.querySelector('#btn-banderines-generales');
+      genBtn.disabled = true;
+      const originalLabel = genBtn.innerText;
+
+      try {
+        ensureDailyBucketForToday();
+        const tickers = getBanderinEnabledSymbols();
+        for (const ticker of tickers) {
+          if (banderinCycles.has(ticker)) {
+            console.log(`🚩🚩 [Banderines Generales] ${ticker}: ya tiene una sonda en curso, se omite.`);
+            continue;
+          }
+          if (getBanderinAvailable() <= 0) {
+            banderinSetStatus('Banderines Generales: bucket del día agotado, se corta el lanzamiento.');
+            break;
+          }
+          genBtn.innerText = `⏳ Sondeando ${ticker}...`;
+          await banderinStartProbe(ticker);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      } catch (err) {
+        console.error('[Banderines Generales] Fallo inesperado:', err);
+      } finally {
+        genBtn.disabled = false;
+        genBtn.innerText = originalLabel;
+      }
+    });
+
+    // Event listener: Zona de Techo y Piso (manual, un solo pase). Para
+    // cada activo habilitado, trae precio + históricos de Yahoo Finance,
+    // calcula PM10/PM20/PM40/PM100/PM200 y compra PUT (zona cara, precio
+    // por encima de los 5) o CALL (zona barata, toca o está por debajo de
+    // alguno) -- ver techoPisoEvaluateTicker más abajo.
+    panel.querySelector('#btn-techo-piso').addEventListener('click', async () => {
+      const zonaBtn = panel.querySelector('#btn-techo-piso');
+      zonaBtn.disabled = true;
+      const originalLabel = zonaBtn.innerText;
+      const qty = parseInt(panel.querySelector('#trader-qty').value, 10) || 100;
+      const profile = localStorage.getItem('ucharts_trader_profile') || 'corto';
+
+      try {
+        ensureDailyBucketForToday();
+        const tickers = getBanderinEnabledSymbols();
+        for (const ticker of tickers) {
+          zonaBtn.innerText = `⏳ Zona T/P: analizando ${ticker}...`;
+          techoPisoSetStatus(`Analizando ${ticker} contra PM10/20/40/100/200...`);
+          let evaluation;
+          try {
+            evaluation = await techoPisoEvaluateTicker(ticker);
+          } catch (err) {
+            console.warn(`[Zona T/P] ${ticker}: no se pudo evaluar (${err.message})`);
+            techoPisoSetStatus(`${ticker}: error al consultar Yahoo Finance (${err.message})`);
+            continue;
+          }
+          if (!evaluation) {
+            console.warn(`[Zona T/P] ${ticker}: no hay suficiente historial (200 ruedas) todavía.`);
+            techoPisoSetStatus(`${ticker}: no hay suficiente historial para calcular los 5 promedios.`);
+            continue;
+          }
+
+          if (getBanderinAvailable() <= 0) {
+            techoPisoSetStatus('Zona T/P: bucket del día agotado, se corta el escaneo.');
+            break;
+          }
+
+          const optionType = evaluation.zone === 'cara' ? 'PUT' : 'CALL';
+          console.log(`🧭 [Zona T/P] ${ticker}: precio $${evaluation.price.toFixed(2)} — zona ${evaluation.zone.toUpperCase()} (PM10=${evaluation.smas[10].toFixed(2)} PM20=${evaluation.smas[20].toFixed(2)} PM40=${evaluation.smas[40].toFixed(2)} PM100=${evaluation.smas[100].toFixed(2)} PM200=${evaluation.smas[200].toFixed(2)}) → compra ${optionType}`);
+          techoPisoSetStatus(`${ticker}: zona ${evaluation.zone} → comprando ${optionType}...`);
+
+          const result = await executeOrder(ticker, optionType, profile, qty, null, { banderinBucketCheck: true });
+          if (result) {
+            banderinRegisterPosition(result, ticker);
+            techoPisoSetStatus(`${ticker}: ${optionType} comprado (zona ${evaluation.zone}).`);
+          } else {
+            techoPisoSetStatus(`${ticker}: no se pudo comprar ${optionType} (${lastTraderError || 'error'}).`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      } catch (err) {
+        console.error('[Zona T/P] Fallo inesperado en el escaneo:', err);
+        techoPisoSetStatus(`Error inesperado: ${err.message}`);
+      } finally {
+        zonaBtn.disabled = false;
+        zonaBtn.innerText = originalLabel;
+      }
+    });
+
     // Event listener: Compra CALL
     panel.querySelector('#btn-buy-call').addEventListener('click', async () => {
       const buyBtn = panel.querySelector('#btn-buy-call');
@@ -1077,11 +1082,6 @@
       startHeartbeatLoop();
       // Iniciar bucle de sincronización del estado del sistema
       setInterval(fetchAndSyncSystemState, 5000);
-      // Iniciar bucle de sincronización del Panel de Riesgo (Requisito #12):
-      // capital, cupo diario, exposición, P&L, posiciones abiertas y estado
-      // del RiskEngine/PositionManager -- se alimenta de /api/risk/status.
-      setInterval(fetchAndSyncRiskStatus, 5000);
-      fetchAndSyncRiskStatus();
       // Iniciar bucle de reconciliación diaria completa de "Registro
       // Continuo": a diferencia del chequeo de fondo de 15s, esta corrida no
       // depende de que la pestaña ya esté en Historial — navega ella sola una
@@ -3194,81 +3194,94 @@
     }
   }
 
-  // ==========================================================================
-  // Panel de Riesgo (Requisito #12): capital de inicio de día, fondos
-  // actuales, cupo diario bruto/consumido/restante, exposición abierta,
-  // P&L realizado/no realizado del día, cantidad de posiciones abiertas, y
-  // estado del RiskEngine/PositionManager (ARMED/DISARMED/STOP/DAILY_LOCKED,
-  // reconciliación). Se alimenta de GET /api/risk/status (ver
-  // position_manager.estado_panel() en el backend) -- nunca inventa datos:
-  // si el servidor local está apagado, el badge pasa a "SIN DATOS" y el
-  // resto del panel conserva el último valor conocido.
-  // ==========================================================================
-  function fmtUsd(n) {
-    if (n === null || n === undefined || isNaN(n)) return '--';
-    const sign = n < 0 ? '-' : '';
-    return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  // ==========================================
+  // ZONA DE TECHO Y PISO (mejora pedida por Ismael, 26/09): botón manual
+  // que compara el precio de cada activo habilitado (misma lista que la
+  // Bandera) contra los promedios móviles PM10/PM20/PM40/PM100/PM200 -- si
+  // el precio está por ENCIMA de los 5, está en "zona cara" (lo más
+  // probable es que retroceda) y compra PUT; si toca o está por DEBAJO de
+  // alguno de los 5, está en "zona barata" (lo más probable es que rebote)
+  // y compra CALL. Es otra forma de sondear el mercado y anticiparse a
+  // rebotes/reversiones, igual que la Bandera pero basada en promedios
+  // móviles en vez de en un straddle 1C+1P. Los precios/promedios se traen
+  // de Yahoo Finance (chart API pública) vía GM_xmlhttpRequest -- no
+  // depende de que haya un widget de medias móviles visible en pantalla en
+  // uCharts/TradingView. Las posiciones que abre se registran con
+  // banderinRegisterPosition(), así quedan bajo el mismo sub-pool/bucket
+  // diario, Take Profit/Stop Loss automático y EXPIRATION_GUARD que ya
+  // tiene todo lo que abre la Bandera.
+  // ==========================================
+  const TECHO_PISO_SMA_PERIODS = [10, 20, 40, 100, 200];
+
+  function techoPisoSetStatus(text) {
+    const el = document.getElementById('techo-piso-status-text');
+    if (el) el.textContent = text;
   }
 
-  async function fetchAndSyncRiskStatus() {
-    const badge = document.getElementById('risk-state-badge');
-    const stopBtn = document.getElementById('btn-risk-stop');
-    try {
-      let r = await fetch('http://127.0.0.1:8055/api/risk/status?cuenta_id=default');
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      let d = await r.json();
-
-      const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      const setCls = (id, cls) => { const el = document.getElementById(id); if (el) el.className = 'risk-val ' + cls; };
-
-      setTxt('risk-capital-inicio', fmtUsd(d.balance_inicial_dia));
-      setTxt('risk-fondos-actuales', fmtUsd(d.balance_actual));
-      setTxt('risk-cupo-total', fmtUsd(d.cupo_diario_total));
-      setTxt('risk-cupo-gastado', fmtUsd(d.cupo_gastado));
-      setTxt('risk-cupo-disponible', fmtUsd(d.cupo_disponible));
-      setCls('risk-cupo-disponible', (d.cupo_disponible !== null && d.cupo_disponible <= 0) ? 'risk-neg' : '');
-      setTxt('risk-exposicion', fmtUsd(d.exposicion_abierta_usd));
-      setTxt('risk-pnl-realizado', fmtUsd(d.pnl_realizado_dia));
-      setCls('risk-pnl-realizado', d.pnl_realizado_dia < 0 ? 'risk-neg' : (d.pnl_realizado_dia > 0 ? 'risk-pos' : ''));
-      setTxt('risk-pnl-no-realizado', fmtUsd(d.pnl_no_realizado));
-      setCls('risk-pnl-no-realizado', d.pnl_no_realizado < 0 ? 'risk-neg' : (d.pnl_no_realizado > 0 ? 'risk-pos' : ''));
-      setTxt('risk-posiciones', d.posiciones_abiertas);
-      setTxt('risk-pm-state', d.reconciliado ? 'OK ✅' : `DESCUADRE ⚠️ ($${(d.reconciliacion_diferencia || 0).toFixed(2)})`);
-      setCls('risk-pm-state', d.reconciliado ? 'risk-pos' : 'risk-warn');
-
-      if (badge) {
-        badge.className = 'risk-badge';
-        if (d.kill_switch_activo || d.system_state === 'STOP') {
-          badge.classList.add('risk-stop');
-          badge.textContent = 'STOP 🛑';
-        } else if (d.daily_locked) {
-          badge.classList.add('risk-locked');
-          badge.textContent = 'DAILY LOCKED 🔒';
-        } else if (d.system_state === 'DISARMED') {
-          badge.classList.add('risk-disarmed');
-          badge.textContent = 'DISARMED 🟡';
-        } else {
-          badge.classList.add('risk-armed');
-          badge.textContent = 'ARMED 🟢';
+  // Trae precios diarios de cierre + el precio actual (regularMarketPrice)
+  // de Yahoo Finance para un ticker. range=2y da margen de sobra para poder
+  // calcular incluso el promedio de 200 ruedas.
+  function fetchYahooDailyCloses(ticker) {
+    return new Promise((resolve, reject) => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=2y&interval=1d`;
+      const onDone = (text) => {
+        try {
+          const data = JSON.parse(text);
+          const result = data && data.chart && data.chart.result && data.chart.result[0];
+          if (!result) {
+            reject(new Error(data && data.chart && data.chart.error ? data.chart.error.description : 'Yahoo Finance no devolvió datos.'));
+            return;
+          }
+          const closesRaw = result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close;
+          const closes = (closesRaw || []).filter(v => typeof v === 'number' && !isNaN(v));
+          const price = result.meta && typeof result.meta.regularMarketPrice === 'number' ? result.meta.regularMarketPrice : closes[closes.length - 1];
+          if (!closes.length || price == null) {
+            reject(new Error('Yahoo Finance devolvió datos incompletos.'));
+            return;
+          }
+          resolve({ closes, price });
+        } catch (err) {
+          reject(new Error('No se pudo interpretar la respuesta de Yahoo Finance: ' + err.message));
         }
+      };
+      if (typeof GM_xmlhttpRequest !== "undefined") {
+        GM_xmlhttpRequest({
+          method: "GET",
+          url,
+          onload: function(response) {
+            if (response.status !== 200) { reject(new Error(`Yahoo Finance HTTP ${response.status}`)); return; }
+            onDone(response.responseText);
+          },
+          onerror: function() { reject(new Error('Fallo de red al consultar Yahoo Finance.')); }
+        });
+      } else {
+        fetch(url).then(r => r.text()).then(onDone).catch(err => reject(err));
       }
-
-      if (stopBtn) {
-        const killActive = !!d.kill_switch_activo;
-        stopBtn.dataset.active = String(killActive);
-        stopBtn.textContent = killActive ? '▶️ Reanudar Nuevas Órdenes' : '🛑 STOP Nuevas Órdenes';
-      }
-    } catch (e) {
-      // Servidor local desconectado -- se conserva el último valor conocido
-      // en el resto de los campos, sólo se marca el badge como offline.
-      if (badge) {
-        badge.className = 'risk-badge risk-offline';
-        badge.textContent = 'SIN DATOS';
-      }
-    }
+    });
   }
 
-  // (declarada arriba del archivo junto a banderinEnabled — ver comentario ahí)
+  function computeSMA(closes, period) {
+    if (closes.length < period) return null;
+    const slice = closes.slice(closes.length - period);
+    const sum = slice.reduce((a, b) => a + b, 0);
+    return sum / period;
+  }
+
+  // Evalúa un activo: trae precios de Yahoo, calcula PM10/20/40/100/200 y
+  // devuelve la zona ('cara' o 'barata') junto con los valores usados, o
+  // null si todavía no hay suficiente historial para calcular los 5.
+  async function techoPisoEvaluateTicker(ticker) {
+    const { closes, price } = await fetchYahooDailyCloses(ticker);
+    const smas = {};
+    for (const period of TECHO_PISO_SMA_PERIODS) {
+      const sma = computeSMA(closes, period);
+      if (sma === null) return null;
+      smas[period] = sma;
+    }
+    const overAll = TECHO_PISO_SMA_PERIODS.every(period => price > smas[period]);
+    const zone = overAll ? 'cara' : 'barata';
+    return { ticker, price, smas, zone };
+  }
 
   function extractAccountBalance() {
     const currentUrl = window.location.href;
