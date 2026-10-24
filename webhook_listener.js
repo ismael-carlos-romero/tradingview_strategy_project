@@ -190,6 +190,10 @@ function doPost(e) {
       return handleLegacyBacktestUpdate(ss, data);
     }
     
+    if (data.action === "update_monitoreo_vivo" && Array.isArray(data.rows)) {
+      return handleMonitoreoVivoUpdate(ss, data);
+    }
+
     if (data.action === "update_live_signals" && Array.isArray(data.signals)) {
       return handleLegacyLiveSignalsUpdate(ss, data);
     }
@@ -1214,6 +1218,45 @@ function handleLegacyLiveSignalsUpdate(ss, data) {
   return ContentService.createTextOutput(JSON.stringify({
     status: "success",
     message: "Señales en vivo legacy actualizadas"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleMonitoreoVivoUpdate(ss, data) {
+  var sheet = findSheetLoose(ss, "Monitoreo en Vivo");
+  if (!sheet) sheet = ss.insertSheet("Monitoreo en Vivo");
+  sheet.clear();
+
+  var counts = data.counts || {};
+  var summary = "Última actualización: " + data.synced_at +
+    "  |  Activos monitoreados: " + data.total_tickers +
+    "  |  Sistema: " + data.system_state +
+    "  |  CONFIRMADA: " + (counts["CONFIRMADA"] || 0) +
+    "  INMINENTE: " + (counts["INMINENTE"] || 0) +
+    "  PRE-ALERTA: " + (counts["PRE-ALERTA"] || 0);
+  sheet.getRange(1, 1).setValue(summary).setFontWeight("bold");
+
+  var headers = ["Activo", "Estrategia", "Estado", "Probabilidad (Win Rate)", "Setup Score", "Precio", "Distancia PM40 %", "Última Actualización"];
+  var hr = sheet.getRange(2, 1, 1, headers.length);
+  hr.setValues([headers]).setFontWeight("bold").setFontColor("#ffffff").setBackground("#107c41").setHorizontalAlignment("center");
+
+  var values = data.rows.map(function (r) {
+    return [r.ticker, r.strategy, r.state, r.probability, r.score, r.price, r.distance_pm40, r.last_update];
+  });
+  if (values.length > 0) {
+    sheet.getRange(3, 1, values.length, headers.length).setValues(values);
+    var colors = { "CONFIRMADA": "#d4edda", "INMINENTE": "#fff3cd", "PRE-ALERTA": "#e2e3e5" };
+    var bg = values.map(function (v) {
+      var c = colors[v[2]] || null;
+      return [c, c, c, c, c, c, c, c];
+    });
+    sheet.getRange(3, 1, values.length, headers.length).setBackgrounds(bg);
+  }
+  sheet.setFrozenRows(2);
+  for (var col = 1; col <= headers.length; col++) sheet.autoResizeColumn(col);
+
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "success",
+    message: "Monitoreo en Vivo actualizado (" + values.length + " filas)"
   })).setMimeType(ContentService.MimeType.JSON);
 }
 

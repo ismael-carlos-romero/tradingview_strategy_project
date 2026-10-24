@@ -101,6 +101,20 @@ STRATEGY_DIRECTION = {
 # 1. LEDGER CONTABLE & RECONCILIACIÓN
 # ==========================================
 
+def normalizar_estrategia(strategy_id):
+    """Id que emite el scanner (CAIDA_NORMAL, 4_PASOS, RUPTURA_PISO, PRIMER_GAP, GAP_BAJISTA...) -> id canonico del catalogo.
+    Tambien acepta el prefijo historico 'cond_'. Fuente unica de alias: trace_ledger.ALIAS."""
+    s = str(strategy_id or "").strip()
+    if s.lower().startswith("cond_"):
+        s = s[5:]
+    s = s.upper()
+    try:
+        import trace_ledger
+        return trace_ledger.ALIAS.get(s, s)
+    except Exception:
+        return s
+
+
 def registrar_movimiento_ledger(conn, tipo_movimiento, monto_debito, monto_credito, trade_id=None, bucket_id=None, estrategia=None, referencia="", cuenta_id='default'):
     """Registra una entrada contable inmutable y recalcula el balance resultante."""
     cursor = conn.cursor()
@@ -274,6 +288,7 @@ def evaluar_riesgo_pre_trade(conn, ticker, strategy_id, costo_total_operacion, c
 
 def simular_compra_broker(conn, ticker, strategy_id, precio_subyacente, cantidad_propuesta=None, expiry=None, cuenta_id='default'):
     """Ejecuta una compra simulada en el sandbox aplicando comisiones, slippage y ledger contable."""
+    strategy_id = normalizar_estrategia(strategy_id)
     if strategy_id not in STRATEGY_BUCKETS:
         return {"status": "REJECTED", "reason": f"Estrategia {strategy_id} no configurada en el Simulador."}
         
@@ -416,7 +431,7 @@ def simular_venta_broker(conn, trade_id, precio_salida_subyacente):
         return {"status": "ERROR", "message": "No se encontró la posición abierta."}
         
     ticker, tipo, estrategia, cantidad, precio_entrada, dte, fecha_apertura, balance_ref, cuenta_id = pos
-    bucket_id = STRATEGY_BUCKETS[estrategia]
+    bucket_id = STRATEGY_BUCKETS.get(estrategia) or STRATEGY_BUCKETS.get(normalizar_estrategia(estrategia), "SHORT_TERM")  # una posicion abierta siempre debe poder cerrarse
     
     # Estimación de precio de salida de la opción (Slippage Castigado del -1.5% sobre el precio Bid estimado)
     cursor.execute("SELECT price FROM radar_actual WHERE ticker = ? LIMIT 1", (ticker,))
@@ -491,6 +506,11 @@ def simular_venta_broker(conn, trade_id, precio_salida_subyacente):
     # Recalcular buckets
     recalcular_buckets_capital(conn, cuenta_id=cuenta_id)
     conn.commit()
+    try:  # Trazabilidad (Etapa 1): CERRADA del simulador interno. Nunca debe afectar al cierre.
+        import trace_ledger
+        trace_ledger.safe(trace_ledger.registrar_cierre_sim, conn, trade_id, pnl_usd=pnl_usd, pnl_pct=pnl_pct_real)
+    except Exception:
+        pass
     
     return {
         "status": "CLOSED",

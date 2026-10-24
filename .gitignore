@@ -19,3 +19,6 @@ __pycache__/
 ESTRATEGIAS/
 scratch/
 config.json
+tv_webhook_secret.txt
+
+Backup/etapa0_*/

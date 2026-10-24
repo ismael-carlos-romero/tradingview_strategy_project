@@ -182,6 +182,9 @@ def track_setup(setup):
 
         # Fallback de simulación si mercado cerrado
         if df_after.empty or len(df_after) < 3:
+            print(f"[Tracker] Sin datos reales posteriores a la señal para {ticker}; no se evalúa (no se inventan ticks).")
+            return
+        if False:
             print(f"[Tracker] [SIMULACIÓN] Generando ticks de simulación...")
             last_real_price = float(df['Close'].iloc[-1]) if not df.empty else 542.15
             

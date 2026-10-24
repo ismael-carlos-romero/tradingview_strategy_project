@@ -9,8 +9,9 @@ import urllib3
 import json
 import sqlite3
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 import sim_broker_core
+import trace_ledger
 import risk_engine
 import position_manager
 
@@ -86,6 +87,62 @@ def set_system_state(state):
     except Exception as e:
         print(f"[Config DB] Error al persistir system_state: {e}")
 
+# ==========================================
+# SONAR (21/10): con el Sonar encendido, durante el horario de mercado de
+# NY (lun-vie 9:30-16:00) el scanner corre en forma continua, el sistema se
+# mantiene ARMED solo, y se publican las últimas confirmaciones por activo
+# para que el userscript cierre posiciones ante una señal contraria.
+# ==========================================
+SONAR_MIN_GAP_SECONDS = 60       # pausa mínima entre escaneos con Sonar ON
+LAST_CONFIRMED = {}              # ticker -> {"direction", "strategy_id", "ts"}
+LAST_WATCHDOG_DISARM = 0.0       # epoch del último desarmado del watchdog
+HANDLED_CONFIRMED = set()        # setup_ids CONFIRMADA ya encolados
+
+def get_config(param_id, default=None):
+    try:
+        conn = sqlite3.connect(DB_NAME, timeout=10.0)
+        row = conn.execute("SELECT val FROM configuracion WHERE param_id = ?", (param_id,)).fetchone()
+        conn.close()
+        return row[0] if row else default
+    except Exception:
+        return default
+
+def set_config(param_id, val):
+    try:
+        conn = sqlite3.connect(DB_NAME, timeout=10.0)
+        conn.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES (?, ?)", (param_id, val))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Config DB] Error al guardar {param_id}: {e}")
+
+def ny_now():
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("America/New_York")).replace(tzinfo=None)
+    except Exception:
+        # Sin tzdata: horario de verano de EE.UU. (2º domingo de marzo a
+        # 1er domingo de noviembre, 2:00 hora local).
+        from datetime import timedelta
+        utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        y = utc.year
+        mar1 = datetime(y, 3, 1)
+        dst_start = mar1 + timedelta(days=(6 - mar1.weekday()) % 7 + 7, hours=2 + 5)
+        nov1 = datetime(y, 11, 1)
+        dst_end = nov1 + timedelta(days=(6 - nov1.weekday()) % 7, hours=2 + 4)
+        offset = 4 if dst_start <= utc < dst_end else 5
+        return utc - timedelta(hours=offset)
+
+def mercado_abierto():
+    n = ny_now()
+    if n.weekday() >= 5:
+        return False
+    minutos = n.hour * 60 + n.minute
+    return 9 * 60 + 30 <= minutos < 16 * 60
+
+def sonar_activo():
+    return get_config('sonar_active', 'false') == 'true'
+
 def registrar_auditoria(usuario, accion, motivo=None, referencia=None):
     try:
         conn = sqlite3.connect(DB_NAME)
@@ -145,25 +202,45 @@ DB_DIR = os.environ.get("PERSISTENT_DATA_DIR", os.path.dirname(os.path.abspath(_
 DB_NAME = os.path.join(DB_DIR, "trading_laboratory.db")
 
 PENDING_TRADES_QUEUE = []
+# Gap Normal / Gap Bajista al Alza: se detectan en la 2a barra (10:xx) pero Cardona manda no comprar antes de las 11:00.
+# Se guardan y se liberan en el primer escaneo >= 11:00 del mismo dia si el patron sigue vigente. (en memoria)
+GAP_IDS = ("GAP_NORMAL", "GAP_BAJISTA")
+GAP_PENDIENTES = {}
+
+
+def gap_registrar_pendiente(ticker, strategy_id, bar_time, low):
+    k = (ticker, strategy_id)
+    if k not in GAP_PENDIENTES or GAP_PENDIENTES[k]["fecha"] != bar_time.date():
+        GAP_PENDIENTES[k] = {"fecha": bar_time.date(), "low": float(low), "liberada": False}
+
+
+def gap_liberar(ticker, strategy_id, bar_time, close):
+    """True una sola vez por dia, si hay pendiente de hoy, ya son las 11:00 y el cierre sigue sobre el minimo de la 2a barra."""
+    p = GAP_PENDIENTES.get((ticker, strategy_id))
+    if not p or p["liberada"] or p["fecha"] != bar_time.date() or bar_time.hour < 11 or float(close) <= p["low"]:
+        return False
+    p["liberada"] = True
+    return True
 # Marca si un escaneo (main()) está en curso ahora mismo. Se usa para no
 # mostrar "SIN_RESPUESTA" en el dashboard mientras el scanner está ocupado
 # escaneando (que puede tardar bastante más que el timeout de 25s), en vez
 # de estar realmente caído.
 SCANNING_IN_PROGRESS = False
 
+# Láminas oficiales del Seminario Avanzado de Cardona (reemplazan los dibujos a mano)
 STRATEGY_PATTERN_IMAGES = {
-    "PM40_BOUNCE": "PROMEDIO MOVIL DE 40.png",
-    "CAIDA_NORMAL": "Estrategia Caida Normal.jpg",
-    "CAIDA_FUERTE": "Estrategia Caida Normal.jpg",
-    "PISO_DIARIO": "Piso Fuerte.jpg",
-    "RUPTURA_RES": "Ruptura del Canal Bajista.jpg",
-    "GAP_ALZA_1": "Primer Gap_.jpg",
-    "GAP_NORMAL": "Gap Normal al Alza.jpg",
-    "GAP_BAJISTA": "Gap Bajista al Alza.jpg",
-    "VELA_ROJA": "Primera Vela Roja de Apertura.jpg",
-    "RUPTURA_PISO": "Ruptura del Piso del Gap.jpg",
-    "HANGER_DIARIO": "Hanger Diario.jpg",
-    "4_PASOS": "Canal Bajista-Modelo de 4 Pasos_.jpg"
+    "PM40_BOUNCE": "seminario_pm40.png",
+    "CAIDA_NORMAL": "seminario_caida_normal.png",
+    "CAIDA_FUERTE": "seminario_caida_normal.png",
+    "PISO_DIARIO": "seminario_piso_fuerte.png",
+    "RUPTURA_RES": "seminario_ruptura_canal_bajista.png",
+    "GAP_ALZA_1": "seminario_primer_gap_alza.png",
+    "GAP_NORMAL": "seminario_gap_normal_alza.png",
+    "GAP_BAJISTA": "seminario_gap_bajista_alza.png",
+    "VELA_ROJA": "seminario_primera_vela_roja.png",
+    "RUPTURA_PISO": "seminario_ruptura_piso_gap.png",
+    "HANGER_DIARIO": "seminario_hanger_diario.png",
+    "4_PASOS": "seminario_canal_bajista_4_pasos.png"
 }
 
 def calculate_setup_score(row, direction, dist_pm40, config):
@@ -299,8 +376,17 @@ def log_trade_close_to_sheet(trade_id, exit_price, pnl_pct, pnl_usd, retorno_bru
     except Exception as e:
         print(f"[Scanner] Error al registrar venta en Sheets: {e}")
 
+import threading as _threading
+# Escaneo manual en seco (/scan_confirmed): mientras esta bandera esté activa
+# en el hilo actual, sync_setup_and_signal no escribe en la base, no notifica,
+# no compra en el simulador ni encola nada; sólo deja que scan_ticker devuelva
+# las señales confirmadas.
+_SCAN_CTX = _threading.local()
+
 def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, price, distance_pm40, volume, rel_vol, slope_pm40, spy_trend, vix_value, session_type, direction, strategy_version):
     """Guarda localmente en la base SQLite y transmite la actualización al webhook relacional."""
+    if getattr(_SCAN_CTX, 'dry_run', False):
+        return f"DRY_{ticker}_{strategy_id}"
     if not os.path.exists(DB_NAME):
         print(f"[Scanner] Base relacional '{DB_NAME}' no existe. Corre db_initializer.py primero.")
         return None
@@ -324,6 +410,11 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
         setup_id = existing_setup[0]
         # Si el estado es idéntico al registrado y no es CONFIRMADA, evitamos duplicidad en Sheets
         if existing_setup[1] == state and state != "CONFIRMADA":
+            conn.close()
+            return setup_id
+        # Sonar (escaneo continuo): una CONFIRMADA que ya se encoló no se
+        # vuelve a procesar en cada vuelta (evita compras/filas duplicadas).
+        if state == "CONFIRMADA" and existing_setup[1] == "CONFIRMADA" and setup_id in HANDLED_CONFIRMED:
             conn.close()
             return setup_id
     else:
@@ -423,6 +514,13 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
 
     # Manejar encolamiento segun el estado del sistema y conexion de uCharts
     if state == "CONFIRMADA":
+        LAST_CONFIRMED[ticker] = {"direction": direction, "strategy_id": strategy_id, "ts": time.time()}
+        # Trazabilidad (Etapa 1): origen del setup. Familia/modo quedan sin clasificar hasta el catalogo (Etapa 2).
+        trace_ledger.registrar(DB_NAME, trace_ledger.registrar_origen, setup_id, signal_id=signal_id,
+                               fuente_senal="SCANNER_PYTHON", strategy_id=strategy_id, strategy_version=strategy_version,
+                               detector_ver=trace_ledger.detector_version(os.path.abspath(__file__)),
+                               ticker=ticker, direccion=direction, timeframe=timeframe,
+                               canales=["TELEGRAM"] if TELEGRAM_ENABLED else [])
         # Ejecutar compra autónoma en el Meliora Sim Broker local
         try:
             # El fix real de esta llamada terminó siendo en sim_broker_core.py
@@ -445,6 +543,15 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
                 except Exception as pm_err:
                     print(f"[PositionManager] Error asignando parametros de riesgo a {res_sim.get('trade_id')}: {pm_err}")
             conn_sim.close()
+            if res_sim.get("status") == "FILLED":
+                trace_ledger.registrar(DB_NAME, trace_ledger.registrar_evento, setup_id, "EJECUTADA", "SIM_INTERNO",
+                                       trade_id=res_sim.get("trade_id"), ticker=ticker, qty=res_sim.get("qty"),
+                                       px_ejecutado=res_sim.get("price"),
+                                       evidencia={"costo_total": res_sim.get("cost"), "dte": res_sim.get("dte"), "prima_simulada": True})
+            else:
+                trace_ledger.registrar(DB_NAME, trace_ledger.registrar_evento, setup_id,
+                                       "BLOQUEADA" if res_sim.get("status") == "REJECTED" else "RECHAZADA", "SIM_INTERNO",
+                                       motivo=res_sim.get("reason") or res_sim.get("message"), ticker=ticker)
             if res_sim.get("status") == "FILLED":
                 msg_sim = (
                     f"💼 <b>MELIORA SIM BROKER: ORDEN FILLED</b>\n\n"
@@ -498,6 +605,7 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
                     pass
 
             global PENDING_TRADES_QUEUE
+            HANDLED_CONFIRMED.add(setup_id)
             if not any(t["setup_id"] == setup_id for t in PENDING_TRADES_QUEUE):
                 PENDING_TRADES_QUEUE.append({
                     "setup_id": setup_id,
@@ -506,8 +614,21 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
                     "strategy_id": strategy_id,
                     "setup_score": setup_score,
                     "price": price,
-                    "timestamp": now_str
+                    "timestamp": now_str,
+                    "tv_confirm": tv_confirmation(ticker, direction)
                 })
+                try:
+                    import torneo_engine
+                    torneo_engine.SESSION = session
+                    torneo_engine.open_for_signal(ticker, direction, strategy_id, setup_id)
+                except Exception as _te:
+                    print(f"[Torneo] Error al abrir posiciones: {_te}")
+                trace_ledger.registrar(DB_NAME, trace_ledger.registrar_evento, setup_id, "ENCOLADA", "UCHARTS_PAPER",
+                                       ticker=ticker, px_solicitado=price,
+                                       evidencia={"tv_confirm": bool(tv_confirmation(ticker, direction)), "cola_en_memoria": True,
+                                                  "item": PENDING_TRADES_QUEUE[-1]})  # payload para recuperar la cola tras un reinicio
+                _tvc = tv_confirmation(ticker, direction)
+                print(f"[Cola] Encolada {ticker} {strategy_id} ({setup_id}). TradingView: {'CONFIRMA ' + str(_tvc['score']) + '/' + str(_tvc['max']) if _tvc else 'sin confirmación'}. Pendientes: {len(PENDING_TRADES_QUEUE)}")
 
     # Determinar si ya se envio notificacion a Telegram para este estado y setup
     should_notify_telegram = False
@@ -540,6 +661,22 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
             f"📍 <b>Distancia PM40:</b> {distance_pm40:.2f}%\n"
             f"🆔 <b>Setup ID:</b> <code>{setup_id}</code>"
         )
+        if state == "CONFIRMADA":
+            try:
+                import chart_analyzer
+                chart_analyzer.set_session(session)
+                _blk = chart_analyzer.analyze_for_signal(DB_NAME, ticker, direction, strategy_id, setup_id)
+                if _blk:
+                    msg += "\n\n" + _blk
+                import chart_vision
+                _vb = chart_vision.analyze_for_signal(DB_NAME, ticker, direction, strategy_id, setup_id)
+                if _vb:
+                    msg += "\n\n" + _vb
+                _tvc2 = tv_confirmation(ticker, direction)
+                if _tvc2:
+                    msg += f"\n📺 TradingView: {_tvc2['score']}/{_tvc2['max']} confirma"
+            except Exception as _ca:
+                print(f"[ChartAnalyzer] {_ca}")
         send_telegram_notification(msg, strategy_id=strategy_id)
 
     return setup_id
@@ -816,8 +953,9 @@ def scan_ticker(ticker):
                     is_confirmed = False
                     
                 # B: Gaps normales y bajistas al alza: Esperar hasta las 11:00 AM NY (barra >= 11)
-                if strategy_id in ["GAP_NORMAL", "GAP_BAJISTA"] and bar_time.hour < 11:
-                    print(f"[Filtro Cardona] Descartando {strategy_id} en {ticker} antes de las 11:00 AM (Hora: {bar_time.hour}).")
+                if strategy_id in GAP_IDS and bar_time.hour < 11:
+                    print(f"[Filtro Cardona] {strategy_id} en {ticker} detectado a las {bar_time.hour}h: se libera desde las 11:00 si sigue vigente.")
+                    gap_registrar_pendiente(ticker, strategy_id, bar_time, row['Low'])
                     is_confirmed = False
                     
                 # C: Primer Gap al Alza: Esperar hasta las 3:59 PM NY (barra de las 15:00)
@@ -825,6 +963,9 @@ def scan_ticker(ticker):
                     print(f"[Filtro Cardona] Descartando GAP_ALZA_1 en {ticker} antes del cierre de las 3:59 PM (Hora: {bar_time.hour}).")
                     is_confirmed = False
             
+            if not is_confirmed and strategy_id in GAP_IDS and gap_liberar(ticker, strategy_id, bar_time, close_price):
+                print(f"[Filtro Cardona] Liberando {strategy_id} en {ticker}: son las 11:00 o mas y el patron sigue vigente.")
+                is_confirmed = True
             if is_confirmed:
                 state = "CONFIRMADA"
             elif strategy_id == "PM40_BOUNCE":
@@ -903,6 +1044,11 @@ def main():
     all_signals = []
     
     for ticker in TICKERS:
+        # Fix 21/10: un escaneo completo puede tardar más que el timeout del
+        # watchdog; se reporta vida en cada activo para no desarmar en falso.
+        report_heartbeat("SCANNER", "ONLINE", f"Escaneando {ticker}")
+        for comp in ("DATABASE", "STRATEGY_ENGINE", "RISK_ENGINE", "CAPITAL_ENGINE"):
+            report_heartbeat(comp, "ONLINE", "Activo durante el escaneo")
         signals = scan_ticker(ticker)
         if signals:
             print(f"[Signal] SENAL DETECTADA en {ticker}! {signals}")
@@ -911,6 +1057,13 @@ def main():
     print(f"\nEscaneo finalizado. Total de señales activas encontradas: {len(all_signals)}")
     report_heartbeat("SCANNER", "ONLINE", f"Escaneo completado. {len(all_signals)} señales detectadas.")
     report_heartbeat("MARKET_DATA", "ONLINE", "Datos históricos yfinance actualizados")
+    try:
+        import torneo_engine
+        torneo_engine.SESSION = session
+        torneo_engine.update_positions()
+        torneo_engine.push_to_sheet(WEBHOOK_URL)
+    except Exception as _te:
+        print(f"[Torneo] Error al actualizar posiciones: {_te}")
     return all_signals
 
 # ==========================================
@@ -919,6 +1072,58 @@ def main():
 import threading
 import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+# --- Confirmación cruzada con TradingView (modo sombra: solo informa, no bloquea) ---
+TV_CONFIRMS = {}
+TV_SECRET_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tv_webhook_secret.txt")
+
+def _tv_secret():
+    try:
+        with open(TV_SECRET_PATH, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception:
+        return ""
+
+def tv_side(direction):
+    return "PUT" if "PUT" in str(direction).upper() else "CALL"
+
+def tv_register(data):
+    """Guarda una confirmación recibida desde la alerta de TradingView."""
+    ticker = str(data.get("ticker", "")).upper()
+    side = tv_side(data.get("side", ""))
+    TV_CONFIRMS[(ticker, side)] = {"ts": time.time(), "score": data.get("score"), "max": data.get("max"), "strategy": data.get("strategy")}
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        conn.execute("CREATE TABLE IF NOT EXISTS tv_confirmaciones (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT DEFAULT CURRENT_TIMESTAMP, ticker TEXT, side TEXT, strategy TEXT, score INTEGER, max_score INTEGER, raw TEXT)")
+        conn.execute("INSERT INTO tv_confirmaciones (ticker, side, strategy, score, max_score, raw) VALUES (?,?,?,?,?,?)",
+                     (ticker, side, str(data.get("strategy", "")), data.get("score"), data.get("max"), json.dumps(data)))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[TV] Error guardando confirmación: {e}")
+
+def tv_confirmation(ticker, direction, max_age=7200):
+    c = TV_CONFIRMS.get((str(ticker).upper(), tv_side(direction)))
+    if c and time.time() - c["ts"] <= max_age:
+        return c
+    return None
+
+def run_manual_monitor():
+    """Escaneo REAL bajo demanda (botón "Monitorear activos"): igual que el ciclo
+    automático de la hora -- actualiza radar_actual, encola señales y refresca
+    el Monitoreo Vivo del Sheet. No se solapa con otro escaneo en curso."""
+    global SCANNING_IN_PROGRESS
+    if SCANNING_IN_PROGRESS:
+        return {"status": "busy", "message": "Ya hay un escaneo en curso."}
+    SCANNING_IN_PROGRESS = True
+    try:
+        signals = main()
+        push_monitoreo_vivo()
+        payload = build_monitoreo_vivo_payload()
+        return {"status": "success", "scanned": len(TICKERS), "signals": signals,
+                "counts": payload["counts"], "synced_at": payload["synced_at"]}
+    finally:
+        SCANNING_IN_PROGRESS = False
 
 def run_backtesting():
     print("[Control Web] Iniciando ejecución de backtest_to_db.py...")
@@ -1032,7 +1237,7 @@ class BotControlServer(BaseHTTPRequestHandler):
     def is_request_authorized(self):
         # Rutas públicas exceptuadas de autenticación
         clean_path = self.path.split('?')[0]
-        if clean_path in ['', '/', '/index.html', '/ping', '/ucharts.user.js', '/webhook']:
+        if clean_path in ['', '/', '/index.html', '/ping', '/ucharts.user.js', '/webhook', '/webhook/tv']:
             return True
         if clean_path.startswith('/assets/'):
             return True
@@ -1130,6 +1335,33 @@ class BotControlServer(BaseHTTPRequestHandler):
             try:
                 signals = main()
                 self.wfile.write(json.dumps({"status": "success", "signals": signals}).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+        elif self.path == '/scan_confirmed':
+            # Escaneo manual en seco de TODOS los activos (TICKERS): devuelve las
+            # estrategias CONFIRMADAS en este momento sin tocar la base, sin
+            # Telegram, sin compras del simulador y sin encolar nada. Lo usa el
+            # botón "Recomprar por estrategia" del userscript.
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            try:
+                _SCAN_CTX.dry_run = True
+                signals = []
+                for tk in TICKERS:
+                    signals.extend(scan_ticker(tk) or [])
+                self.wfile.write(json.dumps({"status": "success", "scanned": len(TICKERS), "signals": signals}).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+            finally:
+                _SCAN_CTX.dry_run = False
+        elif self.path == '/monitor_now':
+            # Botón manual "Monitorear activos" del userscript.
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            try:
+                self.wfile.write(json.dumps(run_manual_monitor()).encode('utf-8'))
             except Exception as e:
                 self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
         elif self.path == '/backtest':
@@ -1291,6 +1523,13 @@ class BotControlServer(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(accounts).encode('utf-8'))
             except Exception as e:
                 self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+        elif self.path == '/get_monitored_tickers':
+            # Lista de activos que monitorea este scanner (TICKERS); la usan
+            # Banderines Generales y Zona de Techo y Piso del userscript.
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"tickers": TICKERS}).encode('utf-8'))
         elif self.path == '/get_system_status':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -1300,7 +1539,10 @@ class BotControlServer(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "system_state": state,
                 "ucharts_status": "ONLINE" if is_online else "OFFLINE",
-                "last_heartbeat": last_ucharts_heartbeat
+                "last_heartbeat": last_ucharts_heartbeat,
+                "sonar_active": sonar_activo(),
+                "market_open": mercado_abierto(),
+                "signals": LAST_CONFIRMED
             }).encode('utf-8'))
         elif self.path.startswith('/api/simulador_status'):
             self.send_response(200)
@@ -1439,6 +1681,8 @@ class BotControlServer(BaseHTTPRequestHandler):
                     "system_state": sys_state,
                     "scanner_active": scanner_active,
                     "autotrade_active": autotrade_active,
+                    "sonar_active": sonar_activo(),
+                    "market_open": mercado_abierto(),
                     "heartbeats": heartbeats_dict
                 }).encode('utf-8'))
             except Exception as err:
@@ -1456,6 +1700,26 @@ class BotControlServer(BaseHTTPRequestHandler):
         global PENDING_TRADES_QUEUE
         if not self.is_request_authorized():
             self.send_unauthorized()
+            return
+        # Confirmación cruzada desde la alerta de TradingView (valida secreto compartido)
+        if self.path.split('?')[0] == '/webhook/tv':
+            try:
+                n = int(self.headers.get('Content-Length', 0))
+                data = json.loads(self.rfile.read(n).decode('utf-8')) if n > 0 else {}
+                secret = _tv_secret()
+                if not secret or data.get("secret") != secret:
+                    self.send_response(403)
+                    self.end_headers()
+                    return
+                if data.get("tv_conf"):
+                    tv_register(data)
+                    print(f"[TV] Confirmación recibida: {data.get('ticker')} {data.get('side')} {data.get('score')}/{data.get('max')} ({data.get('strategy')})")
+                self.send_response(200)
+                self.end_headers()
+            except Exception as e:
+                print(f"[TV] Error en webhook: {e}")
+                self.send_response(400)
+                self.end_headers()
             return
         # Endpoints de la Fase B (Nube 24/7 y Control de Workers)
         if self.path.startswith('/api/bots/') and (self.path.endswith('/start') or self.path.endswith('/pause') or self.path.endswith('/stop')):
@@ -1638,8 +1902,36 @@ class BotControlServer(BaseHTTPRequestHandler):
                     enviar_respuesta_json(200, {"status": "success", "message": "System ARMED"})
                     return
                     
+                elif action == 'sonar_on':
+                    for k, v in (('sonar_active', 'true'), ('system_state', 'ARMED'), ('panic_stop', 'false'),
+                                 ('scanner_active', 'true'), ('autotrade_active', 'true')):
+                        cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES (?, ?)", (k, v))
+                    conn.commit()
+                    conn.close()
+                    registrar_auditoria(usuario, "SONAR_ON", motivo or "Sonar encendido")
+                    try:
+                        send_telegram_notification(f"📡 <b>SONAR ENCENDIDO</b>\nEscaneo continuo en horario de mercado, Auto-Trader ARMED y cierre por señal contraria. ({usuario})")
+                    except Exception as tg_err:
+                        print(f"[Telegram Alert] Error: {tg_err}")
+                    enviar_respuesta_json(200, {"status": "success", "message": "Sonar ON"})
+                    return
+
+                elif action == 'sonar_off':
+                    cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('sonar_active', 'false')")
+                    conn.commit()
+                    conn.close()
+                    registrar_auditoria(usuario, "SONAR_OFF", motivo or "Sonar apagado")
+                    try:
+                        send_telegram_notification(f"📡 <b>SONAR APAGADO</b>\nEl scanner vuelve a 1 escaneo por hora. El estado ARMED/DISARMED no cambia. ({usuario})")
+                    except Exception as tg_err:
+                        print(f"[Telegram Alert] Error: {tg_err}")
+                    enviar_respuesta_json(200, {"status": "success", "message": "Sonar OFF"})
+                    return
+
                 elif action == 'disarm':
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('system_state', 'DISARMED')")
+                    # Desarmar a mano apaga el Sonar (si no, lo volvería a armar solo).
+                    cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('sonar_active', 'false')")
                     conn.commit()
                     conn.close()
                     
@@ -1656,11 +1948,14 @@ class BotControlServer(BaseHTTPRequestHandler):
                     motivo_stop = motivo or "Detención de emergencia manual"
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('system_state', 'STOP')")
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('panic_stop', 'true')")
+                    cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('sonar_active', 'false')")
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('stop_author', ?)", (usuario,))
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('stop_time', ?)", (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
                     conn.commit()
                     conn.close()
                     
+                    trace_ledger.registrar(DB_NAME, trace_ledger.cancelar_encoladas,
+                                           [t_["setup_id"] for t_ in PENDING_TRADES_QUEUE], "STOP: cola vaciada")
                     PENDING_TRADES_QUEUE = []
                     
                     registrar_auditoria(usuario, "PANIC_STOP", motivo_stop)
@@ -1817,7 +2112,15 @@ class BotControlServer(BaseHTTPRequestHandler):
                 direction = data.get("type")
                 qty = data.get("quantity", 0)
                 error_msg = data.get("error_message", "")
-                
+                # Trazabilidad (Etapa 1): persistir lo que uCharts reporto (antes solo iba a Telegram).
+                if data.get("setup_id"):
+                    _ok = status == "SUCCESS"
+                    # Un reporte recibido es EJECUTADA/RECHAZADA, no "conciliada": eso lo decide trace_conciliacion.
+                    trace_ledger.registrar(DB_NAME, trace_ledger.registrar_evento_uc, {
+                        "estado": "EJECUTADA" if _ok else "RECHAZADA", "setup_id": data.get("setup_id"),
+                        "ticker": ticker, "type": direction, "qty": qty if _ok else None,
+                        "price": data.get("price") if _ok else None, "strike": data.get("strike") if _ok else None,
+                        "motivo": None if _ok else (error_msg or "sin detalle")})
                 if status == "SUCCESS":
                     msg = (
                         f"🟢 <b>Auto-Trader: ORDEN EJECUTADA</b>\n\n"
@@ -1834,6 +2137,22 @@ class BotControlServer(BaseHTTPRequestHandler):
                     )
                 send_telegram_notification(msg)
                 self.wfile.write(json.dumps({"status": "success"}).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+        elif self.path in ('/trace_event', '/trace_conciliar'):
+            # Solo registra lo ocurrido en uCharts (userscript). No encola, no ordena, no modifica la cola.
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            try:
+                n = int(self.headers.get('Content-Length', 0))
+                data = json.loads(self.rfile.read(n).decode('utf-8')) if n > 0 else {}
+                if self.path == '/trace_event':
+                    r = trace_ledger.registrar(DB_NAME, trace_ledger.registrar_evento_uc, data)
+                else:
+                    r = trace_ledger.registrar(DB_NAME, trace_ledger.conciliar_historial, data.get("txs") or [],
+                                               data.get("fuente") or "UCHARTS_HISTORIAL")
+                self.wfile.write(json.dumps({"status": "success", "result": r}).encode('utf-8'))
             except Exception as e:
                 self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
         elif self.path == '/api/simulador/buy':
@@ -1977,6 +2296,25 @@ class BotControlServer(BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
+
+def recuperar_cola_pendiente():
+    """Tras un reinicio, repone en la cola en memoria solo las ordenes encoladas que nunca se ofrecieron a uCharts,
+    de hasta 30 min, y solo si el sistema sigue ARMED y sin panic_stop. Las ENVIADAS sin resultado NO se reponen
+    (podrian estar ejecutadas): se listan para revision."""
+    global PENDING_TRADES_QUEUE
+    try:
+        if str(get_config('system_state', 'DISARMED')).upper() != 'ARMED' or str(get_config('panic_stop', 'false')).lower() == 'true':
+            print("[Cola] Reinicio con sistema no ARMED: no se recupera la cola pendiente.")
+            return
+        items = trace_ledger.registrar(DB_NAME, trace_ledger.pendientes_recuperables, 30) or []
+        for it in items:
+            if not any(x["setup_id"] == it["setup_id"] for x in PENDING_TRADES_QUEUE):
+                PENDING_TRADES_QUEUE.append(it)
+        dudosas = trace_ledger.registrar(DB_NAME, trace_ledger.a_conciliar) or []
+        print(f"[Cola] Recuperadas {len(items)} ordenes pendientes. ENVIADAS sin resultado a revisar: {len(dudosas)}")
+    except Exception as e:
+        print(f"[Cola] No se pudo recuperar la cola: {e}")
+
 
 def start_control_server():
     server_address = ('', 8055)
@@ -2351,6 +2689,74 @@ def run_paper_bot_worker():
             
         time.sleep(5)
 
+# ==========================================
+# MONITOREO EN VIVO (pestaña "Monitoreo en Vivo" del Sheet)
+# ==========================================
+MONITOREO_INTERVAL_SECONDS = 60
+_STATE_ORDER = {"CONFIRMADA": 0, "INMINENTE": 1, "PRE-ALERTA": 2, "OBSERVACION": 3}
+
+def build_monitoreo_vivo_payload():
+    """Arma el estado actual de los activos monitoreados: por cada ticker, las
+    estrategias con actividad HOY (radar_actual) con su estado y probabilidad;
+    si no tiene ninguna, una fila OBSERVACION."""
+    prob_by_name = {m[0]: m[2] for m in STRATEGIES_METADATA.values()}
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = sqlite3.connect(DB_NAME, timeout=10.0)
+    try:
+        names = dict(conn.execute("SELECT strategy_id, name FROM catalogo_estrategias").fetchall())
+        radar = conn.execute(
+            "SELECT ticker, strategy_id, state, setup_score, price, distance_pm40, last_update "
+            "FROM radar_actual WHERE last_update >= ?", (today,)
+        ).fetchall()
+    finally:
+        conn.close()
+    by_ticker = {t: [] for t in TICKERS}
+    for ticker, sid, state, score, price, dist, last_update in radar:
+        if ticker not in by_ticker:
+            continue
+        nm = names.get(sid, sid)
+        by_ticker[ticker].append({
+            "ticker": ticker, "strategy": nm, "state": state,
+            "probability": prob_by_name.get(nm, ""), "score": score,
+            "price": round(price or 0, 2), "distance_pm40": round(dist or 0, 2),
+            "last_update": last_update,
+        })
+    rows = []
+    for ticker in TICKERS:
+        items = by_ticker[ticker]
+        if not items:
+            items = [{"ticker": ticker, "strategy": "-", "state": "OBSERVACION", "probability": "",
+                      "score": "", "price": "", "distance_pm40": "", "last_update": ""}]
+        items.sort(key=lambda r: (_STATE_ORDER.get(r["state"], 9), r["strategy"]))
+        rows.extend(items)
+    counts = {}
+    for r in rows:
+        counts[r["state"]] = counts.get(r["state"], 0) + 1
+    return {
+        "action": "update_monitoreo_vivo",
+        "synced_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "total_tickers": len(TICKERS),
+        "counts": counts,
+        "system_state": get_system_state(),
+        "rows": rows,
+    }
+
+def push_monitoreo_vivo():
+    if not WEBHOOK_URL or WEBHOOK_URL == "TU_WEBHOOK_URL_AQUÍ":
+        return
+    try:
+        payload = build_monitoreo_vivo_payload()
+        r = requests.post(WEBHOOK_URL, json=payload, headers={"Content-Type": "text/plain"}, verify=False, timeout=30)
+        print(f"[Monitoreo Vivo] {len(payload['rows'])} filas enviadas al Sheet: {r.status_code}")
+    except Exception as e:
+        print(f"[Monitoreo Vivo] Error al actualizar el Sheet: {e}")
+
+def run_monitoreo_vivo_loop():
+    print(f"[Monitoreo Vivo] Hilo iniciado (actualiza el Sheet cada {MONITOREO_INTERVAL_SECONDS}s).")
+    while True:
+        push_monitoreo_vivo()
+        time.sleep(MONITOREO_INTERVAL_SECONDS)
+
 def run_tracker_loop():
     print("[Tracker Thread] Hilo de seguimiento de posiciones activas iniciado (Monitoreo cada 120s).")
     
@@ -2541,10 +2947,14 @@ def telegram_polling_loop():
                     response_msg = "🟢 <b>Auto-Trader ARMED</b>\nLas compras simuladas en uCharts están habilitadas."
                 elif text == "/disarm" or "desarmar" in text:
                     set_system_state("DISARMED")
+                    set_config('sonar_active', 'false')
                     response_msg = "A <b>Auto-Trader DISARMED</b>\nSolo se generarán alertas y registros. Compras bloqueadas."
                 elif text == "/stop" or "panic" in text or "detener" in text:
                     set_system_state("STOP")
+                    set_config('sonar_active', 'false')
                     global PENDING_TRADES_QUEUE
+                    trace_ledger.registrar(DB_NAME, trace_ledger.cancelar_encoladas,
+                                           [t_["setup_id"] for t_ in PENDING_TRADES_QUEUE], "STOP (Telegram): cola vaciada")
                     PENDING_TRADES_QUEUE = []
                     response_msg = "🛑 <b>SISTEMA EN STOP (EMERGENCIA)</b>\nSe ha vaciado la cola de órdenes y bloqueado toda compra automática."
                 elif text == "/positions" or "posiciones" in text:
@@ -2600,6 +3010,9 @@ def telegram_polling_loop():
 
 def run_watchdog_loop():
     print("[Watchdog Thread] Hilo supervisor de salud de componentes iniciado (Chequeo cada 60s).")
+    # Período de gracia al arrancar: la tabla todavía tiene los heartbeats de
+    # la sesión anterior hasta que cada componente reporta por primera vez.
+    time.sleep(90)
     while True:
         conn = None
         try:
@@ -2610,7 +3023,12 @@ def run_watchdog_loop():
             cursor.execute("SELECT componente, estado, last_heartbeat, detalles FROM heartbeats")
             rows = cursor.fetchall()
             
-            now = datetime.now()
+            # Fix 21/10: report_heartbeat guarda last_heartbeat con datetime('now')
+            # de SQLite, que es UTC. Antes se comparaba contra la hora LOCAL
+            # (UTC-3): al arrancar, los heartbeats viejos daban "vencidos" y se
+            # desarmaba el Auto-Trader; en marcha la diferencia daba negativa y
+            # el watchdog nunca detectaba nada. Ahora se compara en UTC.
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
             degraded_components = []
             
             for comp, estado, last_hb_str, detalles in rows:
@@ -2626,8 +3044,9 @@ def run_watchdog_loop():
                         
                 diff_sec = (now - last_hb).total_seconds()
                 
-                # Timeout de 5 minutos (300s)
-                if diff_sec > 300:
+                # Timeout de 10 minutos (600s): deja margen a un ciclo de
+                # escaneo largo, durante el cual el worker no reporta.
+                if diff_sec > 600:
                     if estado != "OFFLINE":
                         cursor.execute("UPDATE heartbeats SET estado = 'OFFLINE', detalles = 'Heartbeat vencido (timeout)' WHERE componente = ?", (comp,))
                         degraded_components.append(f"• <b>{comp}</b>: OFFLINE (último reporte hace {int(diff_sec)}s)")
@@ -2645,6 +3064,8 @@ def run_watchdog_loop():
                 if critical_fails and current_state == "ARMED":
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('system_state', 'DISARMED')")
                     conn.commit()
+                    global LAST_WATCHDOG_DISARM
+                    LAST_WATCHDOG_DISARM = time.time()
                     registrar_auditoria("WATCHDOG", "SYSTEM_DISARMED", f"Desarmado preventivo por fallos criticos: {', '.join(critical_fails)}")
                     send_telegram_notification(
                         f"🚨 <b>WATCHDOG: DESARMADO DE EMERGENCIA</b>\n\n"
@@ -2674,6 +3095,7 @@ def run_scanner_worker():
     import threading
     last_scan_time = 0.0
     scan_interval = 3600  # Escanear cada 1 hora por defecto
+    last_core_hb = 0.0
     
     # Asegurar que el estado inicial del bot este en la base de datos
     try:
@@ -2710,9 +3132,32 @@ def run_scanner_worker():
                 cursor.execute("UPDATE bot_status SET actual_state = 'RUNNING', last_heartbeat = ?, last_activity = ? WHERE bot_id = 'live_scanner'", (now_str, now_str))
                 conn.commit()
                 conn.close()
-                
-                # Ejecutar ciclo de escaneo si ha pasado una hora
-                if time.time() - last_scan_time >= scan_interval:
+
+                # Fix 21/10: estos núcleos sólo reportaban dentro de main(),
+                # que corre 1 vez por hora -> con el watchdog en UTC quedaban
+                # "vencidos" entre escaneos. Se reportan cada 60s desde acá.
+                if time.time() - last_core_hb >= 60:
+                    for comp, det in (("SCANNER", "Worker del scanner activo"),
+                                      ("DATABASE", "Acceso a base de datos validado"),
+                                      ("STRATEGY_ENGINE", "Motor de estrategias cargado"),
+                                      ("RISK_ENGINE", "Motor de riesgo cargado"),
+                                      ("CAPITAL_ENGINE", "Motor de capital cargado")):
+                        report_heartbeat(comp, "ONLINE", det)
+                    last_core_hb = time.time()
+
+                # SONAR: en horario de mercado escanea en continuo y mantiene
+                # el sistema ARMED (salvo un desarmado del watchdog de hace
+                # menos de 10 min, para no pelear contra una falla real).
+                intervalo_actual = scan_interval
+                if sonar_activo() and mercado_abierto():
+                    intervalo_actual = SONAR_MIN_GAP_SECONDS
+                    if get_system_state() == "DISARMED" and time.time() - LAST_WATCHDOG_DISARM > 600:
+                        set_system_state("ARMED")
+                        registrar_auditoria("SONAR", "SYSTEM_ARMED", "Rearmado automático por Sonar (mercado abierto)")
+                        send_telegram_notification("📡 <b>SONAR:</b> Auto-Trader re-ARMED automáticamente (mercado abierto).")
+
+                # Ejecutar ciclo de escaneo si ha pasado el intervalo (1 hora, o continuo con Sonar)
+                if time.time() - last_scan_time >= intervalo_actual and not globals().get('SCANNING_IN_PROGRESS'):
                     print(f"[Worker] Ejecutando ciclo de escaneo relacional a las {now_str}...")
                     global SCANNING_IN_PROGRESS
                     SCANNING_IN_PROGRESS = True
@@ -2763,11 +3208,15 @@ def run_scanner_worker():
 
 if __name__ == "__main__":
     init_simulation_tables()
+    recuperar_cola_pendiente()
     t_web = threading.Thread(target=start_control_server, daemon=True)
     t_web.start()
     
     t_tracker = threading.Thread(target=run_tracker_loop, daemon=True)
     t_tracker.start()
+    
+    t_monitoreo = threading.Thread(target=run_monitoreo_vivo_loop, daemon=True)
+    t_monitoreo.start()
     
     t_paper = threading.Thread(target=run_paper_bot_worker, daemon=True)
     t_paper.start()

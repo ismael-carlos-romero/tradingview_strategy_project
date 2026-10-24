@@ -30,6 +30,9 @@
     "bot_token": "TU_BOT_TOKEN_DE_TELEGRAM_AQUI",
     "chat_id": "TU_CHAT_ID_AQUI"
   },
+  "sec_user_agent": "TU NOMBRE tu_email@ejemplo.com",
+  "finnhub_api_key": "TU_CLAVE_DE_FINNHUB_AQUI",
+  "anthropic_api_key": "TU_CLAVE_DE_ANTHROPIC_AQUI",
   "ngrok": {
     "authtoken": "TU_AUTHTOKEN_DE_NGROK_AQUI",
     "static_domain": "tu-dominio-fijo.ngrok-free.app"

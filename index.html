@@ -7122,6 +7122,10 @@ if __name__ == "__main__":
           <button class="btn-control-action" onclick="sendControlAction('disarm')">⚠️ DISARM TRADER</button>
         </div>
 
+        <!-- SONAR: escaneo continuo en horario de mercado + auto-ARM + cierre por señal contraria -->
+        <button id="btn-sonar" class="btn-control-action" onclick="sendControlAction(window.__sonarActive ? 'sonar_off' : 'sonar_on')" style="width: 100%; margin-bottom: 6px;">📡 ENCENDER SONAR</button>
+        <div id="sonar-status" style="text-align: center; font-size: 12px; color: #9ca3af; margin-bottom: 15px;">Sonar apagado</div>
+
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
           <button class="btn-control-action" onclick="sendControlAction('pause_scanner')">⏸️ Pausar Scanner</button>
           <button class="btn-control-action" onclick="sendControlAction('resume_scanner')">▶️ Reanudar Scanner</button>
@@ -8948,6 +8952,19 @@ if __name__ == "__main__":
         if (!res.ok) return;
         const data = await res.json();
         
+        // SONAR: botón y estado
+        window.__sonarActive = !!data.sonar_active;
+        const sonarBtn = document.getElementById('btn-sonar');
+        const sonarSt = document.getElementById('sonar-status');
+        if (sonarBtn && sonarSt) {
+          sonarBtn.textContent = data.sonar_active ? '🛑 APAGAR SONAR' : '📡 ENCENDER SONAR';
+          sonarBtn.style.borderColor = data.sonar_active ? '#22c55e' : '';
+          sonarSt.textContent = !data.sonar_active ? 'Sonar apagado'
+            : data.market_open ? '📡 Sonar ACTIVO: escaneando en continuo (mercado abierto)'
+            : '📡 Sonar en espera: mercado cerrado';
+          sonarSt.style.color = !data.sonar_active ? '#9ca3af' : data.market_open ? '#22c55e' : '#facc15';
+        }
+
         const totalEquity = data.balance_actual;
         const ccSaldo = data.cuenta_corriente_saldo || 0.0;
         const tradingEquity = totalEquity - ccSaldo;

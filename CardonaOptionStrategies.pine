@@ -1,5 +1,5 @@
 //@version=5
-strategy("Estrategias Cardona Opciones", overlay=true, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=10, currency=currency.USD, max_labels_count=500)
+strategy("Estrategias Cardona Opciones", overlay=true, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=10, currency=currency.USD, max_labels_count=500, max_boxes_count=500)
 
 // ==========================================
 // 1. CONFIGURACIÓN DE MEDIAS MÓVILES (uCharts style)
@@ -9,23 +9,23 @@ show_mas = input.bool(true, "Mostrar Medias Móviles", group=GP_MAS)
 
 type_pm10 = input.string("SMA", "Tipo PM 10", options=["SMA", "EMA"], group=GP_MAS)
 len_pm10  = input.int(10, "Longitud PM 10", group=GP_MAS)
-color_pm10 = input.color(color.white, "Color PM 10 (Blanco)", group=GP_MAS)
+color_pm10  = color.rgb(255, 255, 255)
 
 type_pm20 = input.string("SMA", "Tipo PM 20", options=["SMA", "EMA"], group=GP_MAS)
 len_pm20  = input.int(20, "Longitud PM 20", group=GP_MAS)
-color_pm20 = input.color(color.yellow, "Color PM 20 (Amarillo)", group=GP_MAS)
+color_pm20  = color.rgb(241, 240, 49)
 
 type_pm40 = input.string("SMA", "Tipo PM 40", options=["SMA", "EMA"], group=GP_MAS)
 len_pm40  = input.int(40, "Longitud PM 40", group=GP_MAS)
-color_pm40 = input.color(color.red, "Color PM 40 (Rojo)", group=GP_MAS)
+color_pm40  = color.rgb(243, 0, 4)
 
 type_pm100 = input.string("SMA", "Tipo PM 100", options=["SMA", "EMA"], group=GP_MAS)
 len_pm100  = input.int(100, "Longitud PM 100", group=GP_MAS)
-color_pm100 = input.color(color.green, "Color PM 100 (Verde)", group=GP_MAS)
+color_pm100 = color.rgb(73, 217, 44)
 
 type_pm200 = input.string("SMA", "Tipo PM 200", options=["SMA", "EMA"], group=GP_MAS)
 len_pm200  = input.int(200, "Longitud PM 200", group=GP_MAS)
-color_pm200 = input.color(color.purple, "Color PM 200 (Morado)", group=GP_MAS)
+color_pm200 = color.rgb(163, 64, 251)
 
 // Función para obtener promedio
 get_ma(type_ma, src, len) =>
@@ -291,22 +291,77 @@ cond_exit_put = is_in_put and is_first_bar and is_green
 if signal_call and not is_in_call
     strategy.entry("CALL", strategy.long, alert_message = '{"action": "buy", "ticker": "' + syminfo.ticker + '", "type": "CALL", "strategy": "' + active_call_strategy + '", "price": "' + str.tostring(close) + '", "quantity": 1}')
     alert("¡SEÑAL CALL! Activo: " + syminfo.ticker + " | Estrategia: " + active_call_strategy, alert.freq_once_per_bar)
-    label.new(x=bar_index, y=low, text="🟢 COMPRAR CALL\n" + active_call_strategy + "\nProb: " + call_win_rate, color=color.green, textcolor=color.white, style=label.style_label_up, yloc=yloc.belowbar)
+    label.new(x=bar_index, y=low, text="CALL · " + active_call_strategy + " · " + call_win_rate, color=color.new(color.green, 15), textcolor=color.white, size=size.small, style=label.style_label_up, yloc=yloc.belowbar)
 
 if signal_put and not is_in_put
     strategy.entry("PUT", strategy.short, alert_message = '{"action": "buy", "ticker": "' + syminfo.ticker + '", "type": "PUT", "strategy": "' + active_put_strategy + '", "price": "' + str.tostring(close) + '", "quantity": 1}')
     alert("¡SEÑAL PUT! Activo: " + syminfo.ticker + " | Estrategia: " + active_put_strategy, alert.freq_once_per_bar)
-    label.new(x=bar_index, y=high, text="🔴 COMPRAR PUT\n" + active_put_strategy + "\nProb: " + put_win_rate, color=color.red, textcolor=color.white, style=label.style_label_down, yloc=yloc.abovebar)
+    label.new(x=bar_index, y=high, text="PUT · " + active_put_strategy + " · " + put_win_rate, color=color.new(color.red, 15), textcolor=color.white, size=size.small, style=label.style_label_down, yloc=yloc.abovebar)
 
 if cond_exit_call and is_in_call[1]
     strategy.close("CALL", alert_message = '{"action": "sell", "ticker": "' + syminfo.ticker + '", "type": "CALL", "price": "' + str.tostring(close) + '"}')
     alert("¡SALIDA CALL! Activo: " + syminfo.ticker + " | Salida por primera vela roja de apertura", alert.freq_once_per_bar)
-    label.new(x=bar_index, y=high, text="🟠 VENDER CALL\n(Cierre)", color=color.orange, textcolor=color.black, style=label.style_label_down, yloc=yloc.abovebar)
+    label.new(x=bar_index, y=high, text="Salida CALL", color=color.new(color.orange, 30), textcolor=color.black, size=size.tiny, style=label.style_label_down, yloc=yloc.abovebar)
 
 if cond_exit_put and is_in_put[1]
     strategy.close("PUT", alert_message = '{"action": "sell", "ticker": "' + syminfo.ticker + '", "type": "PUT", "price": "' + str.tostring(close) + '"}')
     alert("¡SALIDA PUT! Activo: " + syminfo.ticker + " | Salida por primera vela verde de apertura", alert.freq_once_per_bar)
-    label.new(x=bar_index, y=low, text="🟠 VENDER PUT\n(Cierre)", color=color.orange, textcolor=color.black, style=label.style_label_up, yloc=yloc.belowbar)
+    label.new(x=bar_index, y=low, text="Salida PUT", color=color.new(color.orange, 30), textcolor=color.black, size=size.tiny, style=label.style_label_up, yloc=yloc.belowbar)
+
+// ==========================================
+// 5b. ZONAS BARATA / CARA (dibujo automático)
+// ==========================================
+var string GP_ZONA = "Zonas Barata / Cara"
+show_zonas   = input.bool(true, "Dibujar zonas Barata / Cara", group=GP_ZONA)
+zona_lookback = input.int(100, "Velas para medir piso/techo", minval=20, group=GP_ZONA)
+zona_pct     = input.float(15.0, "Ancho de zona (% del rango)", minval=1.0, maxval=50.0, group=GP_ZONA) / 100
+zona_ma_tol  = input.float(0.2, "Tolerancia a promedio móvil (%)", minval=0.0, step=0.05, group=GP_ZONA) / 100
+zona_gap     = input.int(20, "Velas para unir zonas cercanas", minval=1, group=GP_ZONA)
+
+rng_hi  = ta.highest(high, zona_lookback)
+rng_lo  = ta.lowest(low, zona_lookback)
+rng     = rng_hi - rng_lo
+rng_pos = rng > 0 ? (close - rng_lo) / rng : 0.5
+
+// Toque de promedios móviles: soporte (por arriba) y resistencia (por abajo)
+ma_soporte = (low <= pm40 * (1 + zona_ma_tol) and close >= pm40) or (low <= pm100 * (1 + zona_ma_tol) and close >= pm100) or (low <= pm200 * (1 + zona_ma_tol) and close >= pm200)
+ma_resist  = (high >= pm40 * (1 - zona_ma_tol) and close <= pm40) or (high >= pm100 * (1 - zona_ma_tol) and close <= pm100) or (high >= pm200 * (1 - zona_ma_tol) and close <= pm200)
+
+// Barata: cerca del piso del rango, o tocando un promedio como soporte en la mitad baja
+// Cara: cerca del techo del rango, o tocando un promedio como resistencia en la mitad alta
+zona_barata = rng > 0 and (rng_pos <= zona_pct or (ma_soporte and rng_pos <= 0.65))
+zona_cara   = rng > 0 and (rng_pos >= 1 - zona_pct or (ma_resist and rng_pos >= 0.35))
+
+var box box_barata = na
+var box box_cara   = na
+
+var int last_barata = -100000
+var int last_cara   = -100000
+if show_zonas
+    if zona_barata
+        if bar_index - last_barata > zona_gap
+            if not na(box_barata)
+                box.set_text(box_barata, "")
+                box.set_bgcolor(box_barata, color.new(color.green, 94))
+            box_barata := box.new(bar_index, math.max(high, rng_lo + rng * zona_pct), bar_index, math.min(low, rng_lo), border_color=color.green, bgcolor=color.new(color.green, 85), text="Zona Barata - Comprar Call", text_color=color.green, text_size=size.small, text_halign=text.align_left, text_valign=text.align_top)
+            alert("ZONA BARATA - Comprar Call | Activo: " + syminfo.ticker + " | Precio: " + str.tostring(close), alert.freq_once_per_bar)
+        else
+            box.set_right(box_barata, bar_index)
+            box.set_top(box_barata, rng_lo + rng * zona_pct)
+            box.set_bottom(box_barata, rng_lo)
+        last_barata := bar_index
+    if zona_cara
+        if bar_index - last_cara > zona_gap
+            if not na(box_cara)
+                box.set_text(box_cara, "")
+                box.set_bgcolor(box_cara, color.new(color.red, 94))
+            box_cara := box.new(bar_index, math.max(high, rng_hi), bar_index, math.min(low, rng_hi - rng * zona_pct), border_color=color.red, bgcolor=color.new(color.red, 85), text="Zona Cara - Comprar Put", text_color=color.red, text_size=size.small, text_halign=text.align_left, text_valign=text.align_top)
+            alert("ZONA CARA - Comprar Put | Activo: " + syminfo.ticker + " | Precio: " + str.tostring(close), alert.freq_once_per_bar)
+        else
+            box.set_right(box_cara, bar_index)
+            box.set_bottom(box_cara, rng_hi - rng * zona_pct)
+            box.set_top(box_cara, rng_hi)
+        last_cara := bar_index
 
 // ==========================================
 // 6. DIBUJO DE SEÑALES EN EL GRÁFICO (Círculos solicitados por el usuario)
@@ -322,3 +377,121 @@ plotshape(cond_cola_techo and not is_in_put[1], title="Cola de Techo (PUT)", sty
 // Ploteo de salidas
 plotshape(cond_exit_call and is_in_call[1], title="Salida CALL", style=shape.xcross, location=location.abovebar, color=color.orange, size=size.small)
 plotshape(cond_exit_put and is_in_put[1], title="Salida PUT", style=shape.xcross, location=location.belowbar, color=color.orange, size=size.small)
+
+// ==========================================
+// 7. CANAL PARALELO AUTOMATICO (por pivotes)
+// ==========================================
+var string GP_CAN = "Canal automatico"
+show_canal = input.bool(true, "Dibujar canal automatico", group=GP_CAN)
+can_len    = input.int(10, "Fuerza del pivote (velas a cada lado)", minval=3, group=GP_CAN)
+ph = ta.pivothigh(high, can_len, can_len)
+pl = ta.pivotlow(low, can_len, can_len)
+var int hx1 = na
+var float hy1 = na
+var int hx2 = na
+var float hy2 = na
+var int lx1 = na
+var float ly1 = na
+var int lx2 = na
+var float ly2 = na
+if not na(ph)
+    hx1 := hx2
+    hy1 := hy2
+    hx2 := bar_index - can_len
+    hy2 := ph
+if not na(pl)
+    lx1 := lx2
+    ly1 := ly2
+    lx2 := bar_index - can_len
+    ly2 := pl
+var line can_main = na
+var line can_par = na
+if show_canal and barstate.islast and not na(hx1) and not na(lx1)
+    line.delete(can_main)
+    line.delete(can_par)
+    bajista = hy2 < hy1
+    alcista = ly2 > ly1
+    if bajista and (not alcista or hx2 >= lx2)
+        sl = (hy2 - hy1) / (hx2 - hx1)
+        can_main := line.new(hx1, hy1, hx2, hy2, extend=extend.right, color=color.red, width=2)
+        can_par := line.new(lx2, ly2, lx2 + 1, ly2 + sl, extend=extend.right, color=color.red, width=2, style=line.style_dashed)
+    else if alcista
+        sl = (ly2 - ly1) / (lx2 - lx1)
+        can_main := line.new(lx1, ly1, lx2, ly2, extend=extend.right, color=color.green, width=2)
+        can_par := line.new(hx2, hy2, hx2 + 1, hy2 + sl, extend=extend.right, color=color.green, width=2, style=line.style_dashed)
+
+// ==========================================
+// 8. PANEL COMPARATIVO CARDONA (condiciones cumplidas por estrategia)
+// ==========================================
+var string GP_TAB = "Panel Cardona"
+show_panel = input.bool(true, "Mostrar panel comparativo", group=GP_TAB)
+b2i(b) => b ? 1 : 0
+x_cr20  = ta.crossover(close, pm20)
+x_up3   = ta.crossover(close, ta.highest(high, 3)[1])
+x_up15  = ta.crossover(close, ta.highest(high, 15)[1])
+x_up20  = ta.crossover(close, ta.highest(high, 20)[1])
+x_dn3   = ta.crossunder(close, ta.lowest(low, 3)[1])
+x_dn20  = ta.crossunder(close, ta.lowest(low, 20)[1])
+x_dn100 = ta.crossunder(close, d_sma100)
+x_dn200 = ta.crossunder(close, d_sma200)
+n1  = b2i(d_trend_bullish) + b2i(is_second_bar) + b2i(day_open_gap > 0.1) + b2i(day_first_bar_green) + b2i(is_green)
+n2  = b2i(is_second_bar) + b2i(day_open_gap < -0.1) + b2i(day_first_bar_green) + b2i(is_green)
+n3  = b2i(d_trend_bullish) + b2i(d_at_floor) + b2i(x_cr20) + b2i(is_solid_green or is_hammer)
+n4  = b2i(d_at_floor) + b2i(is_last_bar_of_day) + b2i(day_open_gap > 0.1) + b2i(day_first_bar_green) + b2i(day_floor_respected) + b2i(close < pm40[5])
+n5  = b2i(is_cola_piso) + b2i(near_low or near_ma_piso)
+n6  = b2i(pm20 > pm40) + b2i(touched_pm40) + b2i(x_up3) + b2i(is_solid_green)
+n7  = b2i(d_trend_bullish) + b2i(is_caida_valida) + b2i(x_up3) + b2i(is_solid_green)
+n8  = b2i(pm20 < pm40) + b2i(x_up15) + b2i(is_solid_green)
+n9  = b2i(d_trend_bullish) + b2i(x_up20) + b2i(is_solid_green)
+n10 = b2i(is_first_bar) + b2i(is_solid_red) + b2i(close > pm40)
+n11 = b2i(d_at_floor) + b2i(is_second_bar) + b2i(is_red[1]) + b2i(is_solid_red)
+n12 = b2i(not is_first_bar) + b2i(close > pm40) + b2i(close[1] >= day_first_bar_low) + b2i(close < day_first_bar_low) + b2i(is_solid_red)
+n13 = b2i(close < pm40) + b2i(is_red) + b2i(is_green[1]) + b2i(close < open[1]) + b2i(x_dn3)
+n14 = b2i(is_cola_techo) + b2i(near_high or near_ma_techo)
+n15 = b2i(is_last_bar_of_day) + b2i(d_is_hanger) + b2i(d_close > d_sma100)
+n16 = b2i(not d_trend_bullish) + b2i(x_dn20) + b2i(is_solid_red)
+n17 = b2i(x_dn100 or x_dn200) + b2i(is_solid_red)
+n18 = b2i(is_second_bar) + b2i(day_open_gap < -0.1) + b2i(day_first_bar_red) + b2i(is_red)
+var table tb = table.new(position.bottom_right, 3, 19, bgcolor=color.new(color.black, 25), border_width=1)
+f_row(r, nm, n, t, call) =>
+    c = n == t ? color.lime : n * 2 >= t ? color.orange : color.gray
+    table.cell(tb, 0, r, nm, text_color=call ? color.lime : color.red, text_size=size.small, text_halign=text.align_left)
+    table.cell(tb, 1, r, str.tostring(n) + "/" + str.tostring(t), text_color=c, text_size=size.small)
+    table.cell(tb, 2, r, n == t ? "OK" : "-", text_color=c, text_size=size.small)
+if show_panel and barstate.islast
+    table.cell(tb, 0, 0, "Estrategias Cardona", text_color=color.white, text_size=size.small, text_halign=text.align_left)
+    table.cell(tb, 1, 0, "Cumple", text_color=color.white, text_size=size.small)
+    table.cell(tb, 2, 0, "", text_size=size.small)
+    f_row(1, "CALL Gap Normal", n1, 5, true)
+    f_row(2, "CALL Gap Bajista", n2, 4, true)
+    f_row(3, "CALL Piso Fuerte", n3, 4, true)
+    f_row(4, "CALL Primer Gap", n4, 6, true)
+    f_row(5, "CALL Cola de Piso", n5, 2, true)
+    f_row(6, "CALL Prom. Movil 40", n6, 4, true)
+    f_row(7, "CALL Caida Normal/Fuerte", n7, 4, true)
+    f_row(8, "CALL Ruptura Canal Baj.", n8, 3, true)
+    f_row(9, "CALL Ruptura Resistencia", n9, 3, true)
+    f_row(10, "PUT Primera Vela Roja", n10, 3, false)
+    f_row(11, "PUT Techo Fuerte", n11, 4, false)
+    f_row(12, "PUT Ruptura Piso Gap", n12, 5, false)
+    f_row(13, "PUT 4 Pasos", n13, 5, false)
+    f_row(14, "PUT Cola de Techo", n14, 2, false)
+    f_row(15, "PUT Hanger Diario", n15, 3, false)
+    f_row(16, "PUT Ruptura Soporte", n16, 3, false)
+    f_row(17, "PUT Ruptura Piso Fuerte", n17, 2, false)
+    f_row(18, "PUT Gap Baj. Continuacion", n18, 4, false)
+
+// ==========================================
+// 9. CONFIRMACION PARA EL BOT (puntaje TradingView -> live_scanner via webhook)
+// ==========================================
+var string GP_TV = "Confirmacion TradingView"
+tv_secret = input.string("", "Secreto del webhook (tv_webhook_secret.txt)", group=GP_TV)
+rsi14 = ta.rsi(close, 14)
+[macd_l, macd_s, macd_h] = ta.macd(close, 12, 26, 9)
+vol_ok = volume > ta.sma(volume, 20)
+tv_call = b2i(d_trend_bullish) + b2i(close > pm40) + b2i(pm20 > pm40) + b2i(rsi14 > 50) + b2i(macd_l > macd_s) + b2i(vol_ok)
+tv_put  = b2i(not d_trend_bullish) + b2i(close < pm40) + b2i(pm20 < pm40) + b2i(rsi14 < 50) + b2i(macd_l < macd_s) + b2i(vol_ok)
+if barstate.isconfirmed and signal_call and tv_secret != ""
+    alert('{"tv_conf":true,"secret":"' + tv_secret + '","ticker":"' + syminfo.ticker + '","side":"CALL","strategy":"' + active_call_strategy + '","score":' + str.tostring(tv_call) + ',"max":6}', alert.freq_once_per_bar_close)
+if barstate.isconfirmed and signal_put and tv_secret != ""
+    alert('{"tv_conf":true,"secret":"' + tv_secret + '","ticker":"' + syminfo.ticker + '","side":"PUT","strategy":"' + active_put_strategy + '","score":' + str.tostring(tv_put) + ',"max":6}', alert.freq_once_per_bar_close)

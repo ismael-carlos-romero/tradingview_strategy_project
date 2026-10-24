@@ -173,6 +173,10 @@
   // abajo para la lógica de reparto con Bandera.
   const cardonaTrackedPositions = new Map();
   const BANDERIN_EDGE_PCT = 2.0;
+  const TRACKED_POSITIONS_DATE_KEY = 'ucharts_tracked_positions_date';
+  const CARDONA_POSITIONS_STORAGE_KEY = 'ucharts_cardona_tracked_positions_v1';
+  const BANDERIN_POSITIONS_STORAGE_KEY = 'ucharts_banderin_tracked_positions_v1';
+  let dailyFullSyncRunning = false;
   // Repuebla cardona/banderinTrackedPositions desde localStorage apenas
   // arranca el script (función definida más abajo, junto a
   // banderinTodayKey — hoisting la deja disponible acá igual). Ver el
@@ -500,12 +504,12 @@
 
         <div class="form-row">
           <span>Contratos:</span>
-          <input type="number" id="trader-qty" class="form-input" value="1000">
+          <input type="number" id="trader-qty" class="form-input" value="1">
         </div>
 
         <div class="form-row">
           <span>Días de Vencimiento:</span>
-          <input type="number" id="dte-target" class="form-input" value="0" min="0">
+          <input type="number" id="dte-target" class="form-input" value="7" min="0">
         </div>
 
         <div class="form-row">
@@ -513,7 +517,7 @@
             <input type="checkbox" id="chk-tp-pct" checked>
             <span>Take Profit %:</span>
           </label>
-          <input type="number" id="tp-pct-val" class="form-input" value="15">
+          <input type="number" id="tp-pct-val" class="form-input" value="5">
         </div>
 
         <div class="form-row">
@@ -612,9 +616,11 @@
     // Manejo de Perfiles
     const profileBtns = panel.querySelectorAll('.profile-btn');
     const profileConfigs = {
-      corto: { qty: 1000, tpPct: 15, tpUsd: 1000, usePct: true, useUsd: false, slPct: 10, slUsd: 500, useSlPct: true, useSlUsd: false, dte: 0 },
-      medio: { qty: 200, tpPct: 40, tpUsd: 5000, usePct: true, useUsd: false, slPct: 15, slUsd: 1500, useSlPct: true, useSlUsd: false, dte: 5 },
-      largo: { qty: 50, tpPct: 100, tpUsd: 10000, usePct: true, useUsd: false, slPct: 25, slUsd: 2500, useSlPct: true, useSlUsd: false, dte: 30 }
+      // Defaults pedidos por Ismael (01/10): en TODOS los perfiles 1 contrato,
+      // 7 días de vencimiento, TP 5% y SL 10%. Si quiere más, lo agrega a mano.
+      corto: { qty: 1, tpPct: 5, tpUsd: 1000, usePct: true, useUsd: false, slPct: 10, slUsd: 500, useSlPct: true, useSlUsd: false, dte: 7 },
+      medio: { qty: 1, tpPct: 5, tpUsd: 5000, usePct: true, useUsd: false, slPct: 10, slUsd: 1500, useSlPct: true, useSlUsd: false, dte: 7 },
+      largo: { qty: 1, tpPct: 5, tpUsd: 10000, usePct: true, useUsd: false, slPct: 10, slUsd: 2500, useSlPct: true, useSlUsd: false, dte: 7 }
     };
 
     profileBtns.forEach(pBtn => {
@@ -645,7 +651,7 @@
         // el campo "Días de Vencimiento" a mano, no lo pisamos con el preset.
         if (!panel.querySelector('#dte-target').dataset.userEdited) {
           panel.querySelector('#dte-target').value = config.dte;
-          localStorage.setItem('ucharts_dte_target', String(config.dte));
+          localStorage.setItem('ucharts_dte_target_v2', String(config.dte));
         }
 
         localStorage.setItem('ucharts_trader_profile', profile);
@@ -656,14 +662,14 @@
     // el usuario lo toca, para que cambiar de perfil (CORTO/MEDIO/LARGO) no
     // le pise el valor que puso a propósito.
     const dteInput = panel.querySelector('#dte-target');
-    const savedDte = localStorage.getItem('ucharts_dte_target');
+    const savedDte = localStorage.getItem('ucharts_dte_target_v2');
     if (savedDte !== null) {
       dteInput.value = savedDte;
       dteInput.dataset.userEdited = 'true'; // para que el click de restaurar perfil (más abajo) no lo pise
     }
     dteInput.addEventListener('input', (e) => {
       e.target.dataset.userEdited = 'true';
-      localStorage.setItem('ucharts_dte_target', e.target.value);
+      localStorage.setItem('ucharts_dte_target_v2', e.target.value);
     });
 
     // Restaurar perfil guardado
@@ -814,7 +820,7 @@
 
       try {
         ensureDailyBucketForToday();
-        const tickers = getBanderinEnabledSymbols();
+        const tickers = await getMonitoredTickers();
         for (const ticker of tickers) {
           if (banderinCycles.has(ticker)) {
             console.log(`🚩🚩 [Banderines Generales] ${ticker}: ya tiene una sonda en curso, se omite.`);
@@ -850,7 +856,7 @@
 
       try {
         ensureDailyBucketForToday();
-        const tickers = getBanderinEnabledSymbols();
+        const tickers = await getMonitoredTickers();
         for (const ticker of tickers) {
           zonaBtn.innerText = `⏳ Zona T/P: analizando ${ticker}...`;
           techoPisoSetStatus(`Analizando ${ticker} contra PM10/20/40/100/200...`);
@@ -1165,10 +1171,11 @@
   // syncHistory) lo necesario para cubrir los últimos días — así "Registro
   // Continuo" queda al día sin que el usuario tenga que acordarse de abrir
   // Historial ni de clickear "Sincronizar Día" a mano.
-  let dailyFullSyncRunning = false;
 
   async function runDailyFullHistorySync() {
     if (!autoSyncEnabled) return;
+    // Desactivado por defecto (01/10): navegaba solo a Historial y scrolleaba. Para reactivar: localStorage.setItem('ucharts_daily_full_sync_enabled','true')
+    if (localStorage.getItem('ucharts_daily_full_sync_enabled') !== 'true') return;
     if (!WEBHOOK_URL || WEBHOOK_URL.includes("TU_WEBHOOK_URL_AQUÍ")) return;
     if (dailyFullSyncRunning || !btn || btn.disabled) return;
 
@@ -1709,6 +1716,12 @@
       ene: 0, abr: 3, ago: 7, dic: 11
     };
     let expiryButtons = [];
+    // Antes se tomaba la lista apenas aparecía el PRIMER vencimiento; si la cadena
+    // se renderiza de a poco (p. ej. GLD), sólo se veían los más cercanos y el
+    // "Días de Vencimiento" no se respetaba. Ahora se espera a que la cantidad de
+    // vencimientos se estabilice (3 lecturas iguales seguidas) antes de elegir.
+    let lastExpiryCount = -1;
+    let stableTicks = 0;
     const loadDeadline = Date.now() + 6000;
     while (Date.now() < loadDeadline) {
       const rawButtons = Array.from(dialog.querySelectorAll('button'));
@@ -1730,7 +1743,9 @@
       }).filter(Boolean);
 
       if (expiryButtons.length > 0) {
-        break;
+        stableTicks = expiryButtons.length === lastExpiryCount ? stableTicks + 1 : 0;
+        lastExpiryCount = expiryButtons.length;
+        if (stableTicks >= 3) break;
       }
       await new Promise(resolve => setTimeout(resolve, 200));
     }
@@ -1755,6 +1770,17 @@
         ? (parseInt(dteInputEl.value, 10) || 0)
         : (dteProfile === 'largo' ? 30 : dteProfile === 'medio' ? 5 : 0);
       selectedExpiry = expiryButtons.sort((a, b) => Math.abs(a.dte - targetDte) - Math.abs(b.dte - targetDte))[0];
+      // Auditoría del DTE: qué se pidió, qué se eligió y qué vencimientos había.
+      try {
+        const available = expiryButtons.map(e => `${e.expiryKey}(${e.dte}d)`).sort();
+        const far = Math.abs(selectedExpiry.dte - targetDte) > 2;
+        console[far ? 'warn' : 'info'](`[DTE] objetivo=${targetDte}d elegido=${selectedExpiry.expiryKey} (${selectedExpiry.dte}d) disponibles=${available.join(' ')}${far ? ' ⚠ lejos del objetivo' : ''}`);
+        const auditKey = 'ucharts_dte_audit_log';
+        const audit = JSON.parse(localStorage.getItem(auditKey) || '[]');
+        audit.push({ ts: new Date().toISOString(), type, targetDte, chosen: selectedExpiry.expiryKey, chosenDte: selectedExpiry.dte, available });
+        while (audit.length > 200) audit.shift();
+        localStorage.setItem(auditKey, JSON.stringify(audit));
+      } catch (e) { /* la auditoría nunca debe frenar una compra */ }
     }
     if (!selectedExpiry) {
       document.body.click();
@@ -2123,10 +2149,6 @@
   // hayan cerrado mientras el script no corría se depuran solas en el
   // próximo ciclo de banderinReconcileClosedPositions/
   // cardonaReconcileClosedPositions, igual que cualquier otra.
-  const TRACKED_POSITIONS_DATE_KEY = 'ucharts_tracked_positions_date';
-  const CARDONA_POSITIONS_STORAGE_KEY = 'ucharts_cardona_tracked_positions_v1';
-  const BANDERIN_POSITIONS_STORAGE_KEY = 'ucharts_banderin_tracked_positions_v1';
-
   function persistTrackedPositions() {
     try {
       localStorage.setItem(TRACKED_POSITIONS_DATE_KEY, banderinTodayKey());
@@ -2161,6 +2183,21 @@
     const el = document.getElementById('daily-bucket-pct');
     const val = el ? parseFloat(el.value) : NaN;
     return Number.isFinite(val) && val > 0 ? val : 10;
+  }
+
+  // Activos que monitorea live_scanner.py (su lista TICKERS), pedidos al servidor
+  // local. Si el servidor no responde, cae al campo "Activos Bandera".
+  async function getMonitoredTickers() {
+    try {
+      const r = await fetch('http://127.0.0.1:8055/get_monitored_tickers');
+      if (r.ok) {
+        const j = await r.json();
+        if (Array.isArray(j.tickers) && j.tickers.length > 0) return j.tickers.map(t => String(t).toUpperCase());
+      }
+    } catch (e) { /* servidor apagado o sin el endpoint nuevo */ }
+    console.warn('[Tickers] No se pudo leer la lista de activos del scanner (¿reiniciaste live_scanner.py?). Se usa el campo "Activos Bandera".');
+    banderinSetStatus('⚠ Scanner sin respuesta: usando sólo el campo "Activos Bandera"');
+    return getBanderinEnabledSymbols();
   }
 
   function getBanderinEnabledSymbols() {
@@ -3044,13 +3081,27 @@
 
   // Polling de señales en vivo y ejecución de órdenes automáticas
   let isAutoTraderRunning = false;
+  let pollSkipLastReason = null;
+  let pollSkipLastLogMs = 0;
 
   async function pollPendingTradesFromServer() {
-    if (!autoTraderMasterOn) return; // interruptor maestro: pausado por el usuario
-    if (currentSystemState !== "ARMED") return;
-    if (isAutoTraderRunning) return;
-    if (isClosingPosition) return;
-    if (isTradeFormBusy) return;
+    const skipReason = !autoTraderMasterOn ? 'Auto-Trader PAUSADO'
+      : currentSystemState !== "ARMED" ? `estado del sistema = ${currentSystemState}`
+      : isAutoTraderRunning ? 'compra autónoma en curso'
+      : isClosingPosition ? 'cierre de posición en curso'
+      : isTradeFormBusy ? 'formulario de trade ocupado'
+      : null;
+    if (skipReason) {
+      // Log throttled (1 vez por motivo, o cada 60s) para no inundar la consola con el ciclo de 5s
+      const nowMs = Date.now();
+      if (skipReason !== pollSkipLastReason || nowMs - pollSkipLastLogMs > 60000) {
+        console.info(`[Auto-Trader] pollPendingTradesFromServer omitido: ${skipReason}`);
+        pollSkipLastReason = skipReason;
+        pollSkipLastLogMs = nowMs;
+      }
+      return;
+    }
+    pollSkipLastReason = null;
     
     try {
       let r = await fetch('http://127.0.0.1:8055/get_pending_trades');
