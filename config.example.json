@@ -36,5 +36,8 @@
   "ngrok": {
     "authtoken": "TU_AUTHTOKEN_DE_NGROK_AQUI",
     "static_domain": "tu-dominio-fijo.ngrok-free.app"
+  },
+  "portal": {
+    "admin_password": "CAMBIAR_POR_UNA_CLAVE_LARGA_Y_UNICA"
   }
 }
