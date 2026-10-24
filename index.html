@@ -8833,7 +8833,8 @@ if __name__ == "__main__":
     // CAPA DE SEGURIDAD Y AUTENTICACIÓN
     // ==========================================
     function getApiUrl(path) {
-      if (window.location.host === '127.0.0.1:8055' || window.location.host === 'localhost:8055') {
+      // Servido por el propio bot (local o por el tunel): rutas relativas. Solo GitHub Pages o archivo usan la URL guardada.
+      if (window.location.protocol !== 'file:' && !/github\.io$/.test(window.location.hostname)) {
         return path;
       }
       const savedBotUrl = localStorage.getItem('meliora_bot_url');
