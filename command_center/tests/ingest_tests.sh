@@ -146,5 +146,19 @@ DUMP=$("$PGBIN/pg_dump" -h "$D" -p $PORT -U postgres -d cc -a -t public.cc_audit
 ck "token valido no aparece en auditoria/reportes" "$(grep -c "$TOKA" <<< "$DUMP")" "0"
 ck "token no aparece en ningun mensaje de error devuelto" "$(grep -c -e "$TOKA" -e "$TOKBAD" -e "$TOKX" -e "$TOKR" "$D/outs.txt")" "0"
 
+echo "== 11. Aceptacion: el DRY_RUN real de MELIORA_20261029_085305_AR atraviesa la funcion"
+if [ -f "$HERE/tests/dryrun_output.json" ]; then
+  ACC=$(cat "$HERE/tests/dryrun_output.json" | tr -d '\n')
+  ck "se guarda (created)" "$(call "$TOKA" "$ACC")" '"created"'
+  ck "reenvio identico no duplica" "$(call "$TOKA" "$ACC")" '"duplicate"'
+  ck "queda 1 reporte y 1 auditoria" "$(cnt MELIORA_20261029_085305_AR)/$(P -c "select count(*) from public.cc_audit_events where details->>'report_key'='MELIORA_20261029_085305_AR'")" "1/1"
+  ck "agente NOTICIAS, estado PARTIAL" "$(P -c "select agent_id||':'||status from public.cc_reports where report_key='MELIORA_20261029_085305_AR'")" "NOTICIAS:PARTIAL"
+  ck "cobertura 35/20/15" "$(P -c "select (coverage->>'expected')||'/'||(coverage->>'reviewed')||'/'||(coverage->>'unverified') from public.cc_reports where report_key='MELIORA_20261029_085305_AR'")" "35/20/15"
+  ck "texto guardado dice que NO es exhaustivo" "$(P -c "select content like '%No es una investigación exhaustiva de los 35 activos%' from public.cc_reports where report_key='MELIORA_20261029_085305_AR'")" "t"
+  ck "corte guardado 2026-10-29 11:53:05 UTC" "$(P -c "select to_char(cutoff_at at time zone 'UTC','YYYY-MM-DD HH24:MI:SS') from public.cc_reports where report_key='MELIORA_20261029_085305_AR'")" "2026-10-29 11:53:05"
+else
+  ck "falta tests/dryrun_output.json (correr noticias_dryrun.js primero)" "falta" "ok"
+fi
+
 echo; echo "RESULTADO: $n correctas, $f fallidas"
 [ "$f" -eq 0 ]
