@@ -1,0 +1,41 @@
+{
+  "agent_id": "NOTICIAS",
+  "report_id": "MELIORA_20261029_085305_AR",
+  "revision": 1,
+  "format_version": "1.0",
+  "title": "Noticias y Fundamentos - corte 29/10/2026 08:53 (parcial)",
+  "summary": "Corte 29/10/2026 08:53 (AR). Cobertura PARCIAL: 20 de 35 activos con contexto o calendario verificado; 15 no verificados (sin búsqueda individual suficiente; no se afirma ausencia de novedades). No es una investigación exhaustiva de los 35 activos. Eventos de calendario del corte: 9. Límites declarados por el agente: Cobertura 24h parcial; sin precios sincronizados. No noticias individuales exhaustivas.",
+  "findings": "ACTIVOS CON CONTEXTO VERIFICADO (20):\n- SPY | Contexto/calendario | Fed mantiene 3,75-4%, voto 10-2\n- QQQ | Contexto/calendario | Fed mantiene 3,75-4%\n- AMD | Contexto/calendario | Resultados 2026-11-03\n- MSFT | Contexto/calendario | FY27Q1 ingresos 92.300M\n- VLO | Contexto/calendario | Petroleo cede ante diplomacia\n- AXON | Contexto/calendario | Resultados 2026-11-05\n- GLD | Contexto/calendario | Metales bajo presion\n- GOOGL | Contexto/calendario | Alphabet Q3 ingresos 127.600M\n- AAPL | Contexto/calendario | MacBook Pro PROLED XDR\n- GOOG | Contexto/calendario | Alphabet Q3 ingresos 127.600M\n- AMZN | Contexto/calendario | Conferencia Q3 2026-10-29\n- CVX | Contexto/calendario | Petroleo cede ante diplomacia\n- NVDA | Contexto/calendario | RTX Spark laptops\n- XOM | Contexto/calendario | Petroleo cede ante diplomacia\n- COIN | Contexto/calendario | Resultados 2026-10-29\n- USO | Contexto/calendario | Petroleo cede ante diplomacia\n- EBAY | Contexto/calendario | Q3 ingresos 3.206M\n- UBER | Contexto/calendario | Conferencia Q3 2026-11-04\n- TNA | Contexto/calendario | Fed mantiene 3,75-4%\n- SLV | Contexto/calendario | Metales bajo presion\n\nACTIVOS NO VERIFICADOS (15): BLK, META, MSCI, TSLA, MRNA, PLTR, ORCL, C, DIS, NDAQ, NFLX, PYPL, HPE, BAC, EA\n\nCALENDARIO (9):\n- 2026-10-29 09:30AR/08:30EDT | PIB/PCE | PIB avance Q3/Personal Income Outlays Sept | Confirmado\n- 2026-10-29 18AR/17EDT | AMZN | Conferencia Q3 | Confirmado\n- 2026-10-29 18AR/14PDT Q&A | COIN | Resultados tras cierre/Q&A | Confirmado\n- 2026-10-30 10:30AR/08:30CDT | XOM | Conferencia Q3 | Confirmado\n- 2026-10-30 12AR/11EDT | CVX | Conferencia Q3 | Confirmado\n- 2026-11-03 19AR/17EST | AMD | Resultados tras cierre/llamada | Confirmado; etiqueta PDT calendario discrepante\n- 2026-11-04 10AR/08EST | UBER | Conferencia Q3 | Confirmado\n- 2026-11-04 10:30AR/08:30EST | Comercio EEUU | Balanza septiembre | Confirmado\n- 2026-11-05 19AR/17EST | AXON | Resultados tras cierre/webinar | Confirmado\n\nPRIORIDADES 80/20 (texto del agente): 1 MSFT vs Alphabet; 2 PIB/PCE 09:30; 3 AMZN COIN hoy; 4 XOM CVX mañana; 5 faltan trades 28; 6 señales viejas\n\nAUDITORÍA DE TRADES (texto del agente): Sesión 28/10: 0 filas por fecha en Registro Continuo. No auditoría de resultado 28 posible. No repetir neto 27 como actual ni atribuir Sonar.",
+  "cutoff_at": "2026-10-29T08:53:05-03:00",
+  "generated_at": "2026-10-29T15:00:00.000Z",
+  "status": "PARTIAL",
+  "coverage": {
+    "expected": 35,
+    "reviewed": 20,
+    "unverified": 15,
+    "calendar_events": 9
+  },
+  "sources": [
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+    "https://ir.amd.com/news-events/press-releases/detail/1300/amd-to-report-fiscal-third-quarter-2026-financial-results",
+    "https://www.microsoft.com/en-us/Investor/earnings/FY-2027-Q1/press-release-webcast",
+    "https://www.reuters.com/business/energy/us-oil-prices-fall-investors-gauge-risks-mideast-supply-2026-10-29/",
+    "https://www.axon.com/newsroom/press-releases/axon-to-release-third-quarter-2026-earnings-on-november-5-2026",
+    "https://www.reuters.com/world/india/gold-slips-markets-assess-fed-signals-await-us-inflation-data-2026-10-29/",
+    "https://www.publicnow.com/view/ED018F4AAE12FB3B1BD1E9649EA9BF381E69B00F",
+    "https://www.apple.com/newsroom/2026/10/apple-unveils-groundbreaking-macbook-pro-with-proled-xdr-display/",
+    "https://www.aboutamazon.com/news/company-news/amazon-earnings-q3-2026-report",
+    "https://blogs.nvidia.com/blog/local-ai-rtx-spark-laptops-updates-models-agents-games/",
+    "https://investor.coinbase.com/news/news-details/2026/Coinbase-Announces-Date-of-Third-Quarter-2026-Financial-Results/default.aspx",
+    "https://investors.ebayinc.com/investor-news/press-release-details/2026/eBay-Inc--Reports-Third-Quarter-2026-Results/default.aspx",
+    "https://investor.uber.com/news-events/news/press-release-details/2026/Uber-Announces-Date-of-Third-Quarter-2026-Results-Conference-Call/default.aspx",
+    "https://www.bea.gov/news/schedule",
+    "https://investor.exxonmobil.com/news-events/ir-calendar",
+    "https://chevroncorp.gcs-web.com/events/event-details/3q-2026-chevron-earnings-conference-call"
+  ],
+  "limits": [
+    "15 de 35 activos no verificados",
+    "Cobertura 24h parcial; sin precios sincronizados. No noticias individuales exhaustivas.",
+    "Última señal 2026-10-28; vigencia 29/10 no certificada. Sin gráficos/fills. MSN inaccesible. Calendario incompleto."
+  ]
+}
