@@ -135,7 +135,7 @@ ck "anon con token invalido: unauthorized" "$(P -v tok="$TOKBAD" -v rep="$(pl PE
 ck "dueño ve sus reportes" "$(P <<< "set role authenticated; select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',false); select count(*)>0 from public.cc_reports;" | tail -1)" "t"
 ck "otro usuario no ve reportes (RLS)" "$(P <<< "set role authenticated; select set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222',false); select count(*) from public.cc_reports;" | tail -1)" "0"
 ck "service_role lee tokens (solo servidor)" "$(AS service_role 'select count(*)>0 from public.cc_ingest_tokens;' X | tail -1)" "t"
-ck "funcion con search_path vacio y SECURITY DEFINER" "$(P -c "select prosecdef::text||':'||proconfig::text from pg_proc where proname='cc_ingest_report'")" "t:{search_path=\"\"}"
+ck "funcion con search_path vacio y SECURITY DEFINER" "$(P -c "select prosecdef::text||':'||proconfig::text from pg_proc where proname='cc_ingest_report'")" "true:{\"search_path=\\\"\\\"\"}"
 
 echo "== 10. El token no se filtra"
 P <<EOF >/dev/null

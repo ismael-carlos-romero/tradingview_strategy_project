@@ -161,7 +161,7 @@ begin
       raise exception 'invalid report: sources' using errcode = '22023';
     end if;
     for e in select * from pg_catalog.jsonb_array_elements(p_report->'sources') loop
-      if pg_catalog.jsonb_typeof(e) <> 'string' or (e #>> '{}') !~ '^https://[^[:space:]]{1,490}$' then
+      if pg_catalog.jsonb_typeof(e) <> 'string' or (e #>> '{}') !~ '^https://[^[:space:]]+$' or length(e #>> '{}') > 500 then
         raise exception 'invalid report: sources (solo https)' using errcode = '22023';
       end if;
     end loop;

@@ -1,5 +1,5 @@
 -- Solo para pruebas locales: imita lo que Supabase ya trae (roles, schema auth, extensions, privilegios por defecto).
-create role anon nologin; create role authenticated nologin; create role service_role nologin;
+create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
 create schema extensions; create extension pgcrypto schema extensions;
 create schema auth;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text);
