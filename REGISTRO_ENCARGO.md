@@ -43,7 +43,7 @@ Procesos en ejecución: `python live_scanner.py` (servidor HTTP :8055 + Sonar + 
 - Catálogo: tabla `catalogo_estrategias` con 18 estrategias; PM40/Techo Fuerte/Cola de Techo/Hanger tienen discrepancias documentadas pendientes (E2).
 
 ### Hallazgos de seguridad (no corregidos, requieren decisión)
-- Contraseña admin por defecto `meliora2026` se crea si no hay hash (live_scanner.py ~l.1775).
+- Contraseña admin por defecto `CLAVE_RETIRADA` se crea si no hay hash (live_scanner.py ~l.1775).
 - Token `LAB_SIM_SECURE_TOKEN` hardcodeado en el payload al Apps Script.
 - `is_request_authorized` deja pasar sin sesión cualquier request con Host localhost/127.0.0.1 y `/webhook/tv` es público (solo protegido por el secreto en el cuerpo); detrás de ngrok el header Host no es local, pero conviene revisar.
 - `verify=False` en requests a Telegram/webhook.

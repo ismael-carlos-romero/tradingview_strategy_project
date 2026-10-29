@@ -1428,8 +1428,8 @@ class BotControlServer(BaseHTTPRequestHandler):
                 if row:
                     expected_hash = row[0]
                 else:
-                    # Inicializar por defecto con 'meliora2026'
-                    expected_hash = hashlib.sha256("meliora2026".encode('utf-8')).hexdigest()
+                    # Inicializar por defecto con 'CLAVE_RETIRADA'
+                    expected_hash = hashlib.sha256("CLAVE_RETIRADA".encode('utf-8')).hexdigest()
                     cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('admin_password_hash', ?)", (expected_hash,))
                     conn.commit()
                 

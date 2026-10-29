@@ -96,7 +96,7 @@ def run_ssh_tunnel():
                     f"Tu túnel de acceso remoto se ha conectado o reiniciado con éxito.\n\n"
                     f"👉 <b>Enlace de Acceso:</b>\n"
                     f"{url}\n\n"
-                    f"🔑 <i>Contraseña: meliora2026</i>"
+                    f"<i>Ingresa con tu contrasena de administrador.</i>"
                 )
                 send_telegram_message(msg)
                 url_detected = True
@@ -126,7 +126,7 @@ def run_ngrok_tunnel():
         f"Tu túnel de acceso remoto (ngrok, dominio fijo) se ha conectado o reiniciado con éxito.\n\n"
         f"👉 <b>Enlace de Acceso:</b>\n"
         f"{url}\n\n"
-        f"🔑 <i>Contraseña: meliora2026</i>"
+        f"<i>Ingresa con tu contrasena de administrador.</i>"
     )
     send_telegram_message(msg)
 

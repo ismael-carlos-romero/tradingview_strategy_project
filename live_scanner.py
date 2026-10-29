@@ -1807,24 +1807,27 @@ class BotControlServer(BaseHTTPRequestHandler):
                 data = json.loads(post_data) if post_data else {}
                 password = data.get("password", "")
                 
-                # Obtener el hash esperado de SQLite
+                # Hash esperado: clave privada (variable de entorno o config.json) o, si no hay, el hash guardado en SQLite.
+                # No existe clave por defecto: sin configurar, el login queda bloqueado.
+                import hmac
                 conn = sqlite3.connect(DB_NAME)
                 cursor = conn.cursor()
-                cursor.execute("SELECT val FROM configuracion WHERE param_id = 'admin_password_hash'")
-                row = cursor.fetchone()
-                
-                expected_hash = None
-                if row:
-                    expected_hash = row[0]
+                configured_pw = os.environ.get("MELIORA_PORTAL_PASSWORD") or (CONFIG.get("portal") or {}).get("admin_password") or ""
+                if configured_pw and not configured_pw.startswith("CAMBIAR"):
+                    expected_hash = hashlib.sha256(configured_pw.encode('utf-8')).hexdigest()
                 else:
-                    # Inicializar por defecto con 'meliora2026'
-                    expected_hash = hashlib.sha256("meliora2026".encode('utf-8')).hexdigest()
-                    cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('admin_password_hash', ?)", (expected_hash,))
-                    conn.commit()
-                
+                    cursor.execute("SELECT val FROM configuracion WHERE param_id = 'admin_password_hash'")
+                    row = cursor.fetchone()
+                    expected_hash = row[0] if row else None
+
+                if not expected_hash:
+                    conn.close()
+                    self.wfile.write(json.dumps({"status": "error", "message": "Contrasena de administrador no configurada en el servidor."}).encode('utf-8'))
+                    return
+
                 input_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
-                
-                if input_hash == expected_hash:
+
+                if hmac.compare_digest(input_hash, expected_hash):
                     # Generar y guardar session token
                     import secrets
                     session_token = secrets.token_hex(24)
