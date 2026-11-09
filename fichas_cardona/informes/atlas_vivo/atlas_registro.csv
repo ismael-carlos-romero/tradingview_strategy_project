@@ -1,0 +1,20 @@
+﻿ts,t,k,nombre,etapa,dir,falta,img,vela,enviado
+2026-11-06 12:01,BLK,CAIDA,Caída,CASI,CALL,Martillo verde y verde final rompen la línea de techo,BLK_CAIDA.png,2026-11-06 11:00,False
+2026-11-06 12:01,SPY,PISO_FUERTE,Piso fuerte,CONFIRMADA_FUERA_DE_HORARIO,CALL,—,SPY_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,QQQ,PISO_FUERTE,Piso fuerte,CASI,CALL,Hora: martillo/verde final rompe la línea de techo del canal bajista,QQQ_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,META,PISO_FUERTE,Piso fuerte,CONFIRMADA,CALL,—,META_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,MSCI,PM40,PM40,CASI,CALL,Verde final (sólida/martillo) rompe PM20 y la línea,MSCI_PM40.png,2026-11-06 11:00,False
+2026-11-06 12:01,MSCI,CAIDA,Caída,CASI,CALL,Martillo verde y verde final rompen la línea de techo,MSCI_CAIDA.png,2026-11-06 11:00,False
+2026-11-06 12:01,MSFT,PM40,PM40,CASI,CALL,Verde final (sólida/martillo) rompe PM20 y la línea,MSFT_PM40.png,2026-11-06 11:00,False
+2026-11-06 12:01,MSFT,CAIDA,Caída,CONFIRMADA,CALL,—,MSFT_CAIDA.png,2026-11-06 11:00,False
+2026-11-06 12:01,VLO,PISO_FUERTE,Piso fuerte,CASI,CALL,Hora: martillo/verde final rompe la línea de techo del canal bajista,VLO_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,AXON,PISO_FUERTE,Piso fuerte,CASI,CALL,Hora: martillo/verde final rompe la línea de techo del canal bajista,AXON_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,TSLA,CANAL_BREAK,Canal bajista,CONFIRMADA,CALL,—,TSLA_CANAL_BREAK.png,2026-11-06 11:00,False
+2026-11-06 12:01,AMZN,RUPT_PISO,Rupt. piso,CASI,PUT,Vela roja final (≥11am) rompe con el cuerpo la línea de piso del gap,AMZN_RUPT_PISO.png,2026-11-06 11:00,False
+2026-11-06 12:01,PLTR,PISO_FUERTE,Piso fuerte,CASI,CALL,Hora: martillo/verde final rompe la línea de techo del canal bajista,PLTR_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,USO,VELA_ROJA,1ª roja,CONFIRMADA,PUT,—,USO_VELA_ROJA.png,2026-11-06 11:00,False
+2026-11-06 12:01,C,PISO_FUERTE,Piso fuerte,CASI,CALL,Hora: martillo/verde final rompe la línea de techo del canal bajista,C_PISO_FUERTE.png,2026-11-06 11:00,False
+2026-11-06 12:01,EBAY,PM40,PM40,CASI,CALL,Verde final (sólida/martillo) rompe PM20 y la línea,EBAY_PM40.png,2026-11-06 11:00,False
+2026-11-06 12:01,DIS,PM40,PM40,CASI,CALL,Verde final (sólida/martillo) rompe PM20 y la línea,DIS_PM40.png,2026-11-06 11:00,False
+2026-11-06 12:01,PYPL,PM40,PM40,CASI,CALL,Verde final (sólida/martillo) rompe PM20 y la línea,PYPL_PM40.png,2026-11-06 11:00,False
+2026-11-06 12:01,TNA,PISO_FUERTE,Piso fuerte,CASI,CALL,Hora: martillo/verde final rompe la línea de techo del canal bajista,TNA_PISO_FUERTE.png,2026-11-06 11:00,False

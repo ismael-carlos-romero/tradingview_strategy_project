@@ -1,0 +1,383 @@
+//@version=6
+// Atlas vivo v2 - las 12 estrategias de Cardona por ETAPAS en TradingView (solo analisis y alertas; no opera).
+// Dibuja en el grafico, en cada activo, cada vez que una estrategia pasa a CASI (falta 1 señal) o CONFIRMADA:
+// caja del patron + linea de caida/subida hasta la ultima vela + etiqueta con el paso que falta.
+// Espejo del motor Python (atlas_motor.py). Usar en velas de 1 HORA. Python es la referencia.
+indicator("Atlas vivo · Cardona (12 estrategias)", shorttitle="Atlas vivo", overlay=true, max_lines_count=300, max_labels_count=300, max_boxes_count=300)
+
+// ---------------- entradas
+gLin   = input.bool(true, "Dibujar cajas, líneas y etiquetas")
+gTab   = input.bool(true, "Mostrar tabla de las 12 estrategias")
+gPos   = input.string("Arriba derecha", "Posición de la tabla", options=["Arriba derecha", "Abajo derecha", "Arriba izquierda", "Abajo izquierda"])
+lbN    = input.int(60, "Velas hacia atrás para la línea", minval=20, maxval=120)
+minSep = input.int(5, "Separación mínima entre ancla y última vela", minval=2)
+minPend = input.float(0.4, "Pendiente mínima de la línea (%)", step=0.1)
+toqPct = input.float(0.25, "Toque intermedio máximo (%)", step=0.05)
+tolPct = input.float(0.05, "Tolerancia de cola (%)", step=0.01)
+gapMin = input.float(0.1, "Gap mínimo (%)", step=0.05)
+caidaMin = input.float(0.5, "Caída mínima (%)", step=0.1)
+rvolHi = input.float(1.0, "Volumen alto = volumen relativo mayor a", step=0.1)
+usdN   = input.float(7.5, "Dólares sobre PM40 (spot-strike)", step=0.5)
+usdAlc = input.float(10.0, "Dólares sobre PM40 en canal alcista", step=0.5)
+maxBars = input.int(300, "Velas recientes a evaluar", minval=100, maxval=800)
+sepEv  = input.int(6, "Velas mínimas entre dos marcas de la misma estrategia", minval=1)
+
+// ---------------- líneas de tendencia de Cardona
+f_linea(bool desc, int e, int lb) =>
+    bool okL = false
+    int bj = 0
+    float byj = na
+    float bye = na
+    if bar_index > last_bar_index - maxBars
+        float ye = desc ? high[e] : low[e]
+        float tol = tolPct / 100.0
+        float toq = toqPct / 100.0
+        float bestV = na
+        for j = e + minSep to e + lb
+            float yj = desc ? high[j] : low[j]
+            bool cand = desc ? yj > ye : yj < ye
+            if cand and math.abs(yj - ye) / yj * 100.0 >= minPend and (na(bestV) or (desc ? yj > bestV : yj < bestV))
+                bool valid = true
+                bool touch = false
+                for t = e + 1 to j - 1
+                    float yl = ye + (yj - ye) * (t - e) / (j - e)
+                    float pt = desc ? high[t] : low[t]
+                    if desc ? pt > yl * (1.0 + tol) : pt < yl * (1.0 - tol)
+                        valid := false
+                        break
+                    if desc ? pt >= yl * (1.0 - toq) : pt <= yl * (1.0 + toq)
+                        touch := true
+                if valid and touch
+                    bestV := yj
+                    okL := true
+                    bj := j
+                    byj := yj
+                    bye := ye
+    [okL, bj, byj, bye]
+
+f_val(int e, int j, float yj, float ye, int t) =>
+    j > e ? ye + (yj - ye) * (t - e) / (j - e) : na
+
+[cuOk, cuJ, cuYj, cuYe] = f_linea(true, 0, lbN)
+[cpOk, cpJ, cpYj, cpYe] = f_linea(true, 1, lbN)
+[c80Ok, c80J, c80Yj, c80Ye] = f_linea(true, 0, 80)
+[ccOk, ccJ, ccYj, ccYe] = f_linea(true, 0, 100)
+[cqOk, cqJ, cqYj, cqYe] = f_linea(true, 1, 100)
+[suOk, suJ, suYj, suYe] = f_linea(false, 0, lbN)
+[spOk, spJ, spYj, spYe] = f_linea(false, 1, lbN)
+
+// ---------------- datos diarios (contexto)
+f_touch() =>
+    float mx = ta.highest(high, 260)
+    int c = 0
+    for k = 0 to 259
+        if high[k] >= mx * 0.99
+            c += 1
+    c
+
+f_dhoy() =>
+    [close, open, high, low, ta.sma(close, 20), ta.sma(close, 100), ta.sma(close, 200), ta.highest(high, 20), ta.lowest(low, 3), ta.highest(high, 260), f_touch()]
+
+f_dprev() =>
+    float tq = f_touch()
+    [close[1], open[1], ta.sma(close, 20)[1], ta.sma(close, 100)[1], ta.sma(close, 200)[1], ta.highest(high, 20)[1], ta.lowest(low, 3)[1], ta.highest(high, 260)[1], tq[1]]
+
+[dC, dO, dH, dL, d20, d100, d200, dHi20, d3L, dHi260, dTq] = request.security(syminfo.tickerid, "D", f_dhoy(), lookahead = barmerge.lookahead_off)
+[pC, pO, p20, p100, p200, pHi20, p3L, pHi260, pTq] = request.security(syminfo.tickerid, "D", f_dprev(), lookahead = barmerge.lookahead_off)
+
+tz = "America/New_York"
+endMin = hour(time_close, tz) * 60 + minute(time_close, tz)
+lastOfDay = endMin >= 960
+rC = lastOfDay ? dC : pC
+rO = lastOfDay ? dO : pO
+r20 = lastOfDay ? d20 : p20
+r100 = lastOfDay ? d100 : p100
+r200 = lastOfDay ? d200 : p200
+rHi20 = lastOfDay ? dHi20 : pHi20
+r3L = lastOfDay ? d3L : p3L
+rHi260 = lastOfDay ? dHi260 : pHi260
+rTq = lastOfDay ? dTq : pTq
+
+// ---------------- velas y medias horarias
+pm20 = ta.sma(close, 20)
+pm40 = ta.sma(close, 40)
+pm100 = ta.sma(close, 100)
+pm200 = ta.sma(close, 200)
+green = close > open
+red = close < open
+rng = high - low
+body = math.abs(close - open)
+solidG = green and body > 0.6 * rng
+solidR = red and body > 0.6 * rng
+hammer = green and (open - low) > 2 * body and (high - close) < 0.2 * body
+hangerL = rng > 0 and (high - math.max(open, close)) >= 0.45 * rng and body <= 0.4 * rng
+strongG = (solidG or hammer) and not hangerL
+rvol = volume / nz(ta.sma(volume, 20)[1], volume)
+par10 = ta.lowest(pm20 - pm40, 10) > 0 and ta.lowest(pm100 - pm200, 10) > 0
+touch40 = low <= pm40 * 1.0015 and close >= pm40 * 0.9985
+touchRec = ta.barssince(touch40) <= 3
+hamRec = ta.barssince(green and (hammer or solidG)) <= 2
+redsBrk20 = ta.lowest(close - pm20, 5) < 0
+
+// ---------------- estado del día (primera vela, segunda, tercera)
+newDay = session.isfirstbar_regular
+var int slot = 0
+slot := newDay ? 0 : slot + 1
+var float dayOpen = na
+var float fLow = na
+var float fBodyLow = na
+var float fClose = na
+var float fRvol = na
+var float fPm40 = na
+var bool fGreen = false
+var bool fSolid = false
+var bool fRedBelow = false
+var bool s2Green = false
+var bool s2Red = false
+var float s2Close = na
+var bool s3Vol = false
+var float minAfter = na
+if newDay
+    dayOpen := open
+    fLow := low
+    fBodyLow := math.min(open, close)
+    fClose := close
+    fRvol := rvol
+    fPm40 := pm40
+    fGreen := green
+    fSolid := solidG
+    fRedBelow := red and close < pm40
+    s2Green := false
+    s2Red := false
+    s2Close := na
+    s3Vol := false
+    minAfter := na
+else
+    minAfter := na(minAfter) ? close : math.min(minAfter, close)
+if slot == 1
+    s2Green := green
+    s2Red := red
+    s2Close := close
+if slot == 2
+    s3Vol := rvol > rvolHi
+gap = pC > 0 ? (dayOpen - pC) / pC * 100.0 : 0.0
+
+// ---------------- etapas: 0 sin contexto, 1 vigilancia, 2 casi, 3 confirmada en ventana, 4 confirmada fuera de ventana
+// devuelve [etapa, primer paso que falta (1 = primero; 0 = ninguno)]
+f_stage(array<bool> s, int nctx, bool vent) =>
+    int n = s.size()
+    bool all = true
+    bool ctx = true
+    bool allBut = true
+    int miss = 0
+    for i = 0 to n - 1
+        bool v = s.get(i)
+        if not v and miss == 0
+            miss := i + 1
+        all := all and v
+        if i < nctx
+            ctx := ctx and v
+        if i < n - 1
+            allBut := allBut and v
+    int stg = all ? (vent ? 3 : 4) : (not ctx ? 0 : (allBut ? 2 : 1))
+    [stg, miss]
+
+f_vent(int lo, int hi) =>
+    endMin >= lo and endMin <= hi + 30
+
+rompeCall = cpOk and green and close > f_val(1, cpJ, cpYj, cpYe, 0)
+rompePut = spOk and red and close < f_val(1, spJ, spYj, spYe, 0)
+rompeCan = cqOk and green and close > f_val(1, cqJ, cqYj, cqYe, 0)
+lnCaida = cuOk or cpOk
+caidaPct = cuOk ? (cuYj - ta.lowest(low, cuJ + 1)) / cuYj * 100.0 : 0.0
+caidaDia = rC < r20 and (rHi20 - rC) / rHi20 * 100.0 >= 2.0
+cercaPiso = (math.abs(rC - r100) / r100 <= 0.02) or rC < r100 or (math.abs(rC - r200) / r200 <= 0.02) or rC < r200
+usd = par10 ? usdAlc : usdN
+primerGapOk = true
+
+// 1 Gap normal (CALL)
+[st1, ms1] = f_stage(array.from(r100 > r200, rC > r100, gap >= gapMin and fGreen, slot >= 1 and s2Green and (slot > 1 or strongG), slot >= 2 and s3Vol), 2, f_vent(660, 720))
+// 2 Gap bajista (CALL)
+[st2, ms2] = f_stage(array.from(c80Ok, rC > rO, gap <= -gapMin and fGreen, slot >= 1 and s2Green, slot >= 2 and s3Vol), 2, f_vent(660, 960))
+// 3 Piso fuerte (CALL)
+[st3, ms3] = f_stage(array.from(r100 > r200, caidaDia, r3L <= r100 * 1.005 or r3L <= r200 * 1.005, rompeCall and strongG), 3, f_vent(660, 960))
+// 4 Primer gap al alza (CALL)
+[st4, ms4] = f_stage(array.from(caidaDia, cercaPiso, gap >= gapMin and fGreen and fSolid and fRvol > rvolHi and primerGapOk, na(minAfter) or minAfter >= fLow, lastOfDay), 2, lastOfDay)
+// 5 PM40 hora (CALL)
+rompe5 = rompeCall and strongG and close > pm20
+[st5, ms5] = f_stage(array.from(par10, lnCaida and caidaPct >= caidaMin, redsBrk20 and touchRec, rompe5), 2, f_vent(660, 960))
+// 6 Caida normal / fuerte (CALL)
+[st6, ms6] = f_stage(array.from(par10, lnCaida, ta.lowest(close - pm20, 6) < 0, rompeCall and (strongG or strongG[1])), 2, f_vent(660, 960))
+// 7 Ruptura del canal bajista (CALL)
+[st7, ms7] = f_stage(array.from(ccOk and pm40 > pm20, hamRec, rompeCan and rvol > rvolHi), 1, f_vent(660, 960))
+// 8 Primera vela roja (PUT)
+zona8 = c80Ok and (close < pm40 or math.abs(close - pm40) / pm40 < 0.015)
+[st8, ms8] = f_stage(array.from(zona8, fRedBelow, slot >= 1 and s2Red and s2Close < fBodyLow), 1, f_vent(600, 660))
+// 9 Ruptura del piso del gap (PUT)
+abre9 = (gap > 0 or fGreen) and (fClose - fPm40 >= usd)
+[st9, ms9] = f_stage(array.from(rO > rC and (pC - pm40 >= usd), abre9, slot >= 2 and red and close < fBodyLow and endMin >= 660), 1, f_vent(660, 720))
+// 10 Modelo de 4 pasos (PUT)
+yTecho1 = f_val(0, c80J, c80Yj, c80Ye, 1)
+borra10 = green[1] and red and close < open[1] and c80Ok and high[1] >= yTecho1 * 0.995
+[st10, ms10] = f_stage(array.from(pm40 > pm20 and close < pm40, c80Ok and suOk, borra10, rompePut), 2, f_vent(660, 720))
+// 11 Hanger en diario (PUT)
+zona11 = rC >= 0.98 * rHi20 and rC > r20
+pat11 = green[5] and green[4] and green[3] and green[2] and red[1] and red and rvol[1] > rvolHi and rvol > rvolHi and close < open[5]
+dRng = dH - dL
+hd11 = lastOfDay and dRng > 0 and (dH - math.max(dO, dC)) >= 0.45 * dRng and math.abs(dC - dO) <= 0.4 * dRng and dC < dO
+[st11, ms11] = f_stage(array.from(zona11, pat11, hd11), 1, lastOfDay)
+// 12 Techo fuerte (PUT segun criterios de la lamina; titulo dice CALL: ambiguedad)
+dos12 = red[2] and red[1] and math.max(high[2], high[1]) < rHi260
+[st12, ms12] = f_stage(array.from(rTq >= 2 and rC >= 0.97 * rHi260, r200 > r100, dos12, red and close < math.min(open[1], close[1]) and dos12), 2, f_vent(660, 960))
+
+// la mejor etapa confirmada del dia se mantiene (la vela de la señal ya paso)
+var int m1 = 0
+var int m2 = 0
+var int m3 = 0
+var int m4 = 0
+var int m5 = 0
+var int m6 = 0
+var int m7 = 0
+var int m8 = 0
+var int m9 = 0
+var int m10 = 0
+var int m11 = 0
+var int m12 = 0
+m1 := newDay ? 0 : (st1 == 3 ? 3 : m1)
+m2 := newDay ? 0 : (st2 == 3 ? 3 : m2)
+m3 := newDay ? 0 : (st3 == 3 ? 3 : m3)
+m4 := newDay ? 0 : (st4 == 3 ? 3 : m4)
+m5 := newDay ? 0 : (st5 == 3 ? 3 : m5)
+m6 := newDay ? 0 : (st6 == 3 ? 3 : m6)
+m7 := newDay ? 0 : (st7 == 3 ? 3 : m7)
+m8 := newDay ? 0 : (st8 == 3 ? 3 : m8)
+m9 := newDay ? 0 : (st9 == 3 ? 3 : m9)
+m10 := newDay ? 0 : (st10 == 3 ? 3 : m10)
+m11 := newDay ? 0 : (st11 == 3 ? 3 : m11)
+m12 := newDay ? 0 : (st12 == 3 ? 3 : m12)
+
+// ---------------- nombres de los pasos (para decir QUE FALTA)
+var matrix<string> SN = matrix.new<string>(12, 6, "")
+var array<int> lastEv = array.new<int>(12, -1000)
+f_row(int r, array<string> a) =>
+    for i = 0 to a.size() - 1
+        SN.set(r, i, a.get(i))
+if barstate.isfirst
+    f_row(0, array.from("PM100 sobre PM200", "Precio sobre PM100", "Gap al alza + 1ª vela verde", "2ª vela verde", "Volumen alto (3ª vela)"))
+    f_row(1, array.from("Línea de caída", "Cierre diario verde", "Gap a la baja + vela verde", "2ª vela verde", "Volumen alto"))
+    f_row(2, array.from("PM100 sobre PM200", "Caída diaria", "Mínimo cerca de PM100/PM200", "Vela verde fuerte rompe la línea"))
+    f_row(3, array.from("Caída diaria", "Cerca del piso (PM100/PM200)", "Gap al alza + verde sólida + volumen", "Sin mínimos nuevos", "Cierre del día"))
+    f_row(4, array.from("PM20>PM40 y PM100>PM200", "Caída con línea descendente", "Rojas rompen PM20 y tocan PM40", "Vela verde rompe línea y PM20"))
+    f_row(5, array.from("PM20>PM40 y PM100>PM200", "Línea de caída", "Rojas bajo PM20", "Vela verde rompe la línea"))
+    f_row(6, array.from("Canal bajista + PM40>PM20", "Martillo / verde reciente", "Verde rompe el canal con volumen"))
+    f_row(7, array.from("Zona PM40 + línea", "1ª roja bajo PM40", "2ª roja bajo el cuerpo de la 1ª"))
+    f_row(8, array.from("Caída previa vs PM40", "Apertura sobre PM40 (USD)", "Roja rompe el piso del gap"))
+    f_row(9, array.from("Techo bajo PM40", "Líneas de techo y piso", "Roja borra la verde", "Roja rompe la línea de subida"))
+    f_row(10, array.from("Cerca del máximo de 20 días", "4 verdes + 2 rojas", "Hanger diario"))
+    f_row(11, array.from("Techo tocado 2+ veces", "PM200 sobre PM100", "2 rojas bajo el techo", "Roja rompe mínimos"))
+
+f_falta(int k, int ms) =>
+    ms > 0 ? SN.get(k, ms - 1) : ""
+
+// ---------------- dibujo historico: caja del patron + linea + etiqueta, al pasar a CASI o CONFIRMADA
+f_evento(int k, string nm, bool isCall, int stg, int ms, int span, bool hasL, int lj, float lyj, float lye, int le, float lvl) =>
+    bool ev = stg >= 2 and stg > nz(stg[1]) and bar_index - lastEv.get(k) > sepEv
+    if gLin and ev and bar_index > last_bar_index - maxBars
+        lastEv.set(k, bar_index)
+        color base = isCall ? color.green : color.red
+        color cc = stg >= 3 ? base : color.orange
+        int sp = math.min(math.max(span, 3), 80)
+        float top = high
+        float bot = low
+        for i = 1 to sp
+            top := math.max(top, high[i])
+            bot := math.min(bot, low[i])
+        box.new(bar_index - sp, top, bar_index, bot, border_color = cc, border_width = 1, border_style = stg >= 3 ? line.style_solid : line.style_dashed, bgcolor = color.new(cc, 92))
+        if hasL and not na(lyj)
+            line.new(bar_index - lj, lyj, bar_index - le, lye, color = color.aqua, width = 2)
+            line.new(bar_index - le, lye, bar_index + 2, f_val(le, lj, lyj, lye, -2), color = color.aqua, width = 2, style = line.style_dashed)
+        if not na(lvl)
+            line.new(bar_index - math.min(slot, 40), lvl, bar_index + 2, lvl, color = color.fuchsia, width = 1, style = line.style_dashed)
+        string tx = nm + (stg == 3 ? " ✔ CONFIRMADA" : stg == 4 ? " ✔ (fuera de horario)" : " · CASI · falta: " + f_falta(k, ms))
+        label.new(bar_index, isCall ? low : high, tx, style = isCall ? label.style_label_up : label.style_label_down, color = color.new(cc, 20), textcolor = color.white, size = size.small)
+
+lOk = cuOk or cpOk
+lJ = cuOk ? cuJ : cpJ
+lYj = cuOk ? cuYj : cpYj
+lYe = cuOk ? cuYe : cpYe
+lE = cuOk ? 0 : 1
+nada = float(na)
+f_evento(0, "Gap normal", true, st1, ms1, slot + 1, false, 0, na, na, 0, fLow)
+f_evento(1, "Gap bajista", true, st2, ms2, c80J, c80Ok, c80J, c80Yj, c80Ye, 0, fLow)
+f_evento(2, "Piso fuerte", true, st3, ms3, lJ, lOk, lJ, lYj, lYe, lE, nada)
+f_evento(3, "1er gap", true, st4, ms4, slot + 1, false, 0, na, na, 0, fLow)
+f_evento(4, "PM40", true, st5, ms5, lJ, lOk, lJ, lYj, lYe, lE, nada)
+f_evento(5, "Caída", true, st6, ms6, lJ, lOk, lJ, lYj, lYe, lE, nada)
+f_evento(6, "Canal bajista", true, st7, ms7, cqJ, cqOk, cqJ, cqYj, cqYe, 1, nada)
+f_evento(7, "1ª roja", false, st8, ms8, c80J, c80Ok, c80J, c80Yj, c80Ye, 0, fBodyLow)
+f_evento(8, "Rupt. piso gap", false, st9, ms9, slot + 1, false, 0, na, na, 0, fBodyLow)
+f_evento(9, "4 pasos", false, st10, ms10, c80J, c80Ok, c80J, c80Yj, c80Ye, 0, nada)
+f_evento(10, "Hanger", false, st11, ms11, 10, false, 0, na, na, 0, nada)
+f_evento(11, "Techo fuerte", false, st12, ms12, 20, false, 0, na, na, 0, rHi260)
+
+// ---------------- alertas (una por estrategia y etapa)
+alertcondition(st1 == 2 and st1[1] < 2, "Gap normal: CASI", "Atlas vivo · Gap normal en CASI en {{ticker}}")
+alertcondition(st1 == 3 and st1[1] != 3, "Gap normal: CONFIRMADA", "Atlas vivo · Gap normal CONFIRMADA en {{ticker}}")
+alertcondition(st2 == 2 and st2[1] < 2, "Gap bajista: CASI", "Atlas vivo · Gap bajista en CASI en {{ticker}}")
+alertcondition(st2 == 3 and st2[1] != 3, "Gap bajista: CONFIRMADA", "Atlas vivo · Gap bajista CONFIRMADA en {{ticker}}")
+alertcondition(st3 == 2 and st3[1] < 2, "Piso fuerte: CASI", "Atlas vivo · Piso fuerte en CASI en {{ticker}}")
+alertcondition(st3 == 3 and st3[1] != 3, "Piso fuerte: CONFIRMADA", "Atlas vivo · Piso fuerte CONFIRMADA en {{ticker}}")
+alertcondition(st4 == 2 and st4[1] < 2, "1er gap: CASI", "Atlas vivo · 1er gap en CASI en {{ticker}}")
+alertcondition(st4 == 3 and st4[1] != 3, "1er gap: CONFIRMADA", "Atlas vivo · 1er gap CONFIRMADA en {{ticker}}")
+alertcondition(st5 == 2 and st5[1] < 2, "PM40: CASI", "Atlas vivo · PM40 en CASI en {{ticker}}")
+alertcondition(st5 == 3 and st5[1] != 3, "PM40: CONFIRMADA", "Atlas vivo · PM40 CONFIRMADA en {{ticker}}")
+alertcondition(st6 == 2 and st6[1] < 2, "Caída: CASI", "Atlas vivo · Caída en CASI en {{ticker}}")
+alertcondition(st6 == 3 and st6[1] != 3, "Caída: CONFIRMADA", "Atlas vivo · Caída CONFIRMADA en {{ticker}}")
+alertcondition(st7 == 2 and st7[1] < 2, "Canal bajista: CASI", "Atlas vivo · Ruptura de canal bajista en CASI en {{ticker}}")
+alertcondition(st7 == 3 and st7[1] != 3, "Canal bajista: CONFIRMADA", "Atlas vivo · Ruptura de canal bajista CONFIRMADA en {{ticker}}")
+alertcondition(st8 == 2 and st8[1] < 2, "1ª roja: CASI", "Atlas vivo · 1ª vela roja en CASI en {{ticker}}")
+alertcondition(st8 == 3 and st8[1] != 3, "1ª roja: CONFIRMADA", "Atlas vivo · 1ª vela roja CONFIRMADA en {{ticker}}")
+alertcondition(st9 == 2 and st9[1] < 2, "Rupt. piso gap: CASI", "Atlas vivo · Ruptura del piso del gap en CASI en {{ticker}}")
+alertcondition(st9 == 3 and st9[1] != 3, "Rupt. piso gap: CONFIRMADA", "Atlas vivo · Ruptura del piso del gap CONFIRMADA en {{ticker}}")
+alertcondition(st10 == 2 and st10[1] < 2, "4 pasos: CASI", "Atlas vivo · 4 pasos en CASI en {{ticker}}")
+alertcondition(st10 == 3 and st10[1] != 3, "4 pasos: CONFIRMADA", "Atlas vivo · 4 pasos CONFIRMADA en {{ticker}}")
+alertcondition(st11 == 2 and st11[1] < 2, "Hanger: CASI", "Atlas vivo · Hanger en CASI en {{ticker}}")
+alertcondition(st11 == 3 and st11[1] != 3, "Hanger: CONFIRMADA", "Atlas vivo · Hanger CONFIRMADA en {{ticker}}")
+alertcondition(st12 == 2 and st12[1] < 2, "Techo fuerte: CASI", "Atlas vivo · Techo fuerte en CASI en {{ticker}}")
+alertcondition(st12 == 3 and st12[1] != 3, "Techo fuerte: CONFIRMADA", "Atlas vivo · Techo fuerte CONFIRMADA en {{ticker}}")
+
+// ---------------- tabla (solo en la ultima vela)
+var table tb = table.new(position.top_right, 4, 14, bgcolor = color.new(color.black, 20), border_width = 1)
+
+f_pos(string p) =>
+    p == "Arriba derecha" ? position.top_right : p == "Abajo derecha" ? position.bottom_right : p == "Arriba izquierda" ? position.top_left : position.bottom_left
+
+f_col(int s) =>
+    s == 0 ? color.new(color.gray, 70) : s == 1 ? color.new(color.blue, 50) : s == 2 ? color.new(color.orange, 20) : s == 3 ? color.new(color.green, 10) : color.new(color.lime, 55)
+
+f_txt(int s) =>
+    s == 0 ? "-" : s == 1 ? "vigilancia" : s == 2 ? "CASI" : s == 3 ? "CONFIRMADA" : "confirmada (fuera)"
+
+if barstate.islast and gTab
+    array<int> S = array.from(m1 == 3 ? 3 : st1, m2 == 3 ? 3 : st2, m3 == 3 ? 3 : st3, m4 == 3 ? 3 : st4, m5 == 3 ? 3 : st5, m6 == 3 ? 3 : st6, m7 == 3 ? 3 : st7, m8 == 3 ? 3 : st8, m9 == 3 ? 3 : st9, m10 == 3 ? 3 : st10, m11 == 3 ? 3 : st11, m12 == 3 ? 3 : st12)
+    array<int> M = array.from(ms1, ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms9, ms10, ms11, ms12)
+    array<string> nm = array.from("Gap normal", "Gap bajista", "Piso fuerte", "1er gap", "PM40", "Caída", "Canal bajista", "1ª roja", "Rupt. piso gap", "4 pasos", "Hanger", "Techo fuerte")
+    array<string> dr = array.from("CALL", "CALL", "CALL", "CALL", "CALL", "CALL", "CALL", "PUT", "PUT", "PUT", "PUT", "PUT")
+    table.clear(tb, 0, 0, 3, 13)
+    table.set_position(tb, f_pos(gPos))
+    table.cell(tb, 0, 0, "Atlas vivo", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, "Dir", text_color = color.white, text_size = size.small)
+    table.cell(tb, 2, 0, "Etapa", text_color = color.white, text_size = size.small)
+    table.cell(tb, 3, 0, "Falta", text_color = color.white, text_size = size.small)
+    for i = 0 to 11
+        int sI = S.get(i)
+        table.cell(tb, 0, i + 1, nm.get(i), text_color = color.white, text_size = size.small, text_halign = text.align_left)
+        table.cell(tb, 1, i + 1, dr.get(i), text_color = dr.get(i) == "CALL" ? color.lime : color.red, text_size = size.small)
+        table.cell(tb, 2, i + 1, f_txt(sI), text_color = color.white, bgcolor = f_col(sI), text_size = size.small)
+        table.cell(tb, 3, i + 1, (sI == 1 or sI == 2) ? f_falta(i, M.get(i)) : "", text_color = color.silver, text_size = size.tiny, text_halign = text.align_left)
+
+// Notas: (1) TradingView arma las velas de 1H a las :30 (9:30-10:30...), el motor Python usa las de Cardona (9:30-10:00, 10:00-11:00...).
+//        Las ventanas aceptan una vela de margen y la "segunda/tercera vela" son aproximadas. Python es la referencia.
+// (2) El volumen relativo compara con el promedio de las ultimas 20 velas (Python: misma franja horaria de 20 dias).
+// (3) "Primer gap": no verifica que sea el primero tras la caida. (4) Techo fuerte: PUT segun criterios; titulo de la lamina dice CALL.
+// (5) Se dibuja solo en las ultimas "Velas recientes a evaluar" velas. Naranja punteado = CASI (falta un paso); verde/rojo solido = CONFIRMADA.

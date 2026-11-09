@@ -1,0 +1,20 @@
+//@version=5
+// MELIORA · Fichas Cardona (PRUEBA) — elementos del INDICADOR, no dibujos manuales.
+// Ficha: NVDA | CANAL_BREAK (Ruptura del Canal Bajista) | CALL (ruptura alcista de línea bajista) | estado: EN FORMACIÓN
+// Línea bajista: P1 21/10 15:00 ET 222.19 -> P2 26/10 11:00 ET 217.75 (pivotes confirmados, criterio "2 pivotes")
+// Criterio de línea: PENDIENTE DE REVISIÓN (Ismael aún no validó cuál línea refleja el canal de Cardona)
+indicator("MELIORA · Fichas Cardona (prueba)", overlay=true, max_lines_count=50, max_labels_count=50)
+
+x1 = timestamp("America/New_York", 2026, 10, 21, 15, 0)
+y1 = 222.19
+x2 = timestamp("America/New_York", 2026, 10, 26, 11, 0)
+y2 = 217.75
+
+if barstate.islast and syminfo.ticker == "NVDA"
+    line.new(x1, y1, x2, y2, xloc=xloc.bar_time, extend=extend.right, color=color.orange, style=line.style_dashed, width=2)
+    label.new(x1, y1, "P1 21/10 15:00 · 222.19", xloc=xloc.bar_time, style=label.style_label_down, color=color.new(color.orange, 20), textcolor=color.white, size=size.small)
+    label.new(x2, y2, "P2 26/10 11:00 · 217.75", xloc=xloc.bar_time, style=label.style_label_down, color=color.new(color.orange, 20), textcolor=color.white, size=size.small)
+    var table t = table.new(position.top_right, 1, 3, bgcolor=color.new(color.black, 15))
+    table.cell(t, 0, 0, "MELIORA · FICHA NVDA CANAL_BREAK", text_color=color.orange, text_size=size.small)
+    table.cell(t, 0, 1, "Estado: EN FORMACIÓN", text_color=color.white, text_size=size.small)
+    table.cell(t, 0, 2, "Línea: PENDIENTE de revisión", text_color=color.yellow, text_size=size.small)

@@ -20,6 +20,10 @@ start /min "Meliora Bot Server" python live_scanner.py
 echo [Tunel] Iniciando tunel seguro de Serveo (para el celular)...
 start /min "Meliora Tunnel Server" python run_tunnel.py
 
+:: 3b. Atlas vivo (analisis tecnico de las 12 estrategias, solo avisos; no opera)
+echo [Atlas] Iniciando servicio Atlas vivo en segundo plano...
+start /min "Meliora Atlas" python fichas_cardona\atlas_servicio.py
+
 :: 4. Esperar a que el servidor local levante
 echo [Sistema] Esperando 4 segundos a que se estabilicen las conexiones...
 timeout /t 4 /nobreak >nul

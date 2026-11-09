@@ -1,0 +1,458 @@
+﻿activo,estrategia,estado,evidencia
+AAPL,CAIDA_FUERTE,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22
+AAPL,PM40_BOUNCE,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22
+AAPL,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+AAPL,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 347.08; PM20 345.70 PM40 344.77 PM200 339.22"
+AAPL,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+AAPL,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+AAPL,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+AMD,GAP_NORMAL,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77
+AMD,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,VELA_ROJA,NO,Contexto de canal/PM40/PM200 no cumple. cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77
+AMD,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+AMD,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,PISO_FUERTE,CERCA,"SMA100d>SMA200d, en piso diario y linea vigente. Falta ruptura con vela verde solida. cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 560.45; PM20 535.62 PM40 534.18 PM200 587.77"
+AMD,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+AMD,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+AMD,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+AMZN,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83
+AMZN,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+AMZN,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 253.15; PM20 250.24 PM40 254.10 PM200 253.83"
+AMZN,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+AMZN,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+AMZN,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+AXON,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23
+AXON,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+AXON,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 425.69; PM20 422.33 PM40 411.82 PM200 420.23"
+AXON,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+AXON,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+AXON,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+BAC,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67
+BAC,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67"
+BAC,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67"
+BAC,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+BAC,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67"
+BAC,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67"
+BAC,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67"
+BAC,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67"
+BAC,CANAL_BREAK,CERCA,PM20<PM40 y canal bajista largo vigente. Falta ruptura con verde solida + 2a vela verde. cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67
+BAC,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 50.68; PM20 50.76 PM40 50.83 PM200 53.67
+BAC,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+BAC,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+BAC,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+BLK,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+BLK,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78"
+BLK,CANAL_BREAK,CERCA,PM20<PM40 y canal bajista largo vigente. Falta ruptura con verde solida + 2a vela verde. cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78
+BLK,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 1136.07; PM20 1127.73 PM40 1132.76 PM200 1088.78
+BLK,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+BLK,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+BLK,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+C,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55
+C,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55"
+C,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55"
+C,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+C,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55"
+C,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55"
+C,PISO_FUERTE,CERCA,"SMA100d>SMA200d, en piso diario y linea vigente. Falta ruptura con vela verde solida. cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55"
+C,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55"
+C,CANAL_BREAK,CERCA,PM20<PM40 y canal bajista largo vigente. Falta ruptura con verde solida + 2a vela verde. cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55
+C,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 122.69; PM20 121.86 PM40 122.24 PM200 127.55
+C,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+C,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+C,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+COIN,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20
+COIN,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+COIN,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20"
+COIN,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 161.17; PM20 161.88 PM40 167.31 PM200 182.20
+COIN,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+COIN,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+COIN,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+CVX,RUPTURA_PISO,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30
+CVX,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+CVX,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 228.31; PM20 231.30 PM40 228.64 PM200 214.30"
+CVX,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+CVX,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+CVX,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+DIS,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+DIS,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 110.24; PM20 110.96 PM40 111.42 PM200 107.01"
+DIS,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+DIS,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+DIS,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+EA,GAP_NORMAL,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,GAP_BAJISTA,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,VELA_ROJA,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,RUPTURA_PISO_GAP,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,CAIDA_NORMAL,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,CAIDA_FUERTE,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,PISO_FUERTE,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,PM40_BOUNCE,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,CANAL_BREAK,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,4_PASOS,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,PRIMER_GAP,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,HANGER_DIARIO,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EA,TECHO_FUERTE,NO_LEIDO,Error de datos: ValueError('sin velas regulares de hoy; ultima 2026-08-04 19:30:00-04:00')
+EBAY,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+EBAY,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18"
+EBAY,CANAL_BREAK,CERCA,PM20<PM40 y canal bajista largo vigente. Falta ruptura con verde solida + 2a vela verde. cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18
+EBAY,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 117.82; PM20 119.31 PM40 120.63 PM200 113.18
+EBAY,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+EBAY,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+EBAY,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+GLD,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23
+GLD,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23"
+GLD,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23"
+GLD,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+GLD,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23"
+GLD,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23"
+GLD,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23"
+GLD,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23"
+GLD,CANAL_BREAK,CERCA,PM20<PM40 y canal bajista largo vigente. Falta ruptura con verde solida + 2a vela verde. cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23
+GLD,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 372.27; PM20 368.79 PM40 371.94 PM200 382.23
+GLD,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+GLD,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+GLD,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+GOOG,CANAL_BREAK,CUMPLE (ocurrio hoy),Disparo en vela(s) 11:00 NY. Ya pasada: no es para manana. cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32
+GOOG,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32
+GOOG,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32"
+GOOG,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32"
+GOOG,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+GOOG,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32"
+GOOG,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32"
+GOOG,PISO_FUERTE,CERCA,"SMA100d>SMA200d, en piso diario y linea vigente. Falta ruptura con vela verde solida. cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32"
+GOOG,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32"
+GOOG,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 316.89; PM20 317.05 PM40 322.69 PM200 339.32
+GOOG,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+GOOG,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+GOOG,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+GOOGL,CANAL_BREAK,CUMPLE (ocurrio hoy),Disparo en vela(s) 11:00 NY. Ya pasada: no es para manana. cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89
+GOOGL,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89
+GOOGL,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89"
+GOOGL,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89"
+GOOGL,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+GOOGL,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89"
+GOOGL,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89"
+GOOGL,PISO_FUERTE,CERCA,"SMA100d>SMA200d, en piso diario y linea vigente. Falta ruptura con vela verde solida. cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89"
+GOOGL,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89"
+GOOGL,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 320.56; PM20 320.36 PM40 326.26 PM200 342.89
+GOOGL,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+GOOGL,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+GOOGL,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+HPE,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,VELA_ROJA,NO,Contexto de canal/PM40/PM200 no cumple. cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17
+HPE,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+HPE,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 60.84; PM20 58.95 PM40 57.67 PM200 63.17"
+HPE,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+HPE,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+HPE,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+META,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71
+META,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+META,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 620.12; PM20 634.93 PM40 657.61 PM200 715.71"
+META,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+META,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+META,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+MRNA,CAIDA_FUERTE,CUMPLE (ocurrio hoy),Disparo en vela(s) 13:00 NY. Ya pasada: no es para manana. cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41
+MRNA,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+MRNA,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 207.94; PM20 199.21 PM40 214.41 PM200 201.41"
+MRNA,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+MRNA,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+MRNA,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+MSCI,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+MSCI,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 601.84; PM20 612.94 PM40 609.44 PM200 566.00"
+MSCI,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+MSCI,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+MSCI,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+MSFT,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+MSFT,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 531.60; PM20 529.06 PM40 528.83 PM200 521.35"
+MSFT,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+MSFT,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+MSFT,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+NDAQ,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,VELA_ROJA,NO,Contexto de canal/PM40/PM200 no cumple. cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62
+NDAQ,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+NDAQ,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 104.35; PM20 103.89 PM40 101.02 PM200 94.62"
+NDAQ,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+NDAQ,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+NDAQ,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+NFLX,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53
+NFLX,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+NFLX,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 62.52; PM20 64.21 PM40 65.64 PM200 69.53"
+NFLX,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+NFLX,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+NFLX,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+NVDA,CAIDA_FUERTE,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07
+NVDA,CANAL_BREAK,CUMPLE (ocurrio hoy),Disparo en vela(s) 11:00 NY. Ya pasada: no es para manana. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07
+NVDA,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07"
+NVDA,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07"
+NVDA,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07"
+NVDA,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+NVDA,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07"
+NVDA,PISO_FUERTE,CERCA,"SMA100d>SMA200d, en piso diario y linea vigente. Falta ruptura con vela verde solida. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07"
+NVDA,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07"
+NVDA,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 217.88; PM20 215.42 PM40 216.14 PM200 225.07
+NVDA,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+NVDA,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+NVDA,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+ORCL,CANAL_BREAK,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48
+ORCL,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48
+ORCL,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48"
+ORCL,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48"
+ORCL,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+ORCL,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48"
+ORCL,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48"
+ORCL,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48"
+ORCL,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48"
+ORCL,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 130.56; PM20 128.13 PM40 128.32 PM200 137.48
+ORCL,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+ORCL,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+ORCL,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+PLTR,GAP_BAJISTA,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37
+PLTR,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+PLTR,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,PM40_BOUNCE,CERCA,PM20>PM40 y PM100>PM200 sostenidos; distancia a PM40 0.51% (nivel 197.75). Falta toque y ruptura de linea con verde solida/martillo (11:00-15:59). cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37
+PLTR,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 198.75; PM20 198.07 PM40 197.75 PM200 193.37"
+PLTR,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+PLTR,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+PLTR,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+PYPL,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+PYPL,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=True). cierre 56.09; PM20 55.93 PM40 56.66 PM200 54.83"
+PYPL,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+PYPL,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+PYPL,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+QQQ,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49
+QQQ,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+QQQ,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,PISO_FUERTE,CERCA,"SMA100d>SMA200d, en piso diario y linea vigente. Falta ruptura con vela verde solida. cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49"
+QQQ,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 721.24; PM20 713.25 PM40 714.77 PM200 734.49
+QQQ,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+QQQ,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+QQQ,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+SLV,GAP_BAJISTA,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17
+SLV,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17
+SLV,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+SLV,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=False, tend alcista=False). cierre 49.16; PM20 48.84 PM40 49.93 PM200 54.17"
+SLV,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+SLV,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+SLV,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+SPY,CAIDA_FUERTE,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61
+SPY,PISO_FUERTE,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61
+SPY,CANAL_BREAK,CUMPLE (ocurrio hoy),Disparo en vela(s) 11:00 NY. Ya pasada: no es para manana. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61
+SPY,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61"
+SPY,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61"
+SPY,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61"
+SPY,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+SPY,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61"
+SPY,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61"
+SPY,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 769.72; PM20 765.47 PM40 766.76 PM200 769.61
+SPY,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+SPY,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+SPY,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+TNA,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11
+TNA,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+TNA,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=False). cierre 58.33; PM20 56.82 PM40 56.43 PM200 58.11"
+TNA,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+TNA,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+TNA,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+TSLA,GAP_NORMAL,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17
+TSLA,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,VELA_ROJA,NO,Contexto de canal/PM40/PM200 no cumple. cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17
+TSLA,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+TSLA,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 407.46; PM20 391.66 PM40 386.11 PM200 373.17"
+TSLA,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+TSLA,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+TSLA,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+UBER,GAP_NORMAL,NO,Sin tendencia diaria alcista (tend=False). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24
+UBER,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+UBER,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=False). cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24"
+UBER,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 65.78; PM20 66.47 PM40 67.46 PM200 69.24
+UBER,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+UBER,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+UBER,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+USO,RUPTURA_PISO,CUMPLE (ocurrio hoy),Disparo en vela(s) 10:00 NY. Ya pasada: no es para manana. cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95
+USO,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+USO,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,PM40_BOUNCE,CERCA,PM20>PM40 y PM100>PM200 sostenidos; distancia a PM40 0.21% (nivel 163.61). Falta toque y ruptura de linea con verde solida/martillo (11:00-15:59). cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95
+USO,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=True, tend alcista=True). cierre 163.95; PM20 166.35 PM40 163.61 PM200 152.95"
+USO,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+USO,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+USO,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+VLO,VELA_ROJA,CUMPLE (ocurrio hoy),Disparo en vela(s) 09:30 NY. Ya pasada: no es para manana. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86
+VLO,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86"
+VLO,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86"
+VLO,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+VLO,CAIDA_NORMAL,CERCA,"Linea de caida vigente + tendencia diaria alcista. Falta vela verde solida que la rompa (>=11:00) con caida 0,5-1,5%. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86"
+VLO,CAIDA_FUERTE,CERCA,"Linea de caida vigente + tendencia alcista. Falta ruptura con vela verde solida y caida >1,5%. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86"
+VLO,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86"
+VLO,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=False, linea vigente=True, tend alcista=True). cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86"
+VLO,CANAL_BREAK,CERCA,PM20<PM40 y canal bajista largo vigente. Falta ruptura con verde solida + 2a vela verde. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86
+VLO,4_PASOS,CERCA,PM20<PM40 y linea de techo vigente. Falta verde->roja que borre la anterior y ruptura de linea de piso. cierre 387.34; PM20 414.79 PM40 421.96 PM200 416.86
+VLO,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+VLO,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+VLO,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"
+XOM,GAP_NORMAL,CERCA,"Tendencia diaria alcista OK. Falta gap>0,1% manana + 1a y 2a vela verdes (10:00-11:00); compra desde 11:00. El gap se mide en el premercado de manana. cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,GAP_BAJISTA,CERCA,"Falta gap<-0,1% manana + 1a y 2a vela verdes; compra desde 11:00. El gap se mide en el premercado de manana. cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,VELA_ROJA,CERCA,"Contexto de canal/PM40/PM200 OK. Falta 1a vela 9:30 roja solida con volumen > media (compra 10:00, unica compra antes de 11:00). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,RUPTURA_PISO_GAP,NO_EVALUABLE,Depende de la 1a vela verde de manana y una roja solida posterior
+XOM,CAIDA_NORMAL,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,CAIDA_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,PISO_FUERTE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,PM40_BOUNCE,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,CANAL_BREAK,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,4_PASOS,NO,"Condiciones previas no se cumplen (PM20>PM40=True, linea vigente=False, tend alcista=True). cierre 179.89; PM20 182.64 PM40 180.09 PM200 169.29"
+XOM,PRIMER_GAP,NO_EVALUABLE,Se evalua en la ultima vela del dia sobre gap de apertura; cardona_rules no la implementa
+XOM,HANGER_DIARIO,NO_EVALUABLE,Requiere vela diaria hanger en la ultima vela del dia; cardona_rules no la implementa
+XOM,TECHO_FUERTE,NO_EVALUABLE,"Regla ambigua (D6 pendiente: codigo usa piso, PDF define techo); no se evalua"

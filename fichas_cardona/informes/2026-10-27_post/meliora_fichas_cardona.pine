@@ -1,0 +1,187 @@
+//@version=6
+// MELIORA · Fichas Cardona — techo/piso estilo Ismael (2 líneas por activo), PM y zona cara/barata. Informativo: no opera.
+indicator("Meliora Fichas Cardona", overlay=true, max_lines_count=50, max_labels_count=100, max_bars_back=500)
+verTend = input.bool(true, "Dibujar TECHO (rojo) y PISO (verde) estilo Ismael")
+nSes = input.int(5, "Sesiones de ventana para buscar el pivote", minval=1, maxval=5)
+verPM = input.bool(true, "Mostrar promedios móviles PM10/20/40/100/200 de 1 hora")
+verZona = input.bool(true, "Mostrar zona cara / barata (fondo)")
+modoBarata = input.string("Toca o bajo ALGUNA PM", "Zona barata =", options=["Toca o bajo ALGUNA PM", "Bajo TODAS las PM"])
+
+pm(n) => request.security(syminfo.tickerid, "60", ta.sma(close, n))
+p10 = pm(10)
+p20 = pm(20)
+p40 = pm(40)
+p100 = pm(100)
+p200 = pm(200)
+plot(verPM ? p10 : na, "PM10", color=color.new(color.white, 10), linewidth=1)
+plot(verPM ? p20 : na, "PM20", color=color.new(color.aqua, 0), linewidth=2)
+plot(verPM ? p40 : na, "PM40", color=color.new(color.fuchsia, 0), linewidth=2)
+plot(verPM ? p100 : na, "PM100", color=color.new(color.lime, 0), linewidth=2)
+plot(verPM ? p200 : na, "PM200", color=color.new(color.red, 0), linewidth=2)
+
+pmMax = math.max(p10, p20, p40, p100, p200)
+pmMin = math.min(p10, p20, p40, p100, p200)
+cara = close > pmMax
+barata = modoBarata == "Bajo TODAS las PM" ? close < pmMin : (not cara and low <= pmMax)
+bgcolor(verZona and cara ? color.new(color.red, 90) : verZona and barata ? color.new(color.green, 90) : na)
+
+// ===== TECHO / PISO estilo Ismael =====
+// Caso A (último tramo bajista): P = vela roja del mínimo. TECHO: de A (máximo de la ventana antes de P) al high de P; CALL = 1ra vela verde que cierra sobre el techo.
+//   PISO: del low de P al low de la última vela del día; PUT = 1ra vela roja que cierra bajo el piso.
+// Caso B (espejo): P = vela verde del máximo. PISO: del mínimo previo al low de P; TECHO: del high de P al high de la última vela del día.
+newDay = ta.change(time("D")) != 0
+var array<int> starts = array.new<int>()
+if bar_index == 0 or newDay
+    array.push(starts, bar_index)
+var array<line> ln = array.new<line>()
+var array<label> lb = array.new<label>()
+var int callIdx = na
+var int putIdx = na
+var float techoP = na
+var float pisoP = na
+var array<float> hiA = array.new<float>()
+var array<float> loA = array.new<float>()
+var array<float> opA = array.new<float>()
+var array<float> clA = array.new<float>()
+array.push(hiA, high)
+array.push(loA, low)
+array.push(opA, open)
+array.push(clA, close)
+if array.size(hiA) > 300
+    array.shift(hiA)
+    array.shift(loA)
+    array.shift(opA)
+    array.shift(clA)
+base = bar_index - array.size(hiA) + 1
+H(j) => array.get(hiA, j - base)
+L(j) => array.get(loA, j - base)
+O(j) => array.get(opA, j - base)
+C(j) => array.get(clA, j - base)
+if barstate.islast and verTend
+    while array.size(ln) > 0
+        line.delete(array.pop(ln))
+    while array.size(lb) > 0
+        label.delete(array.pop(lb))
+    callIdx := na
+    putIdx := na
+    techoP := na
+    pisoP := na
+    n = bar_index
+    ns = array.size(starts)
+    ws = array.get(starts, math.max(0, ns - nSes))
+    int dIdx = na
+    if hour == 15 and minute == 30
+        dIdx := n
+    else if ns >= 2
+        dIdx := array.get(starts, ns - 1) - 1
+    int lowI = ws
+    int highI = ws
+    for j = ws to n
+        if L(j) <= L(lowI)
+            lowI := j
+        if H(j) >= H(highI)
+            highI := j
+    if lowI > highI
+        int p = lowI
+        while p > ws and not (C(p) < O(p))
+            p -= 1
+        if C(p) < O(p)
+            int aI = ws
+            for j = ws to p
+                if H(j) >= H(aI)
+                    aI := j
+            if p - aI >= 1
+                float hA = H(aI)
+                int bI = na
+                for cand = p to aI + 1
+                    if na(bI) and C(cand) < O(cand)
+                        sl = (H(cand) - hA) / (cand - aI)
+                        bool ok = true
+                        for j = aI + 1 to p
+                            if C(j) > hA + sl * (j - aI) + 0.000001
+                                ok := false
+                        if ok
+                            bI := cand
+                if not na(bI)
+                    float slT = (H(bI) - hA) / (bI - aI)
+                    array.push(ln, line.new(aI, hA, bI, H(bI), extend=extend.right, color=color.red, width=2))
+                    if not na(dIdx)
+                        techoP := hA + slT * (dIdx + 2 - aI)
+                        array.push(lb, label.new(dIdx + 2, techoP, "TECHO " + str.tostring(techoP, format.mintick), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                    if p + 1 <= n
+                        for j = p + 1 to n
+                            if na(callIdx) and C(j) > O(j) and C(j) > hA + slT * (j - aI)
+                                callIdx := j
+                                array.push(lb, label.new(j, L(j), "CALL", style=label.style_triangleup, color=color.green, textcolor=color.white, size=size.small))
+            if not na(dIdx)
+                if dIdx > p and L(dIdx) > L(p)
+                    float cL = L(p)
+                    float slP = (L(dIdx) - cL) / (dIdx - p)
+                    array.push(ln, line.new(p, cL, dIdx, L(dIdx), extend=extend.right, color=color.green, width=2))
+                    pisoP := cL + slP * (dIdx + 2 - p)
+                    array.push(lb, label.new(dIdx + 2, pisoP, "PISO " + str.tostring(pisoP, format.mintick), style=label.style_label_left, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+                    if dIdx + 1 <= n
+                        for j = dIdx + 1 to n
+                            if na(putIdx) and C(j) < O(j) and C(j) < cL + slP * (j - p)
+                                putIdx := j
+                                array.push(lb, label.new(j, H(j), "PUT", style=label.style_triangledown, color=color.red, textcolor=color.white, size=size.small))
+    else
+        int p = highI
+        while p > ws and not (C(p) > O(p))
+            p -= 1
+        if C(p) > O(p)
+            int qI = ws
+            for j = ws to p
+                if L(j) <= L(qI)
+                    qI := j
+            if p - qI >= 1
+                float lQ = L(qI)
+                int rI = na
+                for cand = p to qI + 1
+                    if na(rI) and C(cand) > O(cand)
+                        sl = (L(cand) - lQ) / (cand - qI)
+                        bool ok = true
+                        for j = qI + 1 to p
+                            if C(j) < lQ + sl * (j - qI) - 0.000001
+                                ok := false
+                        if ok
+                            rI := cand
+                if not na(rI)
+                    float slP = (L(rI) - lQ) / (rI - qI)
+                    array.push(ln, line.new(qI, lQ, rI, L(rI), extend=extend.right, color=color.green, width=2))
+                    if not na(dIdx)
+                        pisoP := lQ + slP * (dIdx + 2 - qI)
+                        array.push(lb, label.new(dIdx + 2, pisoP, "PISO " + str.tostring(pisoP, format.mintick), style=label.style_label_left, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+                    if p + 1 <= n
+                        for j = p + 1 to n
+                            if na(putIdx) and C(j) < O(j) and C(j) < lQ + slP * (j - qI)
+                                putIdx := j
+                                array.push(lb, label.new(j, H(j), "PUT", style=label.style_triangledown, color=color.red, textcolor=color.white, size=size.small))
+            if not na(dIdx)
+                if dIdx > p and H(dIdx) < H(p)
+                    float hP = H(p)
+                    float slT2 = (H(dIdx) - hP) / (dIdx - p)
+                    array.push(ln, line.new(p, hP, dIdx, H(dIdx), extend=extend.right, color=color.red, width=2))
+                    techoP := hP + slT2 * (dIdx + 2 - p)
+                    array.push(lb, label.new(dIdx + 2, techoP, "TECHO " + str.tostring(techoP, format.mintick), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                    if dIdx + 1 <= n
+                        for j = dIdx + 1 to n
+                            if na(callIdx) and C(j) > O(j) and C(j) > hP + slT2 * (j - p)
+                                callIdx := j
+                                array.push(lb, label.new(j, L(j), "CALL", style=label.style_triangleup, color=color.green, textcolor=color.white, size=size.small))
+
+callNow = barstate.islast and not na(callIdx) and callIdx == bar_index
+putNow = barstate.islast and not na(putIdx) and putIdx == bar_index
+alertcondition(callNow, "Meliora: CALL (vela verde rompe el techo)", "Vela verde cerró sobre el techo: posible CALL (informativo)")
+alertcondition(putNow, "Meliora: PUT (vela roja rompe el piso)", "Vela roja cerró bajo el piso: posible PUT (informativo)")
+
+var table tb = table.new(position.top_right, 2, 4, bgcolor=color.new(color.black, 25))
+if barstate.islast
+    table.cell(tb, 0, 0, "Techo (10:30 ET mañana)", text_color=color.red, text_size=size.small)
+    table.cell(tb, 1, 0, na(techoP) ? "SIN_PIVOTE" : str.tostring(techoP, format.mintick) + " (" + str.tostring((techoP - close) / close * 100, "#.##") + "%)", text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 1, "Piso (10:30 ET mañana)", text_color=color.green, text_size=size.small)
+    table.cell(tb, 1, 1, na(pisoP) ? "SIN_PIVOTE" : str.tostring(pisoP, format.mintick) + " (" + str.tostring((pisoP - close) / close * 100, "#.##") + "%)", text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 2, "Precio actual", text_color=color.gray, text_size=size.small)
+    table.cell(tb, 1, 2, str.tostring(close, format.mintick), text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 3, "Ruptura", text_color=color.gray, text_size=size.small)
+    table.cell(tb, 1, 3, not na(callIdx) ? "CALL" : not na(putIdx) ? "PUT" : "NINGUNA", text_color=color.white, text_size=size.small)

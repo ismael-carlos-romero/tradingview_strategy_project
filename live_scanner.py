@@ -530,7 +530,10 @@ def sync_setup_and_signal(ticker, strategy_id, timeframe, state, setup_score, pr
             # catalogo_estrategias, que es exactamente el formato que ya trae
             # strategy_id acá). No hace falta transformar nada en esta llamada.
             conn_sim = sqlite3.connect(DB_NAME)
-            res_sim = sim_broker_core.simular_compra_broker(conn_sim, ticker, strategy_id, price)
+            if get_system_state() in ["STOP", "DISARMED"]:
+                res_sim = {"status": "SKIPPED", "reason": "Sistema en " + get_system_state() + ": sin compra simulada"}
+            else:
+                res_sim = sim_broker_core.simular_compra_broker(conn_sim, ticker, strategy_id, price)
             if res_sim.get("status") == "FILLED":
                 # PositionManager: maquina de estados + parametros de riesgo
                 # (SL/TP/time-stop/expiration guard) fijados en el momento
@@ -921,6 +924,12 @@ def scan_ticker(ticker):
         close_price = float(row['Close'])
         dist_pm40 = abs(close_price - float(row['PM40'])) / close_price * 100
         
+        # Guarda de señal vigente (27/10): sin mercado abierto o con una barra de otra
+        # sesión no se evalua nada (evita que la ultima barra de ayer genere ordenes en premercado).
+        if not getattr(_SCAN_CTX, 'dry_run', False) and (not mercado_abierto() or bar_time.date() != ny_now().date()):
+            print(f"[Guarda vigencia] {ticker}: sin senal vigente (mercado cerrado o barra {bar_time} de otra sesion).")
+            return []
+
         # Evaluar estrategias de la base
         for cond_col, metadata in STRATEGIES_METADATA.items():
             strategy_id = cond_col.replace("cond_", "").upper()
@@ -1286,6 +1295,9 @@ class BotControlServer(BaseHTTPRequestHandler):
         if not self.is_request_authorized():
             self.send_unauthorized()
             return
+        if self.path.startswith('/api/aula/'):
+            from aula_virtual import api as _aula_api
+            return _aula_api.manejar(self, 'GET')
         if self.path in ['', '/', '/index.html']:
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -1309,6 +1321,10 @@ class BotControlServer(BaseHTTPRequestHandler):
                         self.send_header('Content-Type', 'image/png')
                     elif file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
                         self.send_header('Content-Type', 'image/jpeg')
+                    elif file_path.endswith('.js'):
+                        self.send_header('Content-Type', 'application/javascript; charset=utf-8')
+                    elif file_path.endswith('.css'):
+                        self.send_header('Content-Type', 'text/css; charset=utf-8')
                     else:
                         self.send_header('Content-Type', 'application/octet-stream')
                     self.end_headers()
@@ -1323,6 +1339,41 @@ class BotControlServer(BaseHTTPRequestHandler):
                 self.send_response(500)
                 self.end_headers()
                 return
+        elif self.path.startswith('/api/fichas/lista') or self.path.startswith('/fichas/'):
+            # Fichas Cardona: SOLO LECTURA de fichas_cardona/informes (sin ordenes, sin escritura)
+            try:
+                import re as _re
+                from urllib.parse import unquote as _unq
+                raiz = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fichas_cardona", "informes")
+                tipos = {".html": "text/html; charset=utf-8", ".pdf": "application/pdf", ".json": "application/json; charset=utf-8",
+                         ".csv": "text/csv; charset=utf-8", ".pine": "text/plain; charset=utf-8", ".png": "image/png"}
+                nombre_ok = lambda n: bool(_re.match(r'^[A-Za-z0-9_.\- ]{1,150}$', n)) and '..' not in n and os.path.splitext(n)[1].lower() in tipos
+                carpeta_ok = lambda d: bool(_re.match(r'^[A-Za-z0-9_\-]{1,60}$', d))
+                if self.path.startswith('/api/fichas/lista'):
+                    out = []
+                    if os.path.isdir(raiz):
+                        for d in sorted(os.listdir(raiz), reverse=True):
+                            p = os.path.join(raiz, d)
+                            if carpeta_ok(d) and os.path.isdir(p):
+                                arch = [a for a in sorted(os.listdir(p)) if nombre_ok(a) and os.path.isfile(os.path.join(p, a))]
+                                if any(a.lower().endswith(('.html', '.pdf')) for a in arch):
+                                    out.append({"carpeta": d, "archivos": arch})
+                    body, ctype = json.dumps(out, ensure_ascii=False).encode('utf-8'), 'application/json; charset=utf-8'
+                else:
+                    partes = _unq(self.path.split('?')[0]).split('/')
+                    if len(partes) != 4 or not carpeta_ok(partes[2]) or not nombre_ok(partes[3]):
+                        self.send_response(404); self.end_headers(); return
+                    fp = os.path.join(raiz, partes[2], partes[3])
+                    if not os.path.isfile(fp):
+                        self.send_response(404); self.end_headers(); return
+                    body, ctype = open(fp, "rb").read(), tipos[os.path.splitext(partes[3])[1].lower()]
+                self.send_response(200)
+                self.send_header('Content-Type', ctype)
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as e:
+                self.send_response(500); self.end_headers()
+            return
         elif self.path == '/ping':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -1701,6 +1752,9 @@ class BotControlServer(BaseHTTPRequestHandler):
         if not self.is_request_authorized():
             self.send_unauthorized()
             return
+        if self.path.startswith('/api/aula/'):
+            from aula_virtual import api as _aula_api
+            return _aula_api.manejar(self, 'POST')
         # Confirmación cruzada desde la alerta de TradingView (valida secreto compartido)
         if self.path.split('?')[0] == '/webhook/tv':
             try:
@@ -1905,6 +1959,20 @@ class BotControlServer(BaseHTTPRequestHandler):
                     enviar_respuesta_json(200, {"status": "success", "message": "System ARMED"})
                     return
                     
+                elif action in ('fichas_estado', 'fichas_on', 'fichas_off'):
+                    # Fichas Cardona (27/10): interruptor de la fuente. Solo habilita; no compra. Paper-only.
+                    if action != 'fichas_estado':
+                        cursor.execute("INSERT OR REPLACE INTO configuracion (param_id, val) VALUES ('fichas_cardona_activo', ?)",
+                                       ('true' if action == 'fichas_on' else 'false',))
+                        conn.commit()
+                    cursor.execute("SELECT val FROM configuracion WHERE param_id = 'fichas_cardona_activo'")
+                    _fr = cursor.fetchone()
+                    conn.close()
+                    if action != 'fichas_estado':
+                        registrar_auditoria(usuario, "FICHAS_CARDONA_" + ("ON" if action == 'fichas_on' else "OFF"), motivo or "Interruptor Fichas Cardona")
+                    enviar_respuesta_json(200, {"status": "success", "activo": bool(_fr and _fr[0] == 'true'), "modo": "PAPER"})
+                    return
+
                 elif action == 'sonar_on':
                     for k, v in (('sonar_active', 'true'), ('system_state', 'ARMED'), ('panic_stop', 'false'),
                                  ('scanner_active', 'true'), ('autotrade_active', 'true')):

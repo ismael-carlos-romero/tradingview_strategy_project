@@ -1,0 +1,2 @@
+L|SPY|CANAL_BREAK|CALL|PENDIENTE|1792605600000|774.44|1793026800000|767.73|1|2 pivotes confirmados; criterio de linea PENDIENTE de validar por Ismael
+M|SPY|CANAL_BREAK|CALL|PENDIENTE|1793041200000|765.37|cierre de ayer -1.01% bajo la linea (aun sin ruptura)

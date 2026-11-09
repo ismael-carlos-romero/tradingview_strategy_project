@@ -1,0 +1,98 @@
+    <!-- FICHAS CARDONA (solo lectura: fichas e informes diarios pre/post mercado) -->
+    <section id="fichas-cardona" class="section">
+      <style>
+        #fichas-cardona{color:#1a1a1a}
+        #fichas-cardona .fc-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:16px}
+        #fichas-cardona .fc-w{overflow-x:auto}
+        #fichas-cardona table{border-collapse:collapse;width:100%;font-size:13px}
+        #fichas-cardona th,#fichas-cardona td{border:1px solid #d9dee3;padding:5px 7px;text-align:left}
+        #fichas-cardona th{background:#e9edf0}
+        #fichas-cardona .fc-call{background:#e3f6e8}#fichas-cardona .fc-put{background:#fde7e7}
+        #fichas-cardona button{background:#1f6feb;color:#fff;border:0;border-radius:8px;padding:6px 10px;margin:2px;cursor:pointer;font-size:13px}
+        #fichas-cardona button.fc-g{background:#6b7280}
+        #fichas-cardona .fc-n{background:#3b2f00;color:#facc15;padding:8px 12px;border-radius:8px;font-size:13px}
+        #fichas-cardona .fc-dia{border-top:1px solid #e5e7eb;padding:8px 0}
+        #fichas-cardona iframe{width:100%;height:80vh;border:1px solid #d9dee3;border-radius:10px;background:#fff}
+      </style>
+      <div class="fc-card">
+        <h1>🗂️ Fichas Cardona</h1>
+        <p class="fc-n">Solo análisis, sin órdenes. Acá llegan las <b>fichas de control</b> (lámina de Cardona vs el activo) y el <b>informe de los 35 activos</b>, por fecha y corte (pre/post mercado). TECHO/PISO estilo Ismael: CALL = vela verde que cierra sobre el techo; PUT = vela roja que cierra bajo el piso; SIN_PIVOTE = no calculable. Informativo, no valida compras.</p>
+        <div id="fc-lista">Cargando…</div>
+      </div>
+      <div class="fc-card" id="fc-vista-card" style="display:none">
+        <h2 id="fc-vista-titulo"></h2>
+        <p><button id="fc-vista-nueva">Abrir en pestaña nueva</button></p>
+        <iframe id="fc-frame" sandbox="allow-popups"></iframe>
+      </div>
+      <div class="fc-card" id="fc-res-card" style="display:none">
+        <h2 id="fc-res-titulo"></h2>
+        <div class="fc-w"><table id="fc-tabla"></table></div>
+      </div>
+      <script>
+      (function(){
+        function el(t,txt,cls){var e=document.createElement(t);if(txt!==undefined)e.textContent=txt;if(cls)e.className=cls;return e;}
+        function f(u){return (typeof customFetch==='function')?customFetch(u):fetch(u);}
+        var urlActual=null;
+        function nombre(a){
+          if(a==='informe.html')return 'Informe 35 activos';
+          if(/\.(html|pdf)$/i.test(a))return 'Ficha: '+a.replace(/^Informe_piloto_\d{4}-\d{2}-\d{2}_/,'').replace(/\.(html|pdf)$/i,'').replace(/_/g,' ')+(/\.pdf$/i.test(a)?' (PDF)':'');
+          return a;
+        }
+        function abrir(c,a){
+          f('/fichas/'+c+'/'+encodeURIComponent(a)).then(function(r){if(!r.ok)throw new Error(r.status);return r.blob();}).then(function(b){
+            var url=URL.createObjectURL(b);
+            if(/\.(html|pdf)$/i.test(a)){
+              urlActual=url;
+              document.getElementById('fc-vista-card').style.display='block';
+              document.getElementById('fc-vista-titulo').textContent=c.replace('_',' · ')+' — '+nombre(a);
+              document.getElementById('fc-frame').src=url;
+              document.getElementById('fc-vista-card').scrollIntoView({behavior:'smooth'});
+            }else{
+              var l=document.createElement('a');l.href=url;l.download=a;document.body.appendChild(l);l.click();l.remove();
+            }
+          }).catch(function(){alert('No se pudo abrir '+a+'. ¿Está corriendo el scanner con el código nuevo?');});
+        }
+        function resumen(c){
+          f('/fichas/'+c+'/resumen.json').then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(rows){
+            document.getElementById('fc-res-card').style.display='block';
+            document.getElementById('fc-res-titulo').textContent='Resumen '+c.replace('_',' · ');
+            var t=document.getElementById('fc-tabla');t.textContent='';
+            var cols=['ticker','estado_datos','cierre','zona_estricta','ruptura','techo_proy','dist_techo_pct','piso_proy','dist_piso_pct','senales_motor'];
+            var th=el('tr');cols.forEach(function(k){th.appendChild(el('th',k));});t.appendChild(th);
+            rows.forEach(function(r){
+              var tr=el('tr');
+              if(r.ruptura==='CALL')tr.className='fc-call';else if(r.ruptura==='PUT')tr.className='fc-put';
+              cols.forEach(function(k){var v=r[k];tr.appendChild(el('td',(v===null||v===undefined)?'':String(v)));});
+              t.appendChild(tr);
+            });
+          }).catch(function(){document.getElementById('fc-res-card').style.display='none';});
+        }
+        function lista(){
+          var box=document.getElementById('fc-lista');
+          f('/api/fichas/lista').then(function(r){return r.json();}).then(function(l){
+            box.textContent='';
+            if(!l.length){box.textContent='Todavía no hay informes.';return;}
+            var primero=null;
+            l.forEach(function(x){
+              var d=el('div',undefined,'fc-dia');d.appendChild(el('b',x.carpeta.replace('_',' · ')+'  '));
+              x.archivos.forEach(function(a){
+                var b=el('button',nombre(a));if(!/\.(html|pdf)$/i.test(a))b.className='fc-g';
+                b.onclick=function(){abrir(x.carpeta,a);};d.appendChild(b);
+              });
+              if(x.archivos.indexOf('resumen.json')>=0){
+                var r=el('button','Ver resumen en tabla');r.onclick=function(){resumen(x.carpeta);};d.appendChild(r);
+                if(!primero)primero=x.carpeta;
+              }
+              box.appendChild(d);
+            });
+            if(primero)resumen(primero);
+          }).catch(function(){box.textContent='No se pudo leer la lista de informes.';});
+        }
+        document.getElementById('fc-vista-nueva').onclick=function(){if(urlActual)window.open(urlActual,'_blank');};
+        document.addEventListener('click',function(e){
+          var a=e.target.closest&&e.target.closest('.menu-item[data-target="fichas-cardona"]');
+          if(a)lista();
+        });
+      })();
+      </script>
+    </section>

@@ -1272,6 +1272,9 @@
       <li><a href="#" class="menu-item" data-target="portfolio-sim">💼 Posiciones Vivo (Simulador)</a></li>
       <li><a href="#" class="menu-item" data-target="control-celular">📱 Centro de Control</a></li>
       <li><a href="#" class="menu-item" data-target="calculadora-1090">🧮 Calculadora 10/90</a></li>
+      <li><a href="#" class="menu-item" data-target="fichas-cardona">🗂️ Fichas Cardona</a></li>
+      <li><a href="#" class="menu-item" data-target="atlas-vivo">🛰️ Atlas vivo</a></li>
+      <li><a href="#" class="menu-item" data-target="aula-virtual">🎓 Aula Virtual</a></li>
     </ul>
   </aside>
 
@@ -7226,6 +7229,277 @@ if __name__ == "__main__":
         </div>
       </div>
 
+    </section>
+
+    <!-- AULA VIRTUAL (practica interactiva de las 12 estrategias de Cardona; solo ensenanza, no opera) -->
+    <section id="aula-virtual" class="section">
+      <link rel="stylesheet" href="/assets/aula/aula.css">
+      <div id="aula-root" class="aula"></div>
+      <script src="/assets/aula/aula_chart.js"></script>
+      <script src="/assets/aula/aula.js"></script>
+    </section>
+
+    <!-- ATLAS VIVO (solo lectura: mapa 12 estrategias x 35 activos; analisis, sin ordenes) -->
+    <section id="atlas-vivo" class="section">
+      <style>
+        #atlas-vivo{color:#1a1a1a}
+        #atlas-vivo .av-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:16px}
+        #atlas-vivo h1{margin:0 0 6px;font-size:26px}#atlas-vivo h2{margin:0 0 10px;font-size:18px}
+        #atlas-vivo .av-n{background:#3b2f00;color:#facc15;padding:8px 12px;border-radius:8px;font-size:13px}
+        #atlas-vivo .av-st{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:#4b5563;margin-top:10px}
+        #atlas-vivo .av-w{overflow-x:auto}
+        #atlas-vivo table.av-map{border-collapse:separate;border-spacing:2px;min-width:max-content}
+        #atlas-vivo .av-map th{font:500 10px ui-monospace,Consolas,monospace;color:#4b5563;font-weight:500}
+        #atlas-vivo .av-map th.rl{text-align:right;padding-right:8px;font:600 12px system-ui,sans-serif;color:#1a1a1a;white-space:nowrap}
+        #atlas-vivo .av-map th.cl{writing-mode:vertical-rl;transform:rotate(180deg);height:44px}
+        #atlas-vivo .av-map td{width:24px;height:24px;border-radius:3px;padding:0}
+        #atlas-vivo .av-map button{width:24px;height:24px;border:0;border-radius:3px;padding:0;margin:0;cursor:pointer;display:block}
+        #atlas-vivo .av-map button.sel{outline:2px solid #111;outline-offset:1px}
+        #atlas-vivo .av-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:#4b5563;margin:8px 0}
+        #atlas-vivo .av-leg i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+        #atlas-vivo .av-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:14px}
+        #atlas-vivo .av-c{border:1px solid #d9dee3;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;background:#fff}
+        #atlas-vivo .av-ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+        #atlas-vivo .av-tk{font-size:21px;font-weight:700}
+        #atlas-vivo .av-b{font:600 11px ui-monospace,Consolas,monospace;padding:3px 8px;border-radius:4px;color:#fff;margin-left:4px}
+        #atlas-vivo .av-steps{display:flex;gap:4px;flex-wrap:wrap}
+        #atlas-vivo .av-s{flex:1 1 110px;min-width:0;border-radius:4px;padding:5px 7px;font-size:11px;line-height:1.25;border:1px dashed #cbd2d9;color:#6b7280}
+        #atlas-vivo .av-s.on{background:#e3f6e8;border:1px solid #2fb872;color:#1a1a1a}
+        #atlas-vivo .av-s.na{background:#f3f4f6;color:#6b7280}
+        #atlas-vivo .av-f{margin:0;font-size:14px}#atlas-vivo .av-f b{color:#b8650a}
+        #atlas-vivo svg.av-svg{width:100%;height:auto;display:block;background:#14211d;border-radius:6px}
+        #atlas-vivo svg text{font-family:ui-monospace,Consolas,monospace;font-size:11px;fill:#e6ede9}
+        #atlas-vivo button.av-btn{background:#1f6feb;color:#fff;border:0;border-radius:8px;padding:6px 10px;margin:2px 4px 2px 0;cursor:pointer;font-size:13px}
+        #atlas-vivo button.av-g{background:#6b7280}
+        #atlas-vivo .av-lam img{width:100%;border-radius:6px;display:block;margin-top:8px}
+        #atlas-vivo table.av-t{border-collapse:collapse;width:100%;font-size:13px;min-width:560px}
+        #atlas-vivo .av-t th,#atlas-vivo .av-t td{border:1px solid #d9dee3;padding:5px 7px;text-align:left}#atlas-vivo .av-t th{background:#e9edf0}
+        #atlas-vivo .av-mut{font-size:12px;color:#6b7280}
+      </style>
+      <div class="av-card">
+        <h1>🛰️ Atlas vivo</h1>
+        <p class="av-n">Solo análisis y avisos, sin órdenes. Las 12 estrategias de Cardona sobre los 35 activos, con la línea de tendencia hasta la última vela. Los gráficos los genera Atlas con datos de Yahoo; no son capturas de TradingView.</p>
+        <div class="av-st" id="av-st">Cargando…</div>
+        <p><button class="av-btn" id="av-recargar">Actualizar vista</button></p>
+      </div>
+      <div class="av-card">
+        <h2>1 · Mapa de vigilancia</h2>
+        <div class="av-leg" id="av-leg"></div>
+        <div class="av-w"><table class="av-map" id="av-map"></table></div>
+        <p class="av-mut">Tocá una celda para ver el detalle y el gráfico.</p>
+      </div>
+      <div class="av-card" id="av-detalle-card" style="display:none"><div id="av-detalle"></div></div>
+      <div class="av-card">
+        <h2>2 · Hoy mirar estos</h2>
+        <div class="av-mut" id="av-cnt"></div>
+        <div class="av-cards" id="av-cards"></div>
+        <p><button class="av-btn av-g" id="av-mas" style="display:none">Mostrar más</button></p>
+      </div>
+      <div class="av-card">
+        <h2>3 · Avisos registrados</h2>
+        <div class="av-w"><table class="av-t" id="av-avisos"></table></div>
+        <p class="av-mut" id="av-avnota"></p>
+      </div>
+      <script>
+      (function(){
+        function Q(s){return document.querySelector(s);}
+        function el(t,txt,cls){var e=document.createElement(t);if(txt!==undefined)e.textContent=txt;if(cls)e.className=cls;return e;}
+        function f(u){return (typeof customFetch==='function')?customFetch(u):fetch(u);}
+        var B='/fichas/atlas_vivo/',DATA=null,SEL=null,SHOWN=6,LAMS={};
+        var COL={SIN_CONTEXTO:'#e3e7e4',VIGILANCIA:'#c4dcf5',CASI:'#f0a640',CONFIRMADA:'#2fb872',CONFIRMADA_FUERA_DE_HORARIO:'#9ad7b4',DATOS_INSUFICIENTES:'#d8c3c3',ERROR:'#d99',SIN_DATOS:'#d8c3c3'};
+        var LEG=[['SIN_CONTEXTO','sin contexto'],['VIGILANCIA','vigilancia'],['CASI','casi'],['CONFIRMADA','confirmada'],['CONFIRMADA_FUERA_DE_HORARIO','confirmada fuera de ventana'],['DATOS_INSUFICIENTES','sin datos']];
+        var RANK={CONFIRMADA:0,CONFIRMADA_FUERA_DE_HORARIO:1,CASI:2,VIGILANCIA:3,SIN_CONTEXTO:4};
+        function etq(e){return e==='CONFIRMADA_FUERA_DE_HORARIO'?'CONFIRMADA (fuera de ventana)':e.replace(/_/g,' ');}
+        function nom(k){var r=DATA.estrategias.filter(function(x){return x.id===k})[0];return r?r.nombre:k;}
+        function act(t){return DATA.activos.filter(function(a){return a.t===t})[0];}
+        function falta(r){var f=(r.pasos||[]).filter(function(p){return p[1]!==true});return f.length?f[0][0]:'';}
+        function svg(a,r){
+          var b=a.bars;if(!b)return null;var n=b.c.length,W=640,H=290,L=8,R=64,T=14,Bt=22,pw=W-L-R,ph=H-T-Bt,off=b.off;
+          var vals=b.h.concat(b.l,b.pm20.filter(Boolean),b.pm40.filter(Boolean));
+          (r.draw||[]).forEach(function(d){if(d.p){vals.push(d.p[1],d.p[3]);}else if(d.y){vals.push(d.y);}});
+          var mx=Math.max.apply(0,vals),mn=Math.min.apply(0,vals),pad=(mx-mn)*.08;mx+=pad;mn-=pad;
+          function X(i){return L+(i+.5)*pw/n}function Y(v){return T+(mx-v)/(mx-mn)*ph}
+          var id='cp'+Math.random().toString(36).slice(2,7);
+          var s='<svg class="av-svg" viewBox="0 0 '+W+' '+H+'" role="img"><defs><clipPath id="'+id+'"><rect x="'+L+'" y="'+T+'" width="'+pw+'" height="'+ph+'"/></clipPath></defs>';
+          for(var g=0;g<=4;g++){var v=mn+(mx-mn)*g/4,y=Y(v);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#2a3b36" stroke-width=".6"/><text x="'+(W-R+6)+'" y="'+(y+4)+'" style="fill:#93a39b">'+v.toFixed(1)+'</text>';}
+          s+='<g clip-path="url(#'+id+')">';
+          [['pm200','#a79bff'],['pm100','#4cc58a'],['pm40','#f2786b'],['pm20','#f1c24a']].forEach(function(p){var d='';b[p[0]].forEach(function(v,i){if(v!=null)d+=(d?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1);});s+='<path d="'+d+'" fill="none" stroke="'+p[1]+'" stroke-width="1.5"/>';});
+          for(var i=0;i<n;i++){var up=b.c[i]>=b.o[i],c=up?'#4cc58a':'#f2786b';s+='<line x1="'+X(i)+'" x2="'+X(i)+'" y1="'+Y(b.h[i])+'" y2="'+Y(b.l[i])+'" stroke="'+c+'"/><rect x="'+(X(i)-3.2)+'" y="'+Y(Math.max(b.o[i],b.c[i]))+'" width="6.4" height="'+Math.max(1.2,Y(Math.min(b.o[i],b.c[i]))-Y(Math.max(b.o[i],b.c[i])))+'" fill="'+c+'"/>';}
+          (r.draw||[]).forEach(function(d){
+            if(d.p){var j1=d.p[0]-off,y1=d.p[1],j2=d.p[2]-off,y2=d.p[3],sl=(y2-y1)/(j2-j1),last=n-1,yl=y1+sl*(last-j1),col=d.k==='piso'?'#fdcb6e':'#6db0ee';
+              s+='<line x1="'+X(j1)+'" y1="'+Y(y1)+'" x2="'+X(last)+'" y2="'+Y(yl)+'" stroke="'+col+'" stroke-width="2"/><line x1="'+X(last)+'" y1="'+Y(yl)+'" x2="'+X(last+1.6)+'" y2="'+Y(yl+sl*1.6)+'" stroke="'+col+'" stroke-width="2" stroke-dasharray="3 3"/>';}
+            else if(d.y){var j0=Math.max(0,(d.j||0)-off);s+='<line x1="'+X(j0)+'" x2="'+X(n-1+1.6)+'" y1="'+Y(d.y)+'" y2="'+Y(d.y)+'" stroke="#fd79a8" stroke-width="1.6" stroke-dasharray="5 3"/>';}
+          });
+          s+='</g><ellipse cx="'+X(n-1)+'" cy="'+Y(b.c[n-1])+'" rx="11" ry="'+Math.max(14,(Y(b.l[n-1])-Y(b.h[n-1]))/2+8)+'" fill="none" stroke="#f0a640" stroke-width="2" stroke-dasharray="4 3"/>';
+          s+='<text x="'+(X(n-1)-8)+'" y="'+(T+10)+'" text-anchor="end" style="fill:#f0a640">vela evaluada · '+b.t[n-1].slice(6)+'</text>';
+          [['PM20','#f1c24a'],['PM40','#f2786b'],['PM100','#4cc58a'],['PM200','#a79bff']].forEach(function(k,i){s+='<text x="'+(L+4+i*52)+'" y="'+(H-6)+'" style="fill:'+k[1]+'">'+k[0]+'</text>';});
+          return s+'</svg>';
+        }
+        function card(t,k,solo){
+          var a=act(t),r=a.e[k],d=el('div','','av-c');
+          var h=el('div','','av-ch'),l=el('span',t+' · '+nom(k),'av-tk');
+          var rg=el('span');var bd=el('span',r.dir||'','av-b');bd.style.background=r.dir==='PUT'?'#c4453a':'#1d8a55';
+          var be=el('span',etq(r.etapa),'av-b');be.style.background=COL[r.etapa]||'#999';be.style.color='#111';rg.appendChild(bd);rg.appendChild(be);h.appendChild(l);h.appendChild(rg);d.appendChild(h);
+          if(!r.pasos){d.appendChild(el('p','Sin datos suficientes para evaluar.','av-f'));return d;}
+          var sp=el('div','','av-steps');r.pasos.forEach(function(p,i){var s=el('div','','av-s '+(p[1]===true?'on':(p[1]===null?'na':'')));var bb=el('b',(p[1]===true?'✔':(p[1]===null?'⏳':'…'))+' PASO '+(i+1));s.appendChild(bb);s.appendChild(document.createTextNode(' '+p[0]));if(p[2])s.title=p[2];sp.appendChild(s);});d.appendChild(sp);
+          var sv=svg(a,r);if(sv){var w=el('div');w.innerHTML=sv;d.appendChild(w);}
+          var fl=falta(r),pf=el('p','','av-f');pf.innerHTML=fl?'<b>Falta:</b> ':'<b>Condiciones completas.</b> ';if(fl)pf.appendChild(document.createTextNode(fl+'.'));
+          pf.appendChild(document.createTextNode(' Ventana de compra: '+r.ventana+' NY'+(r.ventana_ok?' (en ventana)':' (fuera ahora)')+(r.escenario?' · escenario de '+r.escenario:'')+(r.hora?' · se dio a las '+r.hora:'')));d.appendChild(pf);
+          if(r.nota)d.appendChild(el('div',r.nota,'av-mut'));
+          var bx=el('div'),lam=el('div','','av-lam');var bt=el('button','Comparar con la lámina de Cardona','av-btn');
+          bt.onclick=function(){if(lam.firstChild){lam.innerHTML='';return;}
+            var im=el('img');im.alt='Lámina de Cardona';f(B+'lam_'+k+'.png').then(function(x){if(!x.ok)throw 0;return x.blob();}).then(function(bl){im.src=URL.createObjectURL(bl);lam.appendChild(im);}).catch(function(){lam.textContent='Lámina no disponible.';});};
+          bx.appendChild(bt);d.appendChild(bx);d.appendChild(lam);return d;
+        }
+        function mapa(){
+          var m=Q('#av-map');m.innerHTML='';var tr=el('tr');tr.appendChild(el('th'));
+          DATA.activos.forEach(function(a){tr.appendChild(el('th',a.t,'cl'));});m.appendChild(tr);
+          DATA.estrategias.forEach(function(s){var r=el('tr');r.appendChild(el('th',s.nombre,'rl'));
+            DATA.activos.forEach(function(a){var td=el('td'),e=a.e&&a.e[s.id],et=e?e.etapa:'SIN_DATOS',b=el('button');b.style.background=COL[et]||'#ddd';b.title=a.t+' · '+s.nombre+': '+etq(et);
+              if(SEL&&SEL[0]===a.t&&SEL[1]===s.id)b.className='sel';b.onclick=function(){SEL=[a.t,s.id];detalle();mapa();};td.appendChild(b);r.appendChild(td);});m.appendChild(r);});
+        }
+        function detalle(){var c=Q('#av-detalle-card'),d=Q('#av-detalle');d.innerHTML='';if(!SEL){c.style.display='none';return;}c.style.display='block';d.appendChild(card(SEL[0],SEL[1]));c.scrollIntoView({behavior:'smooth',block:'nearest'});}
+        function hoy(){
+          var L=[];DATA.activos.forEach(function(a){if(!a.e)return;Object.keys(a.e).forEach(function(k){var e=a.e[k];if(e.etapa==='CASI'||e.etapa.indexOf('CONFIRMADA')===0)L.push([a.t,k,RANK[e.etapa]]);});});
+          L.sort(function(x,y){return x[2]-y[2]||(x[0]<y[0]?-1:1);});
+          Q('#av-cnt').textContent=L.length+' casos en CASI o CONFIRMADA, de '+DATA.activos.length+' activos × '+DATA.estrategias.length+' estrategias.';
+          var box=Q('#av-cards');box.innerHTML='';L.slice(0,SHOWN).forEach(function(x){box.appendChild(card(x[0],x[1]));});
+          var mas=Q('#av-mas');mas.style.display=L.length>SHOWN?'inline-block':'none';mas.onclick=function(){SHOWN+=6;hoy();};
+        }
+        function avisos(){
+          f(B+'avisos.json').then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(L){
+            var t=Q('#av-avisos');t.innerHTML='';var h=el('tr');['Cuándo (NY)','Activo','Estrategia','Etapa','Falta','Enviado'].forEach(function(x){h.appendChild(el('th',x));});t.appendChild(h);
+            L.slice(-40).reverse().forEach(function(e){var r=el('tr');[e.ts,e.t,e.nombre+' ('+e.dir+')',etq(e.etapa),e.falta,e.enviado?'sí':'no (sin canal)'].forEach(function(x){r.appendChild(el('td',x));});t.appendChild(r);});
+            Q('#av-avnota').textContent='Se registra solo cuando una estrategia pasa a CASI o CONFIRMADA. Telegram: '+(L.some(function(e){return e.enviado;})?'activo':'sin canal propio configurado (telegram.fichas_chat_id)')+'.';
+          }).catch(function(){Q('#av-avisos').innerHTML='';Q('#av-avnota').textContent='Todavía no hay avisos registrados.';});
+        }
+        function estado(hb){
+          function ny(s){var m=(s||'').match(/(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/);return m?new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]):null;}
+          function hace(ms){var m=Math.max(0,Math.round(ms/60000));if(m<90)return m+' min';var h=Math.floor(m/60);if(h<48)return h+' h '+(m%60)+' min';return Math.floor(h/24)+' días';}
+          var n=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+          var g=ny(DATA.generado)||ny(DATA.asof),d=n.getDay(),mins=n.getHours()*60+n.getMinutes(),lab=d>=1&&d<=5;
+          var abierto=lab&&mins>=570&&mins<=975,ok=false;
+          if(g){if(abierto){ok=(n-g)<=90*60000;}else{var c=new Date(n);c.setHours(16,3,0,0);if(!(lab&&mins>=963)){do{c.setDate(c.getDate()-1);}while(c.getDay()==0||c.getDay()==6);}ok=g>=c;}}
+          var box=Q('#av-st');box.innerHTML='';
+          var b=el('b',g?(ok?'✔ DATOS ACTUALES':'⚠ DATOS DESACTUALIZADOS'):'Sin fecha de datos');
+          b.style.cssText='padding:3px 10px;border-radius:6px;color:#fff;background:'+(ok?'#1f9d55':'#c0392b');
+          box.appendChild(b);
+          var s=' Última vela evaluada: '+DATA.asof+' (NY) · Generado: '+DATA.generado+(g?' (hace '+hace(n-g)+')':'')+' · Ahora en NY: '+n.toLocaleString('es-AR',{weekday:'short',hour:'2-digit',minute:'2-digit'})+(abierto?' (mercado abierto)':' (mercado cerrado)')+' · Mercado: '+DATA.mercado+' · Versión: '+DATA.version;
+          var h=null;if(hb&&hb.ts){h=ny(hb.ts);}
+          if(h){s+=' · Servicio Atlas: '+((n-h)<=400*60000?'activo (última corrida hace '+hace(n-h)+')':'SIN CORRER hace '+hace(n-h));}
+          box.appendChild(document.createTextNode(s));
+        }
+        function cargar(){
+          f(B+'ultimo.json').then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){DATA=d;
+            Q('#av-leg').innerHTML=LEG.map(function(x){return '<span><i style="background:'+COL[x[0]]+'"></i>'+x[1]+'</span>';}).join('');
+            f(B+'heartbeat.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(estado);
+            mapa();hoy();detalle();avisos();
+          }).catch(function(e){if(DATA&&DATA.activos){console.error(e);return;}Q('#av-st').textContent='Atlas todavía no generó resultados. Corré atlas_diario.py o encendé el servicio Atlas.';});
+        }
+        Q('#av-recargar').onclick=cargar;
+        document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('.menu-item[data-target="atlas-vivo"]');if(a)cargar();});
+        setInterval(function(){var s=Q('#atlas-vivo');if(s&&s.classList.contains('active'))cargar();},300000);
+      })();
+      </script>
+    </section>
+
+    <!-- FICHAS CARDONA (solo lectura: fichas e informes diarios pre/post mercado) -->
+    <section id="fichas-cardona" class="section">
+      <style>
+        #fichas-cardona{color:#1a1a1a}
+        #fichas-cardona .fc-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:16px}
+        #fichas-cardona .fc-w{overflow-x:auto}
+        #fichas-cardona table{border-collapse:collapse;width:100%;font-size:13px}
+        #fichas-cardona th,#fichas-cardona td{border:1px solid #d9dee3;padding:5px 7px;text-align:left}
+        #fichas-cardona th{background:#e9edf0}
+        #fichas-cardona .fc-call{background:#e3f6e8}#fichas-cardona .fc-put{background:#fde7e7}
+        #fichas-cardona button{background:#1f6feb;color:#fff;border:0;border-radius:8px;padding:6px 10px;margin:2px;cursor:pointer;font-size:13px}
+        #fichas-cardona button.fc-g{background:#6b7280}
+        #fichas-cardona .fc-n{background:#3b2f00;color:#facc15;padding:8px 12px;border-radius:8px;font-size:13px}
+        #fichas-cardona .fc-dia{border-top:1px solid #e5e7eb;padding:8px 0}
+        #fichas-cardona iframe{width:100%;height:80vh;border:1px solid #d9dee3;border-radius:10px;background:#fff}
+      </style>
+      <div class="fc-card">
+        <h1>🗂️ Fichas Cardona</h1>
+        <p class="fc-n">Solo análisis, sin órdenes. Acá llegan las <b>fichas de control</b> (lámina de Cardona vs el activo) y el <b>informe de los 35 activos</b>, por fecha y corte (pre/post mercado). TECHO/PISO estilo Ismael: CALL = vela verde que cierra sobre el techo; PUT = vela roja que cierra bajo el piso; SIN_PIVOTE = no calculable. Informativo, no valida compras.</p>
+        <div id="fc-lista">Cargando…</div>
+      </div>
+      <div class="fc-card" id="fc-vista-card" style="display:none">
+        <h2 id="fc-vista-titulo"></h2>
+        <p><button id="fc-vista-nueva">Abrir en pestaña nueva</button></p>
+        <iframe id="fc-frame" sandbox="allow-popups"></iframe>
+      </div>
+      <div class="fc-card" id="fc-res-card" style="display:none">
+        <h2 id="fc-res-titulo"></h2>
+        <div class="fc-w"><table id="fc-tabla"></table></div>
+      </div>
+      <script>
+      (function(){
+        function el(t,txt,cls){var e=document.createElement(t);if(txt!==undefined)e.textContent=txt;if(cls)e.className=cls;return e;}
+        function f(u){return (typeof customFetch==='function')?customFetch(u):fetch(u);}
+        var urlActual=null;
+        function nombre(a){
+          if(a==='informe.html')return 'Informe 35 activos';
+          if(/\.(html|pdf)$/i.test(a))return 'Ficha: '+a.replace(/^Informe_piloto_\d{4}-\d{2}-\d{2}_/,'').replace(/\.(html|pdf)$/i,'').replace(/_/g,' ')+(/\.pdf$/i.test(a)?' (PDF)':'');
+          return a;
+        }
+        function abrir(c,a){
+          f('/fichas/'+c+'/'+encodeURIComponent(a)).then(function(r){if(!r.ok)throw new Error(r.status);return r.blob();}).then(function(b){
+            var url=URL.createObjectURL(b);
+            if(/\.(html|pdf)$/i.test(a)){
+              urlActual=url;
+              document.getElementById('fc-vista-card').style.display='block';
+              document.getElementById('fc-vista-titulo').textContent=c.replace('_',' · ')+' — '+nombre(a);
+              document.getElementById('fc-frame').src=url;
+              document.getElementById('fc-vista-card').scrollIntoView({behavior:'smooth'});
+            }else{
+              var l=document.createElement('a');l.href=url;l.download=a;document.body.appendChild(l);l.click();l.remove();
+            }
+          }).catch(function(){alert('No se pudo abrir '+a+'. ¿Está corriendo el scanner con el código nuevo?');});
+        }
+        function resumen(c){
+          f('/fichas/'+c+'/resumen.json').then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(rows){
+            document.getElementById('fc-res-card').style.display='block';
+            document.getElementById('fc-res-titulo').textContent='Resumen '+c.replace('_',' · ');
+            var t=document.getElementById('fc-tabla');t.textContent='';
+            var cols=['ticker','estado_datos','cierre','zona_estricta','ruptura','techo_proy','dist_techo_pct','piso_proy','dist_piso_pct','senales_motor'];
+            var th=el('tr');cols.forEach(function(k){th.appendChild(el('th',k));});t.appendChild(th);
+            rows.forEach(function(r){
+              var tr=el('tr');
+              if(r.ruptura==='CALL')tr.className='fc-call';else if(r.ruptura==='PUT')tr.className='fc-put';
+              cols.forEach(function(k){var v=r[k];tr.appendChild(el('td',(v===null||v===undefined)?'':String(v)));});
+              t.appendChild(tr);
+            });
+          }).catch(function(){document.getElementById('fc-res-card').style.display='none';});
+        }
+        function lista(){
+          var box=document.getElementById('fc-lista');
+          f('/api/fichas/lista').then(function(r){return r.json();}).then(function(l){
+            box.textContent='';
+            if(!l.length){box.textContent='Todavía no hay informes.';return;}
+            var primero=null;
+            l.forEach(function(x){
+              var d=el('div',undefined,'fc-dia');d.appendChild(el('b',x.carpeta.replace('_',' · ')+'  '));
+              x.archivos.forEach(function(a){
+                var b=el('button',nombre(a));if(!/\.(html|pdf)$/i.test(a))b.className='fc-g';
+                b.onclick=function(){abrir(x.carpeta,a);};d.appendChild(b);
+              });
+              if(x.archivos.indexOf('resumen.json')>=0){
+                var r=el('button','Ver resumen en tabla');r.onclick=function(){resumen(x.carpeta);};d.appendChild(r);
+                if(!primero)primero=x.carpeta;
+              }
+              box.appendChild(d);
+            });
+            if(primero)resumen(primero);
+          }).catch(function(){box.textContent='No se pudo leer la lista de informes.';});
+        }
+        document.getElementById('fc-vista-nueva').onclick=function(){if(urlActual)window.open(urlActual,'_blank');};
+        document.addEventListener('click',function(e){
+          var a=e.target.closest&&e.target.closest('.menu-item[data-target="fichas-cardona"]');
+          if(a)lista();
+        });
+      })();
+      </script>
     </section>
 
     <!-- CALCULADORA MELIORA 10/90 -->

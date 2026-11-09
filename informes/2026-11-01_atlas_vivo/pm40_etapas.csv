@@ -1,0 +1,36 @@
+﻿ticker,etapa,vela,cierre,linea,dist_linea_%,caida_%,falta,img
+BLK,CASI,2026-10-30 15:00:00-04:00,1147.9,1136.69,-0.98,3.42,5b_cierra_sobre_PM20,C:\Users\Ismael Romero\.gemini\antigravity\scratch\tradingview_strategy_project\informes\2026-11-01_atlas_vivo\BLK_PM40_CASI.png
+SPY,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,755.71,751.41,-0.57,2.51,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+QQQ,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,690.56,682.79,-1.12,4.47,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+META,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,614.98,613.37,-0.26,2.35,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20 | 5c_cierra_sobre_linea,
+MSCI,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,623.46,624.45,0.16,0.75,1_paralelo_20>40_100>200 | 4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,
+AMD,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,505.18,488.58,-3.29,13.14,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+MSFT,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,521.9,520.05,-0.35,4.92,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20,
+VLO,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,399.74,396.92,-0.7,13.47,1_paralelo_20>40_100>200 | 4a_rojas_rompen_PM20 | 5a_verde_solida_o_martillo,
+AXON,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,427.74,425.45,-0.54,3.6,1_paralelo_20>40_100>200 | 5a_verde_solida_o_martillo,
+GLD,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,355.96,353.84,-0.59,3.79,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20,
+TSLA,CASI,2026-10-30 15:00:00-04:00,399.81,399.32,-0.12,4.46,5b_cierra_sobre_PM20 | 5c_cierra_sobre_linea,C:\Users\Ismael Romero\.gemini\antigravity\scratch\tradingview_strategy_project\informes\2026-11-01_atlas_vivo\TSLA_PM40_CASI.png
+GOOGL,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,279.76,275.46,-1.54,15.11,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+AAPL,CASI,2026-10-30 15:00:00-04:00,344.8,345.37,0.16,2.31,5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20 | 5c_cierra_sobre_linea,C:\Users\Ismael Romero\.gemini\antigravity\scratch\tradingview_strategy_project\informes\2026-11-01_atlas_vivo\AAPL_PM40_CASI.png
+GOOG,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,278.24,273.84,-1.58,14.79,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+AMZN,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,240.41,238.32,-0.87,10.14,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+MRNA,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,221.75,,,0.0,2_viene_de_caida | 4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5c_cierra_sobre_linea,
+CVX,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,235.59,236.24,0.28,0.88,1_paralelo_20>40_100>200 | 4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,
+NVDA,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,204.81,201.01,-1.85,5.99,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+PLTR,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,184.1,183.28,-0.45,6.57,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20,
+XOM,VIGILANCIA,2026-10-30 15:00:00-04:00,187.25,187.27,0.01,2.03,4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,C:\Users\Ismael Romero\.gemini\antigravity\scratch\tradingview_strategy_project\informes\2026-11-01_atlas_vivo\XOM_PM40_VIGILANCIA.png
+COIN,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,143.51,134.99,-5.94,15.02,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+USO,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,168.82,,,0.0,1_paralelo_20>40_100>200 | 2_viene_de_caida | 4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,
+ORCL,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,130.69,129.53,-0.89,7.75,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20,
+C,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,122.62,120.83,-1.46,4.11,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+EBAY,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,121.63,121.99,0.3,4.0,1_paralelo_20>40_100>200 | 4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,
+DIS,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,110.97,110.95,-0.02,1.05,1_paralelo_20>40_100>200 | 4a_rojas_rompen_PM20 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,
+NDAQ,VIGILANCIA,2026-10-30 15:00:00-04:00,106.29,106.51,0.21,2.76,4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,C:\Users\Ismael Romero\.gemini\antigravity\scratch\tradingview_strategy_project\informes\2026-11-01_atlas_vivo\NDAQ_PM40_VIGILANCIA.png
+UBER,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,65.24,65.03,-0.32,1.71,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20,
+NFLX,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,62.08,61.84,-0.39,2.24,1_paralelo_20>40_100>200 | 4b_tocan_PM40,
+PYPL,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,57.01,57.23,0.38,1.36,1_paralelo_20>40_100>200 | 4a_rojas_rompen_PM20 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5c_cierra_sobre_linea,
+HPE,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,55.1,53.53,-2.85,9.54,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+TNA,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,57.74,56.42,-2.29,7.58,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+SLV,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,44.57,43.82,-1.68,6.76,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5b_cierra_sobre_PM20,
+BAC,SIN_CONTEXTO,2026-10-30 15:00:00-04:00,50.01,49.71,-0.6,3.03,1_paralelo_20>40_100>200 | 4b_tocan_PM40 | 5a_verde_solida_o_martillo | 5b_cierra_sobre_PM20,
+EA,SIN_DATOS,,,,,,single positional indexer is out-of-bounds,

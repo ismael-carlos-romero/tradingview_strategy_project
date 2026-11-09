@@ -1,0 +1,73 @@
+//@version=5
+// MELIORA · Fichas Cardona — dibujos = OBJETOS DEL INDICADOR (no dibujos manuales editables).
+// Solo dibuja lo que viene en «Datos de fichas» (lo genera Meliora desde la ficha, con puntos de origen y criterio).
+// Formato por línea, campos separados por |, tiempos epoch ms UTC:
+//   L|TICKER|ESTRATEGIA|CALL/PUT|ESTADO|t1|p1|t2|p2|EXTENDER(0/1)|criterio
+//   C|TICKER|NOMBRE_CANAL|-|ESTADO|t1|p1|t2|p2|t3|p3|criterio   (línea por P1-P2 + paralela por P3)
+//   Z|TICKER|ESTRATEGIA|CALL/PUT|ESTADO|tA|precioAlto|tB|precioBajo|criterio
+//   M|TICKER|ESTRATEGIA|CALL/PUT|ESTADO|t|precio|texto
+// ESTADO: CONFIRMADA verde | EN_FORMACION amarillo | PENDIENTE naranja punteada | NO_CUMPLE gris
+indicator("Meliora Fichas Cardona", overlay=true, max_lines_count=100, max_labels_count=100, max_boxes_count=50)
+
+datos = input.text_area("C|SPY|CANAL_BAJISTA|-|PENDIENTE|1792605600000|774.44|1793116800000|771.07|1792764000000|758.68|2 pivotes (cardona_rules); paralela por extremo opuesto; PENDIENTE de validar\nC|SPY|CANAL_ALCISTA|-|PENDIENTE|1792782000000|759.55|1793041200000|764.36|1793127600000|771.14|2 pivotes (cardona_rules); paralela por extremo opuesto; PENDIENTE de validar", "Datos de fichas (los genera Meliora)")
+verPM = input.bool(true, "Mostrar promedios móviles PM10/20/40/100/200 de 1 hora (Cardona)", tooltip="Calculados sobre velas de 1h de TradingView (9:30-10:30...). Cardona/uCharts usan 9:30-10:00 y luego 10:00-11:00..., por eso pueden diferir levemente.")
+
+colorEstado(e) =>
+    e == "CONFIRMADA" ? color.green : e == "EN_FORMACION" ? color.yellow : e == "PENDIENTE" ? color.orange : color.gray
+
+var array<line>  ls = array.new<line>()
+var array<label> bs = array.new<label>()
+var array<box>   zs = array.new<box>()
+
+if barstate.islast
+    while ls.size() > 0
+        line.delete(ls.pop())
+    while bs.size() > 0
+        label.delete(bs.pop())
+    while zs.size() > 0
+        box.delete(zs.pop())
+    rows = str.split(datos, "\n")
+    for r in rows
+        f = str.split(str.trim(r), "|")
+        if f.size() >= 7 and f.get(1) == syminfo.ticker
+            tipo = f.get(0)
+            est = f.get(4)
+            c = colorEstado(est)
+            tag = "MELIORA · " + f.get(2) + (f.get(3) == "-" ? "" : " " + f.get(3)) + " · " + str.replace_all(est, "_", " ")
+            if tipo == "L" and f.size() >= 11
+                t1 = int(str.tonumber(f.get(5)))
+                p1 = str.tonumber(f.get(6))
+                t2 = int(str.tonumber(f.get(7)))
+                p2 = str.tonumber(f.get(8))
+                ex = f.get(9) == "1" ? extend.right : extend.none
+                ls.push(line.new(t1, p1, t2, p2, xloc=xloc.bar_time, extend=ex, color=c, width=2, style=est == "PENDIENTE" ? line.style_dashed : line.style_solid))
+                bs.push(label.new(t1, p1, "P1 " + str.tostring(p1, "#.##"), xloc=xloc.bar_time, style=label.style_label_down, color=color.new(c, 30), textcolor=color.white, size=size.tiny))
+                bs.push(label.new(t2, p2, tag + "\nP2 " + str.tostring(p2, "#.##") + " · " + f.get(10), xloc=xloc.bar_time, style=label.style_label_down, color=color.new(c, 30), textcolor=color.white, size=size.small))
+            else if tipo == "C" and f.size() >= 12
+                t1 = int(str.tonumber(f.get(5)))
+                p1 = str.tonumber(f.get(6))
+                t2 = int(str.tonumber(f.get(7)))
+                p2 = str.tonumber(f.get(8))
+                t3 = int(str.tonumber(f.get(9)))
+                p3 = str.tonumber(f.get(10))
+                pend = (p2 - p1) / (t2 - t1)
+                q1 = p3 - pend * (t3 - t1)
+                q2 = p3 - pend * (t3 - t2)
+                esb = f.get(2) == "CANAL_BAJISTA"
+                est2 = est == "PENDIENTE" ? line.style_dashed : line.style_solid
+                ls.push(line.new(t1, p1, t2, p2, xloc=xloc.bar_time, extend=extend.right, color=c, width=2, style=est2))
+                ls.push(line.new(t1, q1, t2, q2, xloc=xloc.bar_time, extend=extend.right, color=c, width=2, style=est2))
+                bs.push(label.new(t1, p1, esb ? "TECHO P1 " + str.tostring(p1, "#.##") : "PISO P1 " + str.tostring(p1, "#.##"), xloc=xloc.bar_time, style=esb ? label.style_label_down : label.style_label_up, color=color.new(c, 30), textcolor=color.white, size=size.tiny))
+                bs.push(label.new(t2, p2, esb ? "TECHO P2 " + str.tostring(p2, "#.##") : "PISO P2 " + str.tostring(p2, "#.##"), xloc=xloc.bar_time, style=esb ? label.style_label_down : label.style_label_up, color=color.new(c, 30), textcolor=color.white, size=size.tiny))
+                bs.push(label.new(t3, p3, (esb ? "PISO (paralela) " : "TECHO (paralela) ") + str.tostring(p3, "#.##") + "\n" + tag + "\n" + f.get(11), xloc=xloc.bar_time, style=esb ? label.style_label_up : label.style_label_down, color=color.new(c, 30), textcolor=color.white, size=size.small))
+            else if tipo == "Z" and f.size() >= 10
+                zs.push(box.new(int(str.tonumber(f.get(5))), str.tonumber(f.get(6)), int(str.tonumber(f.get(7))), str.tonumber(f.get(8)), xloc=xloc.bar_time, border_color=c, bgcolor=color.new(c, 85), text=tag + " · " + f.get(9), text_color=color.white, text_size=size.small))
+            else if tipo == "M" and f.size() >= 8
+                bs.push(label.new(int(str.tonumber(f.get(5))), str.tonumber(f.get(6)), tag + "\n" + f.get(7), xloc=xloc.bar_time, style=label.style_label_left, color=color.new(c, 30), textcolor=color.white, size=size.small))
+
+pm(n) => request.security(syminfo.tickerid, "60", ta.sma(close, n))
+plot(verPM ? pm(10) : na, "PM10", color=color.new(color.white, 10), linewidth=1)
+plot(verPM ? pm(20) : na, "PM20", color=color.new(color.aqua, 0), linewidth=2)
+plot(verPM ? pm(40) : na, "PM40", color=color.new(color.fuchsia, 0), linewidth=2)
+plot(verPM ? pm(100) : na, "PM100", color=color.new(color.lime, 0), linewidth=2)
+plot(verPM ? pm(200) : na, "PM200", color=color.new(color.red, 0), linewidth=2)

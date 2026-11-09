@@ -1,0 +1,2 @@
+L|NVDA|CANAL_BREAK|CALL|PENDIENTE|1792609200000|222.19|1793026800000|217.75|1|2 pivotes confirmados; criterio de linea PENDIENTE de validar por Ismael
+M|NVDA|CANAL_BREAK|CALL|PENDIENTE|1793041200000|216.0|cierre de ayer -0.73% bajo la linea (aun sin ruptura)

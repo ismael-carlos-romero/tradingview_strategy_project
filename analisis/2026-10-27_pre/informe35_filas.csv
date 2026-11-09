@@ -1,0 +1,456 @@
+﻿activo,dato_NY,temporalidad,estrategia,estado,evidencia
+AAPL,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 343.98; premercado 342.57 (-0.41%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+AAPL,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 343.98; premercado 342.57 (-0.41%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+AAPL,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+AAPL,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+AAPL,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 343.98; premercado 342.57 (-0.41%)"
+AAPL,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 343.98; premercado 342.57 (-0.41%)"
+AAPL,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 343.98; premercado 342.57 (-0.41%)"
+AAPL,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,En formación,"PM20>PM40 y PM100>PM200 sostenidos; distancia a PM40 0.03%. Falta: toque de PM40, ruptura de línea con vela verde sólida/martillo (11:00-15:59). cierre ayer 343.98; premercado 342.57 (-0.41%)"
+AAPL,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 343.98; premercado 342.57 (-0.41%)"
+AAPL,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 343.98; premercado 342.57 (-0.41%)"
+AAPL,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+AAPL,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+AAPL,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+AMD,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 531.47; premercado 539.50 (+1.51%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+AMD,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 531.47; premercado 539.50 (+1.51%). Gap no es < -0,1%"
+AMD,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+AMD,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+AMD,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 531.47; premercado 539.50 (+1.51%)"
+AMD,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 531.47; premercado 539.50 (+1.51%)"
+AMD,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 531.47; premercado 539.50 (+1.51%)"
+AMD,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 531.47; premercado 539.50 (+1.51%)"
+AMD,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 531.47; premercado 539.50 (+1.51%)"
+AMD,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 531.47; premercado 539.50 (+1.51%)"
+AMD,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+AMD,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+AMD,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+AMZN,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 249.01; premercado 250.24 (+0.49%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+AMZN,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 249.01; premercado 250.24 (+0.49%). Gap no es < -0,1%"
+AMZN,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+AMZN,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+AMZN,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 249.01; premercado 250.24 (+0.49%)"
+AMZN,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 249.01; premercado 250.24 (+0.49%)"
+AMZN,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 249.01; premercado 250.24 (+0.49%)"
+AMZN,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 249.01; premercado 250.24 (+0.49%)"
+AMZN,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 249.01; premercado 250.24 (+0.49%)"
+AMZN,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 249.01; premercado 250.24 (+0.49%)"
+AMZN,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+AMZN,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+AMZN,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+AXON,2026-10-27 07:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 424.89; premercado 426.50 (+0.38%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+AXON,2026-10-27 07:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 424.89; premercado 426.50 (+0.38%). Gap no es < -0,1%"
+AXON,2026-10-27 07:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+AXON,2026-10-27 07:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+AXON,2026-10-27 07:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 424.89; premercado 426.50 (+0.38%)"
+AXON,2026-10-27 07:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 424.89; premercado 426.50 (+0.38%)"
+AXON,2026-10-27 07:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 424.89; premercado 426.50 (+0.38%)"
+AXON,2026-10-27 07:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 424.89; premercado 426.50 (+0.38%)"
+AXON,2026-10-27 07:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 424.89; premercado 426.50 (+0.38%)"
+AXON,2026-10-27 07:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 424.89; premercado 426.50 (+0.38%)"
+AXON,2026-10-27 07:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+AXON,2026-10-27 07:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+AXON,2026-10-27 07:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+BAC,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 50.54; premercado 50.72 (+0.36%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+BAC,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 50.54; premercado 50.72 (+0.36%). Gap no es < -0,1%"
+BAC,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+BAC,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+BAC,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=False). cierre ayer 50.54; premercado 50.72 (+0.36%)"
+BAC,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=False). cierre ayer 50.54; premercado 50.72 (+0.36%)"
+BAC,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=False). cierre ayer 50.54; premercado 50.72 (+0.36%)"
+BAC,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=False). cierre ayer 50.54; premercado 50.72 (+0.36%)"
+BAC,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=False). cierre ayer 50.54; premercado 50.72 (+0.36%)"
+BAC,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=False). cierre ayer 50.54; premercado 50.72 (+0.36%)"
+BAC,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+BAC,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+BAC,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+BLK,2026-10-26 19:30:00-04:00,1H,GAP_NORMAL,No evaluable,Sin datos de premercado para medir el gap
+BLK,2026-10-26 19:30:00-04:00,1H,GAP_BAJISTA,No evaluable,Sin datos de premercado para medir el gap
+BLK,2026-10-26 19:30:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+BLK,2026-10-26 19:30:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+BLK,2026-10-26 19:30:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 1127.72; sin velas de premercado"
+BLK,2026-10-26 19:30:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 1127.72; sin velas de premercado"
+BLK,2026-10-26 19:30:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 1127.72; sin velas de premercado"
+BLK,2026-10-26 19:30:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 1127.72; sin velas de premercado"
+BLK,2026-10-26 19:30:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 1127.72; sin velas de premercado"
+BLK,2026-10-26 19:30:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 1127.72; sin velas de premercado"
+BLK,2026-10-26 19:30:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+BLK,2026-10-26 19:30:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+BLK,2026-10-26 19:30:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+C,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 121.07; premercado 122.25 (+0.97%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+C,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 121.07; premercado 122.25 (+0.97%). Gap no es < -0,1%"
+C,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+C,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+C,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 121.07; premercado 122.25 (+0.97%)"
+C,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 121.07; premercado 122.25 (+0.97%)"
+C,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,En formación,"SMA100d>SMA200d, en piso diario y línea de caída vigente. Falta: ruptura con vela verde sólida y cierre sobre apertura del día. cierre ayer 121.07; premercado 122.25 (+0.97%)"
+C,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 121.07; premercado 122.25 (+0.97%)"
+C,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 121.07; premercado 122.25 (+0.97%)
+C,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 121.07; premercado 122.25 (+0.97%)
+C,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+C,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+C,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+COIN,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 159.68; premercado 160.50 (+0.51%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+COIN,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 159.68; premercado 160.50 (+0.51%). Gap no es < -0,1%"
+COIN,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+COIN,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+COIN,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 159.68; premercado 160.50 (+0.51%)"
+COIN,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 159.68; premercado 160.50 (+0.51%)"
+COIN,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 159.68; premercado 160.50 (+0.51%)"
+COIN,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 159.68; premercado 160.50 (+0.51%)"
+COIN,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 159.68; premercado 160.50 (+0.51%)"
+COIN,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 159.68; premercado 160.50 (+0.51%)"
+COIN,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+COIN,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+COIN,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+CVX,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 231.99; premercado 230.70 (-0.56%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+CVX,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 231.99; premercado 230.70 (-0.56%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+CVX,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+CVX,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+CVX,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 231.99; premercado 230.70 (-0.56%)"
+CVX,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 231.99; premercado 230.70 (-0.56%)"
+CVX,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 231.99; premercado 230.70 (-0.56%)"
+CVX,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 231.99; premercado 230.70 (-0.56%)"
+CVX,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 231.99; premercado 230.70 (-0.56%)"
+CVX,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 231.99; premercado 230.70 (-0.56%)"
+CVX,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+CVX,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+CVX,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+DIS,2026-10-27 07:30:00-04:00,1H,GAP_NORMAL,En formación,"cierre ayer 110.40; premercado 110.83 (+0.39%). Tendencia diaria alcista=True. Falta: 1ª y 2ª vela verdes (10:00-11:00), no martillo; compra desde 11:00"
+DIS,2026-10-27 07:30:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 110.40; premercado 110.83 (+0.39%). Gap no es < -0,1%"
+DIS,2026-10-27 07:30:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+DIS,2026-10-27 07:30:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+DIS,2026-10-27 07:30:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 110.40; premercado 110.83 (+0.39%)"
+DIS,2026-10-27 07:30:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 110.40; premercado 110.83 (+0.39%)"
+DIS,2026-10-27 07:30:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 110.40; premercado 110.83 (+0.39%)"
+DIS,2026-10-27 07:30:00-04:00,1H,PM40_BOUNCE,En formación,"PM20>PM40 y PM100>PM200 sostenidos; distancia a PM40 0.98%. Falta: toque de PM40, ruptura de línea con vela verde sólida/martillo (11:00-15:59). cierre ayer 110.40; premercado 110.83 (+0.39%)"
+DIS,2026-10-27 07:30:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 110.40; premercado 110.83 (+0.39%)"
+DIS,2026-10-27 07:30:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 110.40; premercado 110.83 (+0.39%)"
+DIS,2026-10-27 07:30:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+DIS,2026-10-27 07:30:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+DIS,2026-10-27 07:30:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+EA,2026-08-04 19:30:00-04:00,1H,GAP_NORMAL,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,GAP_BAJISTA,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,VELA_ROJA,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,CAIDA_NORMAL,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,CAIDA_FUERTE,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,PISO_FUERTE,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,PM40_BOUNCE,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,CANAL_BREAK,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,4_PASOS,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,PRIMER_GAP,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,HANGER_DIARIO,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EA,2026-08-04 19:30:00-04:00,1H,TECHO_FUERTE,No evaluable,Error de datos: ValueError('datos desactualizados: ultima vela 2026-08-04 19:30:00-04:00 (hace 84 dias); posible activo sin cotizacion')
+EBAY,2026-10-26 19:00:00-04:00,1H,GAP_NORMAL,No evaluable,Sin datos de premercado para medir el gap
+EBAY,2026-10-26 19:00:00-04:00,1H,GAP_BAJISTA,No evaluable,Sin datos de premercado para medir el gap
+EBAY,2026-10-26 19:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+EBAY,2026-10-26 19:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+EBAY,2026-10-26 19:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 118.63; sin velas de premercado"
+EBAY,2026-10-26 19:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 118.63; sin velas de premercado"
+EBAY,2026-10-26 19:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 118.63; sin velas de premercado"
+EBAY,2026-10-26 19:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 118.63; sin velas de premercado"
+EBAY,2026-10-26 19:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 118.63; sin velas de premercado
+EBAY,2026-10-26 19:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 118.63; sin velas de premercado
+EBAY,2026-10-26 19:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+EBAY,2026-10-26 19:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+EBAY,2026-10-26 19:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+GLD,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 367.83; premercado 367.81 (-0.00%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+GLD,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 367.83; premercado 367.81 (-0.00%). Gap no es < -0,1%"
+GLD,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+GLD,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+GLD,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 367.83; premercado 367.81 (-0.00%)"
+GLD,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 367.83; premercado 367.81 (-0.00%)"
+GLD,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 367.83; premercado 367.81 (-0.00%)"
+GLD,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 367.83; premercado 367.81 (-0.00%)"
+GLD,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 367.83; premercado 367.81 (-0.00%)
+GLD,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 367.83; premercado 367.81 (-0.00%)
+GLD,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+GLD,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+GLD,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+GOOG,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 314.19; premercado 315.31 (+0.36%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+GOOG,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 314.19; premercado 315.31 (+0.36%). Gap no es < -0,1%"
+GOOG,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+GOOG,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+GOOG,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 314.19; premercado 315.31 (+0.36%)"
+GOOG,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 314.19; premercado 315.31 (+0.36%)"
+GOOG,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 314.19; premercado 315.31 (+0.36%)"
+GOOG,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 314.19; premercado 315.31 (+0.36%)"
+GOOG,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 314.19; premercado 315.31 (+0.36%)
+GOOG,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 314.19; premercado 315.31 (+0.36%)"
+GOOG,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+GOOG,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+GOOG,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+GOOGL,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 316.89; premercado 318.34 (+0.46%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+GOOGL,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 316.89; premercado 318.34 (+0.46%). Gap no es < -0,1%"
+GOOGL,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+GOOGL,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+GOOGL,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 316.89; premercado 318.34 (+0.46%)"
+GOOGL,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 316.89; premercado 318.34 (+0.46%)"
+GOOGL,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 316.89; premercado 318.34 (+0.46%)"
+GOOGL,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 316.89; premercado 318.34 (+0.46%)"
+GOOGL,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 316.89; premercado 318.34 (+0.46%)
+GOOGL,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=False). cierre ayer 316.89; premercado 318.34 (+0.46%)"
+GOOGL,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+GOOGL,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+GOOGL,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+HPE,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,En formación,"cierre ayer 58.72; premercado 59.55 (+1.41%). Tendencia diaria alcista=True. Falta: 1ª y 2ª vela verdes (10:00-11:00), no martillo; compra desde 11:00"
+HPE,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 58.72; premercado 59.55 (+1.41%). Gap no es < -0,1%"
+HPE,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,Sin coincidencia,Contexto de canal/PM40/PM200 no cumple. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+HPE,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+HPE,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 58.72; premercado 59.55 (+1.41%)"
+HPE,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Confirmada,"Ya ocurrió en la última sesión cerrada (2026-10-26 10:00:00-04:00, inicio de vela NY); no es una señal para hoy. cierre ayer 58.72; premercado 59.55 (+1.41%)"
+HPE,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 58.72; premercado 59.55 (+1.41%)"
+HPE,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 58.72; premercado 59.55 (+1.41%)"
+HPE,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 58.72; premercado 59.55 (+1.41%)"
+HPE,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 58.72; premercado 59.55 (+1.41%)"
+HPE,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+HPE,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+HPE,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+META,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 630.47; premercado 628.00 (-0.39%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+META,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 630.47; premercado 628.00 (-0.39%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+META,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+META,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+META,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 630.47; premercado 628.00 (-0.39%)"
+META,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 630.47; premercado 628.00 (-0.39%)"
+META,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 630.47; premercado 628.00 (-0.39%)"
+META,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 630.47; premercado 628.00 (-0.39%)"
+META,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 630.47; premercado 628.00 (-0.39%)"
+META,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 630.47; premercado 628.00 (-0.39%)
+META,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+META,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+META,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+MRNA,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 198.86; premercado 192.69 (-3.10%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+MRNA,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 198.86; premercado 192.69 (-3.10%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+MRNA,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+MRNA,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+MRNA,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 198.86; premercado 192.69 (-3.10%)"
+MRNA,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 198.86; premercado 192.69 (-3.10%)"
+MRNA,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 198.86; premercado 192.69 (-3.10%)"
+MRNA,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 198.86; premercado 192.69 (-3.10%)"
+MRNA,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 198.86; premercado 192.69 (-3.10%)"
+MRNA,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 198.86; premercado 192.69 (-3.10%)
+MRNA,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+MRNA,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+MRNA,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+MSCI,2026-10-26 17:00:00-04:00,1H,GAP_NORMAL,No evaluable,Sin datos de premercado para medir el gap
+MSCI,2026-10-26 17:00:00-04:00,1H,GAP_BAJISTA,No evaluable,Sin datos de premercado para medir el gap
+MSCI,2026-10-26 17:00:00-04:00,1H,VELA_ROJA,Sin coincidencia,Contexto de canal/PM40/PM200 no cumple. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+MSCI,2026-10-26 17:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+MSCI,2026-10-26 17:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 617.80; sin velas de premercado"
+MSCI,2026-10-26 17:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 617.80; sin velas de premercado"
+MSCI,2026-10-26 17:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 617.80; sin velas de premercado"
+MSCI,2026-10-26 17:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 617.80; sin velas de premercado"
+MSCI,2026-10-26 17:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 617.80; sin velas de premercado"
+MSCI,2026-10-26 17:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 617.80; sin velas de premercado"
+MSCI,2026-10-26 17:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+MSCI,2026-10-26 17:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+MSCI,2026-10-26 17:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+MSFT,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 532.75; premercado 529.81 (-0.55%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+MSFT,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 532.75; premercado 529.81 (-0.55%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+MSFT,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+MSFT,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+MSFT,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 532.75; premercado 529.81 (-0.55%)"
+MSFT,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 532.75; premercado 529.81 (-0.55%)"
+MSFT,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 532.75; premercado 529.81 (-0.55%)"
+MSFT,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 532.75; premercado 529.81 (-0.55%)"
+MSFT,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 532.75; premercado 529.81 (-0.55%)"
+MSFT,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 532.75; premercado 529.81 (-0.55%)"
+MSFT,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+MSFT,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+MSFT,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+NDAQ,2026-10-27 04:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 104.72; premercado 104.54 (-0.17%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 104.72; premercado 104.54 (-0.17%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+NDAQ,2026-10-27 04:00:00-04:00,1H,VELA_ROJA,Sin coincidencia,Contexto de canal/PM40/PM200 no cumple. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+NDAQ,2026-10-27 04:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+NDAQ,2026-10-27 04:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 104.72; premercado 104.54 (-0.17%)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 104.72; premercado 104.54 (-0.17%)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 104.72; premercado 104.54 (-0.17%)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 104.72; premercado 104.54 (-0.17%)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 104.72; premercado 104.54 (-0.17%)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 104.72; premercado 104.54 (-0.17%)"
+NDAQ,2026-10-27 04:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+NDAQ,2026-10-27 04:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+NDAQ,2026-10-27 04:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+NFLX,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 63.90; premercado 63.56 (-0.52%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+NFLX,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 63.90; premercado 63.56 (-0.52%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+NFLX,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+NFLX,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+NFLX,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 63.90; premercado 63.56 (-0.52%)"
+NFLX,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 63.90; premercado 63.56 (-0.52%)"
+NFLX,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 63.90; premercado 63.56 (-0.52%)"
+NFLX,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 63.90; premercado 63.56 (-0.52%)"
+NFLX,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 63.90; premercado 63.56 (-0.52%)
+NFLX,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 63.90; premercado 63.56 (-0.52%)
+NFLX,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+NFLX,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+NFLX,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+NVDA,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 215.98; premercado 217.65 (+0.77%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+NVDA,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 215.98; premercado 217.65 (+0.77%). Gap no es < -0,1%"
+NVDA,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+NVDA,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+NVDA,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 215.98; premercado 217.65 (+0.77%)"
+NVDA,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 215.98; premercado 217.65 (+0.77%)"
+NVDA,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,En formación,"SMA100d>SMA200d, en piso diario y línea de caída vigente. Falta: ruptura con vela verde sólida y cierre sobre apertura del día. cierre ayer 215.98; premercado 217.65 (+0.77%)"
+NVDA,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 215.98; premercado 217.65 (+0.77%)"
+NVDA,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 215.98; premercado 217.65 (+0.77%)
+NVDA,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 215.98; premercado 217.65 (+0.77%)
+NVDA,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+NVDA,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+NVDA,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+ORCL,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 126.09; premercado 127.94 (+1.47%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+ORCL,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 126.09; premercado 127.94 (+1.47%). Gap no es < -0,1%"
+ORCL,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+ORCL,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+ORCL,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 126.09; premercado 127.94 (+1.47%)"
+ORCL,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 126.09; premercado 127.94 (+1.47%)"
+ORCL,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 126.09; premercado 127.94 (+1.47%)"
+ORCL,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 126.09; premercado 127.94 (+1.47%)"
+ORCL,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 126.09; premercado 127.94 (+1.47%)
+ORCL,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 126.09; premercado 127.94 (+1.47%)
+ORCL,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+ORCL,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+ORCL,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+PLTR,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 198.87; premercado 198.61 (-0.13%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+PLTR,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 198.87; premercado 198.61 (-0.13%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+PLTR,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+PLTR,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+PLTR,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 198.87; premercado 198.61 (-0.13%)"
+PLTR,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 198.87; premercado 198.61 (-0.13%)"
+PLTR,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 198.87; premercado 198.61 (-0.13%)"
+PLTR,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 198.87; premercado 198.61 (-0.13%)"
+PLTR,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 198.87; premercado 198.61 (-0.13%)"
+PLTR,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 198.87; premercado 198.61 (-0.13%)"
+PLTR,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+PLTR,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+PLTR,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+PYPL,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,En formación,"cierre ayer 54.97; premercado 56.33 (+2.46%). Tendencia diaria alcista=True. Falta: 1ª y 2ª vela verdes (10:00-11:00), no martillo; compra desde 11:00"
+PYPL,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 54.97; premercado 56.33 (+2.46%). Gap no es < -0,1%"
+PYPL,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+PYPL,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+PYPL,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 54.97; premercado 56.33 (+2.46%)"
+PYPL,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 54.97; premercado 56.33 (+2.46%)"
+PYPL,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 54.97; premercado 56.33 (+2.46%)"
+PYPL,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 54.97; premercado 56.33 (+2.46%)"
+PYPL,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 54.97; premercado 56.33 (+2.46%)"
+PYPL,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=False, tendencia alcista=True). cierre ayer 54.97; premercado 56.33 (+2.46%)"
+PYPL,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+PYPL,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+PYPL,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+QQQ,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 712.12; premercado 715.23 (+0.44%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+QQQ,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 712.12; premercado 715.23 (+0.44%). Gap no es < -0,1%"
+QQQ,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+QQQ,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+QQQ,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 712.12; premercado 715.23 (+0.44%)"
+QQQ,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 712.12; premercado 715.23 (+0.44%)"
+QQQ,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 712.12; premercado 715.23 (+0.44%)"
+QQQ,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 712.12; premercado 715.23 (+0.44%)"
+QQQ,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 712.12; premercado 715.23 (+0.44%)
+QQQ,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 712.12; premercado 715.23 (+0.44%)
+QQQ,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+QQQ,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+QQQ,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+SLV,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 48.67; premercado 48.18 (-1.00%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+SLV,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 48.67; premercado 48.18 (-1.00%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+SLV,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+SLV,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+SLV,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 48.67; premercado 48.18 (-1.00%)"
+SLV,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 48.67; premercado 48.18 (-1.00%)"
+SLV,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 48.67; premercado 48.18 (-1.00%)"
+SLV,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 48.67; premercado 48.18 (-1.00%)"
+SLV,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 48.67; premercado 48.18 (-1.00%)
+SLV,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 48.67; premercado 48.18 (-1.00%)
+SLV,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+SLV,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+SLV,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+SPY,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,En formación,"cierre ayer 765.22; premercado 767.91 (+0.35%). Tendencia diaria alcista=True. Falta: 1ª y 2ª vela verdes (10:00-11:00), no martillo; compra desde 11:00"
+SPY,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 765.22; premercado 767.91 (+0.35%). Gap no es < -0,1%"
+SPY,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+SPY,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+SPY,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Confirmada,"Ya ocurrió en la última sesión cerrada (2026-10-26 10:00:00-04:00, inicio de vela NY); no es una señal para hoy. cierre ayer 765.22; premercado 767.91 (+0.35%)"
+SPY,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 765.22; premercado 767.91 (+0.35%)"
+SPY,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Confirmada,"Ya ocurrió en la última sesión cerrada (2026-10-26 10:00:00-04:00, inicio de vela NY); no es una señal para hoy. cierre ayer 765.22; premercado 767.91 (+0.35%)"
+SPY,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 765.22; premercado 767.91 (+0.35%)"
+SPY,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 765.22; premercado 767.91 (+0.35%)
+SPY,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 765.22; premercado 767.91 (+0.35%)
+SPY,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+SPY,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+SPY,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+TNA,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 56.43; premercado 57.16 (+1.29%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+TNA,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 56.43; premercado 57.16 (+1.29%). Gap no es < -0,1%"
+TNA,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+TNA,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+TNA,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 56.43; premercado 57.16 (+1.29%)"
+TNA,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 56.43; premercado 57.16 (+1.29%)"
+TNA,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 56.43; premercado 57.16 (+1.29%)"
+TNA,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 56.43; premercado 57.16 (+1.29%)"
+TNA,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 56.43; premercado 57.16 (+1.29%)"
+TNA,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=False). cierre ayer 56.43; premercado 57.16 (+1.29%)"
+TNA,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+TNA,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+TNA,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+TSLA,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,En formación,"cierre ayer 391.69; premercado 395.60 (+1.00%). Tendencia diaria alcista=True. Falta: 1ª y 2ª vela verdes (10:00-11:00), no martillo; compra desde 11:00"
+TSLA,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 391.69; premercado 395.60 (+1.00%). Gap no es < -0,1%"
+TSLA,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,Sin coincidencia,Contexto de canal/PM40/PM200 no cumple. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+TSLA,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+TSLA,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 391.69; premercado 395.60 (+1.00%)"
+TSLA,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 391.69; premercado 395.60 (+1.00%)"
+TSLA,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 391.69; premercado 395.60 (+1.00%)"
+TSLA,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 391.69; premercado 395.60 (+1.00%)"
+TSLA,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 391.69; premercado 395.60 (+1.00%)"
+TSLA,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 391.69; premercado 395.60 (+1.00%)"
+TSLA,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+TSLA,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+TSLA,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+UBER,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 66.12; premercado 66.42 (+0.46%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=False)"
+UBER,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,Sin coincidencia,"cierre ayer 66.12; premercado 66.42 (+0.46%). Gap no es < -0,1%"
+UBER,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+UBER,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+UBER,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 66.12; premercado 66.42 (+0.46%)"
+UBER,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 66.12; premercado 66.42 (+0.46%)"
+UBER,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 66.12; premercado 66.42 (+0.46%)"
+UBER,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=False). cierre ayer 66.12; premercado 66.42 (+0.46%)"
+UBER,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 66.12; premercado 66.42 (+0.46%)
+UBER,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 66.12; premercado 66.42 (+0.46%)
+UBER,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+UBER,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+UBER,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+USO,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 166.23; premercado 165.24 (-0.59%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+USO,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 166.23; premercado 165.24 (-0.59%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+USO,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+USO,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+USO,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 166.23; premercado 165.24 (-0.59%)"
+USO,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 166.23; premercado 165.24 (-0.59%)"
+USO,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 166.23; premercado 165.24 (-0.59%)"
+USO,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 166.23; premercado 165.24 (-0.59%)"
+USO,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 166.23; premercado 165.24 (-0.59%)"
+USO,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=True, tendencia alcista=True). cierre ayer 166.23; premercado 165.24 (-0.59%)"
+USO,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+USO,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+USO,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+VLO,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 426.65; premercado 421.60 (-1.18%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+VLO,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 426.65; premercado 421.60 (-1.18%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+VLO,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,En formación,Contexto de canal/PM40/PM200 OK. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+VLO,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+VLO,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,En formación,"Línea de caída vigente + tendencia diaria alcista. Falta: vela verde sólida que la rompa (≥11:00, cruce de máximo de 3 velas) y caída 0,5%-1,5%. cierre ayer 426.65; premercado 421.60 (-1.18%)"
+VLO,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,En formación,"Línea de caída vigente + tendencia alcista. Falta: ruptura con vela verde sólida y caída > 1,5%. cierre ayer 426.65; premercado 421.60 (-1.18%)"
+VLO,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 426.65; premercado 421.60 (-1.18%)"
+VLO,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=False, línea vigente=True, tendencia alcista=True). cierre ayer 426.65; premercado 421.60 (-1.18%)"
+VLO,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,En formación,PM20<PM40 y canal bajista largo vigente. Falta: ruptura con vela verde sólida y 2ª vela de confirmación verde. cierre ayer 426.65; premercado 421.60 (-1.18%)
+VLO,2026-10-27 08:00:00-04:00,1H,4_PASOS,En formación,PM20<PM40 y línea de techo vigente. Falta: vela verde->roja que borre la anterior y ruptura de la línea de piso. cierre ayer 426.65; premercado 421.60 (-1.18%)
+VLO,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+VLO,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+VLO,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas
+XOM,2026-10-27 08:00:00-04:00,1H,GAP_NORMAL,Sin coincidencia,"cierre ayer 184.55; premercado 183.47 (-0.59%). Gap>0,1% y tendencia alcista no se cumplen (tendencia=True)"
+XOM,2026-10-27 08:00:00-04:00,1H,GAP_BAJISTA,En formación,cierre ayer 184.55; premercado 183.47 (-0.59%). Falta: 1ª vela verde y 2ª vela verde; compra desde 11:00
+XOM,2026-10-27 08:00:00-04:00,1H,VELA_ROJA,Sin coincidencia,Contexto de canal/PM40/PM200 no cumple. Falta: 1ª vela 9:30 roja sólida con volumen > media de 10 días (compra 10:00)
+XOM,2026-10-27 08:00:00-04:00,1H,RUPTURA_PISO_GAP,No evaluable,Depende de la 1ª vela verde de hoy y de una vela roja sólida posterior; no hay datos todavía
+XOM,2026-10-27 08:00:00-04:00,1H,CAIDA_NORMAL,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 184.55; premercado 183.47 (-0.59%)"
+XOM,2026-10-27 08:00:00-04:00,1H,CAIDA_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 184.55; premercado 183.47 (-0.59%)"
+XOM,2026-10-27 08:00:00-04:00,1H,PISO_FUERTE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 184.55; premercado 183.47 (-0.59%)"
+XOM,2026-10-27 08:00:00-04:00,1H,PM40_BOUNCE,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 184.55; premercado 183.47 (-0.59%)"
+XOM,2026-10-27 08:00:00-04:00,1H,CANAL_BREAK,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 184.55; premercado 183.47 (-0.59%)"
+XOM,2026-10-27 08:00:00-04:00,1H,4_PASOS,Sin coincidencia,"Condiciones previas no se cumplen (PM20>PM40=True, línea vigente=False, tendencia alcista=True). cierre ayer 184.55; premercado 183.47 (-0.59%)"
+XOM,2026-10-27 08:00:00-04:00,1H,PRIMER_GAP,No evaluable,Se evalúa en la última vela del día (15:00-16:00); el motor cardona_rules no la implementa todavía
+XOM,2026-10-27 08:00:00-04:00,1H,HANGER_DIARIO,No evaluable,Se evalúa en la última vela del día sobre la vela diaria; el motor cardona_rules no la implementa todavía
+XOM,2026-10-27 08:00:00-04:00,1H,TECHO_FUERTE,No evaluable,Regla ambigua: el código usa condición de PISO diario y el PDF define techo (PM100/PM200 diario); no se evalúa para no inventar reglas

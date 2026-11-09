@@ -1,0 +1,343 @@
+//@version=6
+// MELIORA · Fichas Cardona — techo/piso estilo Ismael (2 líneas por activo), PM y zona cara/barata. Informativo: no opera.
+indicator("Meliora Fichas Cardona", overlay=true, max_lines_count=50, max_labels_count=100, max_bars_back=500)
+verTend = input.bool(true, "Dibujar TECHO (rojo) y PISO (verde) estilo Ismael")
+nSes = input.int(5, "Sesiones de ventana para buscar el pivote", minval=1, maxval=5)
+verAzul = input.bool(true, "Dibujar líneas de tendencia AZULES (swing, como las manuales)")
+azulBars = input.int(84, "Velas hacia atrás para el 1er ancla (84 = 12 sesiones de 1h)", minval=20, maxval=250)
+pivL = input.int(4, "Swing: velas a la izquierda", minval=1, maxval=15)
+pivR = input.int(3, "Swing: velas a la derecha", minval=1, maxval=15)
+verPM = input.bool(true, "Mostrar promedios móviles PM10/20/40/100/200 de 1 hora")
+verZona = input.bool(true, "Mostrar zona cara / barata (fondo)")
+modoBarata = input.string("Toca o bajo ALGUNA PM", "Zona barata =", options=["Toca o bajo ALGUNA PM", "Bajo TODAS las PM"])
+
+pm(n) => request.security(syminfo.tickerid, "60", ta.sma(close, n))
+p10 = pm(10)
+p20 = pm(20)
+p40 = pm(40)
+p100 = pm(100)
+p200 = pm(200)
+plot(verPM ? p10 : na, "PM10", color=color.new(color.white, 10), linewidth=1)
+plot(verPM ? p20 : na, "PM20", color=color.new(color.aqua, 0), linewidth=2)
+plot(verPM ? p40 : na, "PM40", color=color.new(color.fuchsia, 0), linewidth=2)
+plot(verPM ? p100 : na, "PM100", color=color.new(color.lime, 0), linewidth=2)
+plot(verPM ? p200 : na, "PM200", color=color.new(color.red, 0), linewidth=2)
+
+pmMax = math.max(p10, p20, p40, p100, p200)
+pmMin = math.min(p10, p20, p40, p100, p200)
+cara = close > pmMax
+barata = modoBarata == "Bajo TODAS las PM" ? close < pmMin : (not cara and low <= pmMax)
+bgcolor(verZona and cara ? color.new(color.red, 90) : verZona and barata ? color.new(color.green, 90) : na)
+
+// ===== TECHO / PISO estilo Ismael =====
+// Caso A (último tramo bajista): P = vela roja del mínimo. TECHO: de A (máximo de la ventana antes de P) al high de P; CALL = 1ra vela verde que cierra sobre el techo.
+//   PISO: del low de P al low de la última vela del día; PUT = 1ra vela roja que cierra bajo el piso.
+// Caso B (espejo): P = vela verde del máximo. PISO: del mínimo previo al low de P; TECHO: del high de P al high de la última vela del día.
+newDay = ta.change(time("D")) != 0
+var array<int> starts = array.new<int>()
+if bar_index == 0 or newDay
+    array.push(starts, bar_index)
+var array<line> ln = array.new<line>()
+var array<label> lb = array.new<label>()
+var int callIdx = na
+var int putIdx = na
+var float techoP = na
+var float pisoP = na
+var array<float> hiA = array.new<float>()
+var array<float> loA = array.new<float>()
+var array<float> opA = array.new<float>()
+var array<float> clA = array.new<float>()
+array.push(hiA, high)
+array.push(loA, low)
+array.push(opA, open)
+array.push(clA, close)
+if array.size(hiA) > 300
+    array.shift(hiA)
+    array.shift(loA)
+    array.shift(opA)
+    array.shift(clA)
+base = bar_index - array.size(hiA) + 1
+H(j) => array.get(hiA, j - base)
+L(j) => array.get(loA, j - base)
+O(j) => array.get(opA, j - base)
+C(j) => array.get(clA, j - base)
+if barstate.islast and verTend
+    while array.size(ln) > 0
+        line.delete(array.pop(ln))
+    while array.size(lb) > 0
+        label.delete(array.pop(lb))
+    callIdx := na
+    putIdx := na
+    techoP := na
+    pisoP := na
+    n = bar_index
+    ns = array.size(starts)
+    ws = array.get(starts, math.max(0, ns - nSes))
+    int dIdx = na
+    if hour == 15 and minute == 30
+        dIdx := n
+    else if ns >= 2
+        dIdx := array.get(starts, ns - 1) - 1
+    int lowI = ws
+    int highI = ws
+    for j = ws to n
+        if L(j) <= L(lowI)
+            lowI := j
+        if H(j) >= H(highI)
+            highI := j
+    if lowI > highI
+        int p = lowI
+        while p > ws and not (C(p) < O(p))
+            p -= 1
+        if C(p) < O(p)
+            int aI = ws
+            for j = ws to p
+                if H(j) >= H(aI)
+                    aI := j
+            if p - aI >= 1
+                float hA = H(aI)
+                int bI = na
+                for cand = p to aI + 1
+                    if na(bI) and C(cand) < O(cand)
+                        sl = (H(cand) - hA) / (cand - aI)
+                        bool ok = true
+                        for j = aI + 1 to p
+                            if C(j) > hA + sl * (j - aI) + 0.000001
+                                ok := false
+                        if ok
+                            bI := cand
+                if not na(bI)
+                    float slT = (H(bI) - hA) / (bI - aI)
+                    array.push(ln, line.new(aI, hA, bI, H(bI), extend=extend.right, color=color.red, width=2))
+                    if not na(dIdx)
+                        techoP := hA + slT * (dIdx + 2 - aI)
+                        array.push(lb, label.new(dIdx + 2, techoP, "TECHO " + str.tostring(techoP, format.mintick), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                    if p + 1 <= n
+                        for j = p + 1 to n
+                            if na(callIdx) and C(j) > O(j) and C(j) > hA + slT * (j - aI)
+                                callIdx := j
+                                array.push(lb, label.new(j, L(j), "CALL", style=label.style_triangleup, color=color.green, textcolor=color.white, size=size.small))
+            if not na(dIdx)
+                if dIdx > p and L(dIdx) > L(p)
+                    float cL = L(p)
+                    float slP = (L(dIdx) - cL) / (dIdx - p)
+                    array.push(ln, line.new(p, cL, dIdx, L(dIdx), extend=extend.right, color=color.green, width=2))
+                    pisoP := cL + slP * (dIdx + 2 - p)
+                    array.push(lb, label.new(dIdx + 2, pisoP, "PISO " + str.tostring(pisoP, format.mintick), style=label.style_label_left, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+                    if dIdx + 1 <= n
+                        for j = dIdx + 1 to n
+                            if na(putIdx) and C(j) < O(j) and C(j) < cL + slP * (j - p)
+                                putIdx := j
+                                array.push(lb, label.new(j, H(j), "PUT", style=label.style_triangledown, color=color.red, textcolor=color.white, size=size.small))
+    else
+        int p = highI
+        while p > ws and not (C(p) > O(p))
+            p -= 1
+        if C(p) > O(p)
+            int qI = ws
+            for j = ws to p
+                if L(j) <= L(qI)
+                    qI := j
+            if p - qI >= 1
+                float lQ = L(qI)
+                int rI = na
+                for cand = p to qI + 1
+                    if na(rI) and C(cand) > O(cand)
+                        sl = (L(cand) - lQ) / (cand - qI)
+                        bool ok = true
+                        for j = qI + 1 to p
+                            if C(j) < lQ + sl * (j - qI) - 0.000001
+                                ok := false
+                        if ok
+                            rI := cand
+                if not na(rI)
+                    float slP = (L(rI) - lQ) / (rI - qI)
+                    array.push(ln, line.new(qI, lQ, rI, L(rI), extend=extend.right, color=color.green, width=2))
+                    if not na(dIdx)
+                        pisoP := lQ + slP * (dIdx + 2 - qI)
+                        array.push(lb, label.new(dIdx + 2, pisoP, "PISO " + str.tostring(pisoP, format.mintick), style=label.style_label_left, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+                    if p + 1 <= n
+                        for j = p + 1 to n
+                            if na(putIdx) and C(j) < O(j) and C(j) < lQ + slP * (j - qI)
+                                putIdx := j
+                                array.push(lb, label.new(j, H(j), "PUT", style=label.style_triangledown, color=color.red, textcolor=color.white, size=size.small))
+            if not na(dIdx)
+                if dIdx > p and H(dIdx) < H(p)
+                    float hP = H(p)
+                    float slT2 = (H(dIdx) - hP) / (dIdx - p)
+                    array.push(ln, line.new(p, hP, dIdx, H(dIdx), extend=extend.right, color=color.red, width=2))
+                    techoP := hP + slT2 * (dIdx + 2 - p)
+                    array.push(lb, label.new(dIdx + 2, techoP, "TECHO " + str.tostring(techoP, format.mintick), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                    if dIdx + 1 <= n
+                        for j = dIdx + 1 to n
+                            if na(callIdx) and C(j) > O(j) and C(j) > hP + slT2 * (j - p)
+                                callIdx := j
+                                array.push(lb, label.new(j, L(j), "CALL", style=label.style_triangleup, color=color.green, textcolor=color.white, size=size.small))
+
+callNow = barstate.islast and not na(callIdx) and callIdx == bar_index
+putNow = barstate.islast and not na(putIdx) and putIdx == bar_index
+alertcondition(callNow, "Meliora: CALL (vela verde rompe el techo)", "Vela verde cerró sobre el techo: posible CALL (informativo)")
+alertcondition(putNow, "Meliora: PUT (vela roja rompe el piso)", "Vela roja cerró bajo el piso: posible PUT (informativo)")
+
+var table tb = table.new(position.top_right, 2, 4, bgcolor=color.new(color.black, 25))
+if barstate.islast
+    table.cell(tb, 0, 0, "Techo (10:30 ET mañana)", text_color=color.red, text_size=size.small)
+    table.cell(tb, 1, 0, na(techoP) ? "SIN_PIVOTE" : str.tostring(techoP, format.mintick) + " (" + str.tostring((techoP - close) / close * 100, "#.##") + "%)", text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 1, "Piso (10:30 ET mañana)", text_color=color.green, text_size=size.small)
+    table.cell(tb, 1, 1, na(pisoP) ? "SIN_PIVOTE" : str.tostring(pisoP, format.mintick) + " (" + str.tostring((pisoP - close) / close * 100, "#.##") + "%)", text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 2, "Precio actual", text_color=color.gray, text_size=size.small)
+    table.cell(tb, 1, 2, str.tostring(close, format.mintick), text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 3, "Ruptura", text_color=color.gray, text_size=size.small)
+    table.cell(tb, 1, 3, not na(callIdx) ? "CALL" : not na(putIdx) ? "PUT" : "NINGUNA", text_color=color.white, text_size=size.small)
+
+// ===== LINEAS DE TENDENCIA AZULES (estilo manual de Ismael) =====
+// TECHO descendente: 1er ancla = swing high mas alto de las ultimas azulBars velas (posterior a la ultima ruptura); 2do ancla = ultimo swing high posterior mas bajo,
+//   sin cierres sobre la linea por mas de 0,05 %. PISO ascendente: espejo con swing lows. Mechas para anclar, cierres para validar.
+// La linea NO se mueve con cada vela: se prolonga; el 2do ancla solo avanza a un nuevo swing si la nueva linea sigue valida. Primero se evalua la ruptura contra la linea vigente.
+// Ruptura confirmada al cierre: techo -> vela VERDE que cierra sobre la linea (CALL); piso -> vela ROJA que cierra bajo la linea (PUT). Tras la ruptura se descarta la linea
+// (queda marcada) y la nueva solo usa pivotes posteriores. Sin estructura valida = no se dibuja nada. Solo informativo.
+tolP = 0.0005
+phv = ta.pivothigh(high, pivL, pivR)
+plv = ta.pivotlow(low, pivL, pivR)
+var array<int> phI = array.new<int>()
+var array<float> phP = array.new<float>()
+var array<int> plI = array.new<int>()
+var array<float> plP = array.new<float>()
+if not na(phv)
+    array.push(phI, bar_index - pivR)
+    array.push(phP, phv)
+    if array.size(phI) > 80
+        array.shift(phI)
+        array.shift(phP)
+if not na(plv)
+    array.push(plI, bar_index - pivR)
+    array.push(plP, plv)
+    if array.size(plI) > 80
+        array.shift(plI)
+        array.shift(plP)
+var array<float> stT = array.from(0.0, 0.0, 0.0, 0.0, 0.0, -1.0)
+var array<float> stP = array.from(0.0, 0.0, 0.0, 0.0, 0.0, -1.0)
+var array<int> evI = array.new<int>()
+var array<string> evT = array.new<string>()
+var array<float> evL = array.new<float>()
+var array<float> evC = array.new<float>()
+
+okLine(int s, int i1, float p1, float sl, int t) =>
+    bool ok = true
+    for j = i1 + 1 to t
+        if s * (C(j) - (p1 + sl * (j - i1))) > tolP * C(j)
+            ok := false
+    ok
+
+// st: 0 activa, 1 i1, 2 p1, 3 i2, 4 p2, 5 ultima ruptura
+stepLinea(int s, array<float> st, array<int> pI, array<float> pP) =>
+    int t = bar_index
+    float cl = close
+    bool act = array.get(st, 0) == 1.0
+    if act
+        int i1 = int(array.get(st, 1))
+        float p1 = array.get(st, 2)
+        int i2 = int(array.get(st, 3))
+        float p2 = array.get(st, 4)
+        float sl = (p2 - p1) / (i2 - i1)
+        float v = p1 + sl * (t - i1)
+        float vp = p1 + sl * (t - 1 - i1)
+        if s * (cl - v) > tolP * cl
+            bool prevOk = s * (C(t - 1) - vp) <= tolP * C(t - 1)
+            bool colOk = s == 1 ? close > open : close < open
+            if prevOk and colOk
+                array.push(evI, t)
+                array.push(evT, s == 1 ? "CALL" : "PUT")
+                array.push(evL, v)
+                array.push(evC, cl)
+            array.set(st, 0, 0.0)
+            array.set(st, 5, float(t))
+            act := false
+        else if t - i1 > 250
+            array.set(st, 0, 0.0)
+            act := false
+        else
+            int n2 = array.size(pI)
+            bool done = false
+            for k = n2 - 1 to 0
+                if not done and n2 > 0
+                    int j2 = array.get(pI, k)
+                    float q2 = array.get(pP, k)
+                    if j2 > i2 and s * q2 < s * p1
+                        float sl2 = (q2 - p1) / (j2 - i1)
+                        if okLine(s, i1, p1, sl2, t)
+                            array.set(st, 3, float(j2))
+                            array.set(st, 4, q2)
+                            done := true
+    if not act
+        int n = array.size(pI)
+        int brk = int(array.get(st, 5))
+        array<bool> used = array.new<bool>(math.max(n, 1), false)
+        bool built = false
+        int rounds = 0
+        while not built and rounds < 12 and n > 0
+            rounds += 1
+            int a = -1
+            for k = 0 to n - 1
+                if not array.get(used, k) and array.get(pI, k) > brk and array.get(pI, k) >= t - azulBars
+                    if a < 0
+                        a := k
+                    else if s * array.get(pP, k) > s * array.get(pP, a)
+                        a := k
+            if a < 0
+                rounds := 99
+            else
+                array.set(used, a, true)
+                int ia = array.get(pI, a)
+                float pa = array.get(pP, a)
+                for k = n - 1 to 0
+                    if not built
+                        int ib = array.get(pI, k)
+                        float pb = array.get(pP, k)
+                        if ib > ia and s * pb < s * pa
+                            float slb = (pb - pa) / (ib - ia)
+                            if okLine(s, ia, pa, slb, t)
+                                array.set(st, 0, 1.0)
+                                array.set(st, 1, float(ia))
+                                array.set(st, 2, pa)
+                                array.set(st, 3, float(ib))
+                                array.set(st, 4, pb)
+                                built := true
+    0
+
+if verAzul and bar_index >= last_bar_index - 700 and bar_index > 5
+    stepLinea(1, stT, phI, phP)
+    stepLinea(-1, stP, plI, plP)
+
+var array<line> tl = array.new<line>()
+var array<label> tb2 = array.new<label>()
+if barstate.islast and verAzul
+    while array.size(tl) > 0
+        line.delete(array.pop(tl))
+    while array.size(tb2) > 0
+        label.delete(array.pop(tb2))
+    nn = bar_index
+    left = hour <= 15 ? 15 - hour : 0
+    proy = nn + left + 2
+    if array.get(stT, 0) == 1.0
+        i1 = int(array.get(stT, 1))
+        p1 = array.get(stT, 2)
+        i2 = int(array.get(stT, 3))
+        p2 = array.get(stT, 4)
+        sl = (p2 - p1) / (i2 - i1)
+        array.push(tl, line.new(i1, p1, i2, p2, extend=extend.right, color=color.blue, width=2))
+        array.push(tb2, label.new(proy, p1 + sl * (proy - i1), "Techo azul " + str.tostring(p1 + sl * (proy - i1), format.mintick), style=label.style_label_left, color=color.new(color.blue, 20), textcolor=color.white, size=size.small))
+    if array.get(stP, 0) == 1.0
+        j1 = int(array.get(stP, 1))
+        q1 = array.get(stP, 2)
+        j2 = int(array.get(stP, 3))
+        q2 = array.get(stP, 4)
+        sq = (q2 - q1) / (j2 - j1)
+        array.push(tl, line.new(j1, q1, j2, q2, extend=extend.right, color=color.blue, width=2))
+        array.push(tb2, label.new(proy, q1 + sq * (proy - j1), "Piso azul " + str.tostring(q1 + sq * (proy - j1), format.mintick), style=label.style_label_left, color=color.new(color.blue, 20), textcolor=color.white, size=size.small))
+    for e = 0 to array.size(evI) - 1
+        if array.size(evI) > 0
+            int ie = array.get(evI, e)
+            if ie >= nn - 250
+                bool up = array.get(evT, e) == "CALL"
+                array.push(tb2, label.new(ie, up ? L(ie) : H(ie), array.get(evT, e) + " azul " + str.tostring(array.get(evL, e), format.mintick), style=up ? label.style_label_up : label.style_label_down, color=up ? color.green : color.red, textcolor=color.white, size=size.small))

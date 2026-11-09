@@ -1,0 +1,99 @@
+//@version=5
+// MELIORA · Fichas Cardona — datos generados __FECHA__
+// Los dibujos son OBJETOS DEL INDICADOR (no dibujos manuales editables). Solo dibuja lo que viene en los
+// cuadros «Datos»: lo genera Meliora (fichas_diario.py) con puntos de origen; todo canal sale PENDIENTE de validar.
+// Filas (campos separados por |, tiempos epoch ms UTC):
+//   C|TICKER|CANAL_BAJISTA/ALCISTA|-|ESTADO|t1|p1|t2|p2|t3|p3[|criterio]   línea P1-P2 + paralela por P3
+//   L|TICKER|ESTRATEGIA|CALL/PUT|ESTADO|t1|p1|t2|p2|EXTENDER(0/1)|criterio
+//   Z|TICKER|ESTRATEGIA|CALL/PUT|ESTADO|tA|precioAlto|tB|precioBajo|criterio
+//   M|TICKER|ESTRATEGIA|CALL/PUT|ESTADO|t|precio|texto
+// ESTADO: CONFIRMADA verde | EN_FORMACION amarillo | PENDIENTE naranja punteada | NO_CUMPLE gris
+indicator("Meliora Fichas Cardona", overlay=true, max_lines_count=100, max_labels_count=100, max_boxes_count=50)
+
+d1 = input.text_area("__D1__", "Datos 1 (los genera Meliora)")
+d2 = input.text_area("__D2__", "Datos 2")
+d3 = input.text_area("__D3__", "Datos 3")
+d4 = input.text_area("__D4__", "Datos 4")
+verPM = input.bool(true, "Mostrar promedios móviles PM10/20/40/100/200 de 1 hora", tooltip="Calculados sobre velas de 1h de TradingView (9:30-10:30...). Cardona/uCharts usan 9:30-10:00 y luego 10:00-11:00..., por eso pueden diferir levemente.")
+verZona = input.bool(true, "Mostrar zona cara / barata (fondo y cuadro)")
+modoBarata = input.string("Toca o bajo ALGUNA PM", "Zona barata =", options=["Toca o bajo ALGUNA PM", "Bajo TODAS las PM"], tooltip="Cara = precio sobre las 5 PM (techo: a mano, PUT). Barata (piso: a mano, CALL). La primera opción es el criterio del botón «Zona de Techo y Piso». Es informativo: no valida señales.")
+
+datos = d1 + "\n" + d2 + "\n" + d3 + "\n" + d4
+
+colorEstado(e) =>
+    e == "CONFIRMADA" ? color.green : e == "EN_FORMACION" ? color.yellow : e == "PENDIENTE" ? color.orange : color.gray
+
+var array<line>  ls = array.new<line>()
+var array<label> bs = array.new<label>()
+var array<box>   zs = array.new<box>()
+
+if barstate.islast
+    while ls.size() > 0
+        line.delete(ls.pop())
+    while bs.size() > 0
+        label.delete(bs.pop())
+    while zs.size() > 0
+        box.delete(zs.pop())
+    rows = str.split(datos, "\n")
+    for r in rows
+        f = str.split(str.trim(r), "|")
+        if f.size() >= 7 and f.get(1) == syminfo.ticker
+            tipo = f.get(0)
+            est = f.get(4)
+            c = colorEstado(est)
+            tag = "MELIORA · " + f.get(2) + (f.get(3) == "-" ? "" : " " + f.get(3)) + " · " + str.replace_all(est, "_", " ")
+            if tipo == "L" and f.size() >= 11
+                t1 = int(str.tonumber(f.get(5)))
+                p1 = str.tonumber(f.get(6))
+                t2 = int(str.tonumber(f.get(7)))
+                p2 = str.tonumber(f.get(8))
+                ex = f.get(9) == "1" ? extend.right : extend.none
+                ls.push(line.new(t1, p1, t2, p2, xloc=xloc.bar_time, extend=ex, color=c, width=2, style=est == "PENDIENTE" ? line.style_dashed : line.style_solid))
+                bs.push(label.new(t1, p1, "P1 " + str.tostring(p1, "#.##"), xloc=xloc.bar_time, style=label.style_label_down, color=color.new(c, 30), textcolor=color.white, size=size.tiny))
+                bs.push(label.new(t2, p2, tag + "\nP2 " + str.tostring(p2, "#.##") + " · " + f.get(10), xloc=xloc.bar_time, style=label.style_label_down, color=color.new(c, 30), textcolor=color.white, size=size.small))
+            else if tipo == "C" and f.size() >= 11
+                t1 = int(str.tonumber(f.get(5)))
+                p1 = str.tonumber(f.get(6))
+                t2 = int(str.tonumber(f.get(7)))
+                p2 = str.tonumber(f.get(8))
+                t3 = int(str.tonumber(f.get(9)))
+                p3 = str.tonumber(f.get(10))
+                crit = f.size() >= 12 ? f.get(11) : "2 pivotes (cardona_rules); paralela; PENDIENTE de validar"
+                pend = (p2 - p1) / (t2 - t1)
+                q1 = p3 - pend * (t3 - t1)
+                q2 = p3 - pend * (t3 - t2)
+                esb = f.get(2) == "CANAL_BAJISTA"
+                est2 = est == "PENDIENTE" ? line.style_dashed : line.style_solid
+                cc = esb ? color.orange : color.aqua
+                ls.push(line.new(t1, p1, t2, p2, xloc=xloc.bar_time, extend=extend.right, color=cc, width=2, style=est2))
+                ls.push(line.new(t1, q1, t2, q2, xloc=xloc.bar_time, extend=extend.right, color=cc, width=2, style=est2))
+                bs.push(label.new(t1, p1, esb ? "TECHO P1 " + str.tostring(p1, "#.##") : "PISO P1 " + str.tostring(p1, "#.##"), xloc=xloc.bar_time, style=esb ? label.style_label_down : label.style_label_up, color=color.new(cc, 30), textcolor=color.white, size=size.tiny))
+                bs.push(label.new(t2, p2, esb ? "TECHO P2 " + str.tostring(p2, "#.##") : "PISO P2 " + str.tostring(p2, "#.##"), xloc=xloc.bar_time, style=esb ? label.style_label_down : label.style_label_up, color=color.new(cc, 30), textcolor=color.white, size=size.tiny))
+                bs.push(label.new(t3, p3, (esb ? "PISO (paralela) " : "TECHO (paralela) ") + str.tostring(p3, "#.##") + "\n" + tag + "\n" + crit, xloc=xloc.bar_time, style=esb ? label.style_label_up : label.style_label_down, color=color.new(cc, 30), textcolor=color.white, size=size.small))
+            else if tipo == "Z" and f.size() >= 10
+                zs.push(box.new(int(str.tonumber(f.get(5))), str.tonumber(f.get(6)), int(str.tonumber(f.get(7))), str.tonumber(f.get(8)), xloc=xloc.bar_time, border_color=c, bgcolor=color.new(c, 85), text=tag + " · " + f.get(9), text_color=color.white, text_size=size.small))
+            else if tipo == "M" and f.size() >= 8
+                bs.push(label.new(int(str.tonumber(f.get(5))), str.tonumber(f.get(6)), tag + "\n" + f.get(7), xloc=xloc.bar_time, style=label.style_label_left, color=color.new(c, 30), textcolor=color.white, size=size.small))
+
+pm(n) => request.security(syminfo.tickerid, "60", ta.sma(close, n))
+p10 = pm(10)
+p20 = pm(20)
+p40 = pm(40)
+p100 = pm(100)
+p200 = pm(200)
+plot(verPM ? p10 : na, "PM10", color=color.new(color.white, 10), linewidth=1)
+plot(verPM ? p20 : na, "PM20", color=color.new(color.aqua, 0), linewidth=2)
+plot(verPM ? p40 : na, "PM40", color=color.new(color.fuchsia, 0), linewidth=2)
+plot(verPM ? p100 : na, "PM100", color=color.new(color.lime, 0), linewidth=2)
+plot(verPM ? p200 : na, "PM200", color=color.new(color.red, 0), linewidth=2)
+
+// Zona cara / barata (informativa; a mano: cara -> PUT, barata -> CALL)
+pmMax = math.max(p10, p20, p40, p100, p200)
+pmMin = math.min(p10, p20, p40, p100, p200)
+cara = close > pmMax
+barata = modoBarata == "Bajo TODAS las PM" ? close < pmMin : (not cara and low <= pmMax)
+bgcolor(verZona and cara ? color.new(color.red, 90) : verZona and barata ? color.new(color.green, 90) : na)
+var table tz = table.new(position.bottom_left, 1, 2, bgcolor=color.new(color.black, 20))
+if barstate.islast and verZona
+    table.cell(tz, 0, 0, cara ? "ZONA CARA (techo): a mano, PUT" : barata ? "ZONA BARATA (piso): a mano, CALL" : "ZONA NEUTRA", text_color=cara ? color.red : barata ? color.lime : color.gray, text_size=size.normal)
+    table.cell(tz, 0, 1, "Informativo · no valida señales", text_color=color.gray, text_size=size.tiny)

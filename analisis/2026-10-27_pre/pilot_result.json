@@ -1,0 +1,109 @@
+﻿{
+ "SPY": {
+  "ultima_vela_30m_NY": "2026-10-27 08:00:00-04:00",
+  "demora_min": 13.3,
+  "velas_premercado_hoy": 9,
+  "ultimo_close_30m": 767.6,
+  "ultimo_close_diario": 765.3699951171875,
+  "fecha_ultimo_diario": "2026-10-26",
+  "ultima_vela_alineada": "2026-10-26 15:00:00-04:00",
+  "senales_ultimas_14_velas": {
+   "2026-10-23 10:00:00-04:00": {
+    "GAP_BAJISTA": {
+     "gap": -0.53
+    }
+   },
+   "2026-10-26 10:00:00-04:00": {
+    "GAP_NORMAL": {
+     "gap": 0.3,
+     "cerca_pm40": true
+    },
+    "CAIDA_NORMAL": {
+     "caida_%": 0.74
+    },
+    "PISO_FUERTE": {
+     "caida_%": 0.74,
+     "vela_dia_verde": true
+    }
+   }
+  },
+  "ctx": {
+   "Close": 765.225,
+   "PM20": 763.347,
+   "PM40": 766.627,
+   "PM100": 770.883,
+   "PM200": 769.257,
+   "d_close": 759.97,
+   "d_sma100": 758.146,
+   "d_sma200": 727.006,
+   "gap": 0.3,
+   "d_trend": true,
+   "d_floor": true
+  }
+ },
+ "NVDA": {
+  "ultima_vela_30m_NY": "2026-10-27 08:00:00-04:00",
+  "demora_min": 13.3,
+  "velas_premercado_hoy": 9,
+  "ultimo_close_30m": 217.5,
+  "ultimo_close_diario": 216.0,
+  "fecha_ultimo_diario": "2026-10-26",
+  "ultima_vela_alineada": "2026-10-26 15:00:00-04:00",
+  "senales_ultimas_14_velas": {
+   "2026-10-23 10:00:00-04:00": {
+    "GAP_BAJISTA": {
+     "gap": -0.6
+    }
+   },
+   "2026-10-23 13:00:00-04:00": {
+    "PISO_FUERTE": {
+     "caida_%": 5.41,
+     "vela_dia_verde": true
+    }
+   }
+  },
+  "ctx": {
+   "Close": 215.98,
+   "PM20": 213.673,
+   "PM40": 216.075,
+   "PM100": 222.132,
+   "PM200": 225.025,
+   "d_close": 210.96,
+   "d_sma100": 214.397,
+   "d_sma200": 203.665,
+   "gap": 1.157,
+   "d_trend": false,
+   "d_floor": true
+  }
+ },
+ "TSLA": {
+  "ultima_vela_30m_NY": "2026-10-27 08:00:00-04:00",
+  "demora_min": 13.3,
+  "velas_premercado_hoy": 9,
+  "ultimo_close_30m": 395.4,
+  "ultimo_close_diario": 391.6199951171875,
+  "fecha_ultimo_diario": "2026-10-26",
+  "ultima_vela_alineada": "2026-10-26 15:00:00-04:00",
+  "senales_ultimas_14_velas": {
+   "2026-10-26 10:00:00-04:00": {
+    "GAP_NORMAL": {
+     "gap": 3.16,
+     "cerca_pm40": false
+    }
+   }
+  },
+  "ctx": {
+   "Close": 391.69,
+   "PM20": 382.004,
+   "PM40": 379.898,
+   "PM100": 374.843,
+   "PM200": 371.708,
+   "d_close": 372.22,
+   "d_sma100": 368.241,
+   "d_sma200": 386.347,
+   "gap": 3.159,
+   "d_trend": true,
+   "d_floor": true
+  }
+ }
+}

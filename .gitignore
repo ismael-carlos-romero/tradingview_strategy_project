@@ -22,3 +22,10 @@ config.json
 tv_webhook_secret.txt
 
 Backup/etapa0_*/
+bitacoras/
+
+*.bak*
+capturas_diarias/
+aula_virtual/cache/
+*.log
+*.err
